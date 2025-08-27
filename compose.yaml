@@ -1,0 +1,85 @@
+﻿services:
+  web.api:
+    image: web.api
+    container_name: web.api
+    build:
+      context: .
+      dockerfile: src/Web.API/Dockerfile
+    ports:
+      - "5000:8080"
+    depends_on:
+        web.database:
+          condition: service_healthy
+    environment:
+      - ConnectionStrings__Boardis_DB=Host=web.database;Port=5432;Database=Boardis_DB;Username=postgres;Password=postgres
+    networks:
+      - boardis-network
+
+## Database of main web app ##
+  web.database:
+    image: postgres:latest
+    container_name: web.database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Boardis_DB
+    volumes:
+      - ./.containers/boardis_db:/var/lib/postgresql/data
+    ports:
+        - "5433:5432"
+    healthcheck: # ensuring PostgreSQL is ready before Keycloak starts
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - boardis-network
+    
+## Database of keycloak ##
+  keycloak.database:
+    image: postgres:latest
+    container_name: keycloak.database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: keycloak
+    volumes:
+      - ./.containers/keycloak_db:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - boardis-network
+        
+  web.keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: web.keycloak
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak.database:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HOSTNAME: localhost
+      KC_HTTP_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      keycloak.database:
+        condition: service_healthy # wait for PostgreSQL to be healthy
+    command: start-dev
+    networks:
+      - boardis-network
+        
+networks:
+  boardis-network:
+    driver: bridge
+    
+##volumes:
+ ## boardis_db:
+  ##keycloak_db:
