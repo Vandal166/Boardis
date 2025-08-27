@@ -1,0 +1,25 @@
+﻿services:
+  web.api:
+    image: web.api
+    container_name: web.api
+    build:
+      context: .
+      dockerfile: src/Web.API/Dockerfile
+    ports:
+      - "5000:8080"
+    depends_on:
+        - web.database
+    environment:
+      - ConnectionStrings__Boardis_DB=Host=web.database;Port=5432;Database=Boardis_DB;Username=postgres;Password=postgres
+            
+  web.database:
+    image: postgres:latest
+    container_name: web.database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: Boardis_DB
+    volumes:
+      - ./.containers/boardis_db:/var/lib/postgresql/data
+    ports:
+        - "5433:5432"
