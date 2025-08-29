@@ -60,4 +60,28 @@ public sealed class Board
         
         return Result.Ok();
     }
+    
+    //TODo add migration
+    public Result AddMember(Guid userId, BoardRoles role, Guid requestingUserId)
+    {
+        // TODO: Validate requestingUserId is authorized (e.g., owner or admin)
+        var member = _members.FirstOrDefault(m => m.UserId == requestingUserId);
+        if (member is null)
+            return Result.Fail("User is not a member of the board.");
+        
+        if (member.Role != BoardRoles.Owner)
+            return Result.Fail("Only board owners can change visibility.");
+        
+        if (_members.Any(m => m.UserId == userId))
+            return Result.Fail("User is already a member of this board.");
+        
+        var memberResult = BoardMember.Create(Id, userId, role);
+        if (memberResult.IsFailed)
+            return Result.Fail(memberResult.Errors);
+        
+        _members.Add(memberResult.Value);
+        UpdatedAt = DateTime.UtcNow;
+        
+        return Result.Ok();
+    }
 }

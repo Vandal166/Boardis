@@ -73,6 +73,8 @@
       keycloak.database:
         condition: service_healthy # wait for PostgreSQL to be healthy
     command: start-dev
+    volumes:
+      - ./keycloak_theme/keycloak-theme-for-kc-22-to-25.jar:/opt/keycloak/providers/keycloak-theme-for-kc-22-to-25.jar # mounting custom theme
     networks:
       - boardis-network
         
