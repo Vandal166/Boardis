@@ -1,4 +1,8 @@
-﻿using Infrastructure.Data;
+﻿using Application.Contracts;
+using Domain.Contracts;
+using Infrastructure.Data;
+using Infrastructure.Persistence;
+using Infrastructure.Persistence.Board;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +17,11 @@ public static class DependencyInjection
         {
             options.UseNpgsql(configuration.GetConnectionString("Boardis_DB"));
         });
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
+        services.AddScoped<IBoardRepository, BoardRepository>();
         
         return services;
     }
