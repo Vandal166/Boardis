@@ -1,7 +1,7 @@
 namespace Domain.Constants;
 
-public enum BoardRoles
+/*public enum BoardRoles
 {
     Owner,
     Member
-}
+}*/

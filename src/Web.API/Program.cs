@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
-builder.Services.AddCors(options =>
+/*builder.Services.AddCors(options =>
 {
     options.AddPolicy("SwaggerOnly", builder =>
     {
@@ -16,7 +16,7 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
-});
+});*/
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
@@ -37,7 +37,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
-app.UseCors("SwaggerOnly");
+//app.UseCors("SwaggerOnly");
 
 app.UseAuthentication();
 app.UseAuthorization();

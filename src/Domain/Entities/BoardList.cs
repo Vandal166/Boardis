@@ -19,8 +19,8 @@ public sealed class BoardList
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
     
-    public IReadOnlyCollection<Card> Cards => _cards.AsReadOnly();
-    private readonly List<Card> _cards = new();
+    public IReadOnlyCollection<ListCard> Cards => _cards.AsReadOnly();
+    private readonly List<ListCard> _cards = new();
     
     private BoardList() { }
     
@@ -35,15 +35,13 @@ public sealed class BoardList
         if (title.Length > 100)
             return Result.Fail<BoardList>("Title cannot exceed 100 characters.");
         
-        var boardList = new BoardList
+        return Result.Ok(new BoardList
         {
             Id = Guid.NewGuid(),
             BoardId = boardId,
             Title = title,
             CreatedAt = DateTime.UtcNow
-        };
-        
-        return Result.Ok(boardList);
+        });
     }
     
     public Result UpdateColor(Color newColor)
