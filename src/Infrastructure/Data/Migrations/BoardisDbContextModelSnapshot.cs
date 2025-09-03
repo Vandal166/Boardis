@@ -111,12 +111,6 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("Member");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone");
@@ -128,14 +122,17 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("BoardMembers");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Card", b =>
+            modelBuilder.Entity("Domain.Entities.ListCard", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("BoardListId")
+                    b.Property<Guid>("BoardListId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -145,14 +142,6 @@ namespace Infrastructure.Data.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsCompleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<Guid>("ListId")
-                        .HasColumnType("uuid");
 
                     b.Property<int>("Position")
                         .ValueGeneratedOnAdd()
@@ -170,11 +159,9 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BoardListId");
+                    b.HasIndex("BoardListId", "Position");
 
-                    b.HasIndex("ListId", "Position");
-
-                    b.ToTable("Card");
+                    b.ToTable("ListCards");
                 });
 
             modelBuilder.Entity("Domain.Entities.BoardList", b =>
@@ -193,13 +180,40 @@ namespace Infrastructure.Data.Migrations
                         .HasForeignKey("BoardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.OwnsOne("Domain.ValueObjects.Role", "Role", b1 =>
+                        {
+                            b1.Property<Guid>("BoardMemberBoardId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("BoardMemberUserId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("StringValue")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("Role");
+
+                            b1.HasKey("BoardMemberBoardId", "BoardMemberUserId");
+
+                            b1.ToTable("BoardMembers");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BoardMemberBoardId", "BoardMemberUserId");
+                        });
+
+                    b.Navigation("Role")
+                        .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.Card", b =>
+            modelBuilder.Entity("Domain.Entities.ListCard", b =>
                 {
                     b.HasOne("Domain.Entities.BoardList", null)
                         .WithMany("Cards")
-                        .HasForeignKey("BoardListId");
+                        .HasForeignKey("BoardListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Entities.Board", b =>

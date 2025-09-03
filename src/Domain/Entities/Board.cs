@@ -1,4 +1,5 @@
 ﻿using Domain.Constants;
+using Domain.ValueObjects;
 using FluentResults;
 
 namespace Domain.Entities;
@@ -48,11 +49,11 @@ public sealed class Board
     public Result SetVisibility(VisibilityLevel newVisibility, Guid requestingUserId)
     {
         // Only allow changing visibility if the requesting user is an owner
-        var member = _members.FirstOrDefault(m => m.UserId == requestingUserId);
+        var member = HasMember(requestingUserId);
         if (member is null)
             return Result.Fail("User is not a member of the board.");
         
-        if (member.Role != BoardRoles.Owner)
+        if(!MemberHasRole(requestingUserId, Role.Owner))
             return Result.Fail("Only board owners can change visibility.");
         
         Visibility = newVisibility;
@@ -61,27 +62,60 @@ public sealed class Board
         return Result.Ok();
     }
     
-    //TODo add migration
-    public Result AddMember(Guid userId, BoardRoles role, Guid requestingUserId)
+    public Result<BoardMember> AddMember(Guid userIdToAdd, Role role, Guid requestingUserId)
     {
-        // TODO: Validate requestingUserId is authorized (e.g., owner or admin)
-        var member = _members.FirstOrDefault(m => m.UserId == requestingUserId);
-        if (member is null)
-            return Result.Fail("User is not a member of the board.");
+        //permission check
+        var requestingMember = HasMember(requestingUserId);
+        if (requestingMember is null)
+            return Result.Fail<BoardMember>("You are not a member of this board");
         
-        if (member.Role != BoardRoles.Owner)
-            return Result.Fail("Only board owners can change visibility.");
+        if(!MemberHasRole(requestingUserId, Role.Owner))
+            return Result.Fail<BoardMember>("You don't have permission to add members to this board");
         
-        if (_members.Any(m => m.UserId == userId))
-            return Result.Fail("User is already a member of this board.");
+        if (HasMember(userIdToAdd) is not null)
+            return Result.Fail<BoardMember>("User is already a member of this board");
         
-        var memberResult = BoardMember.Create(Id, userId, role);
+        if(Equals(role, Role.Owner))
+            return Result.Fail<BoardMember>("An owner is already assigned when the board is created. Cannot add another owner.");
+        
+        var memberResult = BoardMember.Create(Id, userIdToAdd, role);
         if (memberResult.IsFailed)
             return Result.Fail(memberResult.Errors);
         
         _members.Add(memberResult.Value);
         UpdatedAt = DateTime.UtcNow;
         
+        return Result.Ok(memberResult.Value);
+    }
+    
+    public Result RemoveMember(Guid userIdToRemove, Guid requestingUserId)
+    {
+        var requestingMember = HasMember(requestingUserId);
+        if (requestingMember is null)
+            return Result.Fail("You are not a member of this board");
+        
+        if(!MemberHasRole(requestingUserId, Role.Owner))
+            return Result.Fail("You don't have permission to remove members from this board");
+        
+        var memberToRemove = HasMember(userIdToRemove);
+        if (memberToRemove is null)
+            return Result.Fail("User is not a member of this board");
+        
+        if (Equals(memberToRemove.Role, Role.Owner))
+            return Result.Fail("Cannot remove the owner of the board");
+        
+        _members.Remove(memberToRemove);
+        UpdatedAt = DateTime.UtcNow;
+        
         return Result.Ok();
     }
+    
+    public bool HasVisibility(VisibilityLevel requiredVisibility) 
+        => Visibility == requiredVisibility;
+    
+    public BoardMember? HasMember(Guid requestingUserId) 
+        => _members.FirstOrDefault(m => m.UserId == requestingUserId);
+    
+    public bool MemberHasRole(Guid userId, Role role) 
+        => _members.Any(m => m.UserId == userId && Equals(m.Role, role));
 }

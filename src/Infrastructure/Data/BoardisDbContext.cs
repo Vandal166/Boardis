@@ -11,6 +11,7 @@ public sealed class BoardisDbContext : DbContext
     public DbSet<Board> Boards => Set<Board>();
     public DbSet<BoardMember> BoardMembers => Set<BoardMember>();
     public DbSet<BoardList> BoardLists => Set<BoardList>();
+    public DbSet<ListCard> ListCards => Set<ListCard>();
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -35,7 +36,8 @@ public sealed class BoardisDbContext : DbContext
             b.Property(board => board.WallpaperImageId);
 
             b.Property(board => board.Visibility)
-                .IsRequired().HasDefaultValue(Domain.Constants.VisibilityLevel.Private)
+                .IsRequired()
+                .HasDefaultValue(Domain.Constants.VisibilityLevel.Private)
                 .HasConversion<string>(); // enum to string
 
             b.Property(board => board.CreatedAt).HasDefaultValueSql("now()")
@@ -64,10 +66,13 @@ public sealed class BoardisDbContext : DbContext
             
             bm.Property(b => b.UserId).IsRequired();
 
-            bm.Property(b => b.Role)
-                .IsRequired()
-                .HasDefaultValue(Domain.Constants.BoardRoles.Member)
-                .HasConversion<string>();
+            bm.OwnsOne(b => b.Role, role =>
+            {
+                role.Property(r => r.Key)
+                    .IsRequired()
+                    .HasColumnName("Role")
+                    .HasMaxLength(50);
+            });
 
             bm.Property(b => b.JoinedAt).HasDefaultValueSql("now()")
                 .ValueGeneratedOnAdd();
@@ -110,10 +115,10 @@ public sealed class BoardisDbContext : DbContext
         });
         
         // ------ Card -------
-        builder.Entity<Card>(c =>
+        builder.Entity<ListCard>(c =>
         {
             c.HasKey(card => card.Id);
-            c.Property(card => card.ListId)
+            c.Property(card => card.BoardListId)
                 .IsRequired();
             
             c.Property(card => card.Title)
@@ -122,8 +127,7 @@ public sealed class BoardisDbContext : DbContext
             c.Property(card => card.Description)
                 .HasMaxLength(500);
             
-            c.Property(card => card.IsCompleted)
-                .IsRequired().HasDefaultValue(false);
+            c.Property(card => card.CompletedAt);
             
             c.Property(card => card.Position)
                 .IsRequired().HasDefaultValue(0);
@@ -136,7 +140,7 @@ public sealed class BoardisDbContext : DbContext
                 .ValueGeneratedOnAddOrUpdate();
 
             // Index for sorting by Pos
-            c.HasIndex(card => new { card.ListId, card.Position });
+            c.HasIndex(card => new { ListId = card.BoardListId, card.Position });
         });
     }
 }

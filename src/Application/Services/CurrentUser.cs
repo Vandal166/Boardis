@@ -24,7 +24,7 @@ internal sealed class CurrentUser : ICurrentUser
         }
     }
     
-    public string Username => User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+    public string Username => User.Identity?.Name ?? string.Empty;
     
     public IReadOnlyCollection<string> Roles => User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList().AsReadOnly();
 }

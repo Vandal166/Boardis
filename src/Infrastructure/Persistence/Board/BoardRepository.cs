@@ -20,10 +20,25 @@ internal sealed class BoardRepository : IBoardRepository
         await _dbContext.Boards.AddAsync(board, ct);
     }
 
+    public Task DeleteAsync(Board board, CancellationToken ct = default)
+    {
+        _dbContext.Boards.Remove(board);
+        return Task.CompletedTask;
+    }
+
     public async Task<Board?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _dbContext.Boards
             .Include(b => b.Members)
             .FirstOrDefaultAsync(b => b.Id == id, ct);
+    }
+
+    public async Task<List<Board>?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
+    {
+        return await _dbContext.Boards
+            .AsNoTracking()
+            .Include(b => b.Members)
+            .Where(b => b.Members.Any(m => m.UserId == userId))
+            .ToListAsync(ct);
     }
 }
