@@ -35,7 +35,7 @@ internal sealed class CreateListCardCommandHandler : ICommandHandler<CreateListC
         if (boardMember is null)
             return Result.Fail<ListCard>("You are not a member of this board");
         
-        if(!board.MemberHasRole(boardMember.UserId, Role.Create("Owner", "Owner").Value))
+        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
             return Result.Fail<ListCard>("You don't have permission to create a card in this list");
         
         var listCardResult = ListCard.Create(command.BoardListId, command.Title, command.Description);

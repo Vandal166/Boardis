@@ -33,10 +33,7 @@ internal sealed class DeleteBoardListCommandHandler : ICommandHandler<DeleteBoar
         if (boardMember is null)
             return Result.Fail("You are not a member of this board");
 
-        var role = Role.Create("Owner", "Owner");
-        if(role.IsFailed)
-            return Result.Fail("Role creation failed");
-        if(!board.MemberHasRole(boardMember.UserId, role.Value))
+        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
             return Result.Fail("You don't have permission to delete a list in this board");
         
         var boardList = await _boardListRepository.GetByIdAsync(command.BoardListId, ct);

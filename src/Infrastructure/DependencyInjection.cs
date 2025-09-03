@@ -21,9 +21,10 @@ public static class DependencyInjection
         });
 
         services.AddHttpContextAccessor();
-        services.AddHttpClient<IKeycloakService, KeycloakService>();
-        services.AddHttpClient<IKeycloakUserService, KeycloakUserService>();
-        services.AddHttpClient<IKeycloakRoleService, KeycloakRoleService>();
+        services.AddHttpClient();
+        services.AddScoped<IKeycloakService, KeycloakService>();
+        services.AddScoped<IKeycloakUserService, KeycloakUserService>();
+        services.AddScoped<IKeycloakRoleService, KeycloakRoleService>();
         services.AddMemoryCache();
         
         services.AddScoped<IUnitOfWork, UnitOfWork>();

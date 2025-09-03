@@ -14,10 +14,10 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
     private readonly IMemoryCache _cache;
     private const string CacheKey = "KeycloakRoles";
 
-    public KeycloakRoleService(IKeycloakService keycloakService, HttpClient httpClient, IMemoryCache cache)
+    public KeycloakRoleService(IKeycloakService keycloakService, IHttpClientFactory httpClient, IMemoryCache cache)
     {
         _keycloakService = keycloakService;
-        _httpClient = httpClient;
+        _httpClient = httpClient.CreateClient(nameof(KeycloakRoleService));
         _cache = cache;
     }
     
@@ -51,7 +51,7 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
         var getClientUUUIDReq = new HttpRequestMessage
         (
             HttpMethod.Get,
-            "http://localhost:8081/admin/realms/BoardisRealm/clients?clientId=boardis-api"
+            "http://localhost:8081/auth/admin/realms/BoardisRealm/clients?clientId=boardis-api"
         );
         getClientUUUIDReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         
@@ -69,7 +69,7 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
         var getReq = new HttpRequestMessage
         (
             HttpMethod.Get,
-            $"http://localhost:8081/admin/realms/BoardisRealm/clients/{uuuid}/roles"
+            $"http://localhost:8081/auth/admin/realms/BoardisRealm/clients/{uuuid}/roles"
         );
         getReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         

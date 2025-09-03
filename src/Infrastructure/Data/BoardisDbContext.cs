@@ -127,8 +127,6 @@ public sealed class BoardisDbContext : DbContext
             c.Property(card => card.Description)
                 .HasMaxLength(500);
             
-            /*c.Property(card => card.IsCompleted)
-                .IsRequired().HasDefaultValue(false);*/
             c.Property(card => card.CompletedAt);
             
             c.Property(card => card.Position)

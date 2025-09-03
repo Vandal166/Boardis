@@ -31,7 +31,7 @@ internal sealed class CreateBoardCommandHandler : ICommandHandler<CreateBoardCom
 
         var board = boardResult.Value;
         
-        var memberResult = BoardMember.Create(board.Id, command.OwnerId, Role.Create("Owner", "Owner").Value); // self-adding as owner
+        var memberResult = BoardMember.Create(board.Id, command.OwnerId, Role.Owner); // self-adding as owner
         if (memberResult.IsFailed)
             return Result.Fail<Board>(memberResult.Errors);
 

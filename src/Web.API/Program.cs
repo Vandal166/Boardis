@@ -1,22 +1,23 @@
 using Application;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Logging;
 using Serilog;
 using Web.API;
 
 var builder = WebApplication.CreateBuilder(args);
-
+IdentityModelEventSource.ShowPII = true;
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
-/*builder.Services.AddCors(options =>
+builder.Services.AddCors(options =>
 {
-    options.AddPolicy("SwaggerOnly", builder =>
-    {
-        builder.WithOrigins("http://localhost:5185") // Swagger UI origin
+    options.AddPolicy("AllowFrontend",
+        policy => policy.WithOrigins("http://localhost:3000")
             .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});*/
+            .AllowAnyMethod()
+            .AllowCredentials()); // cookies/session
+});
+
 builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
@@ -37,7 +38,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
-//app.UseCors("SwaggerOnly");
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

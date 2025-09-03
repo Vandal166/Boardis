@@ -31,7 +31,7 @@ internal sealed class DeleteBoardCommandHandler : ICommandHandler<DeleteBoardCom
         if (boardMember is null)
             return Result.Fail("You are not a member of this board");
         
-        if(!board.MemberHasRole(boardMember.UserId, Role.Create("Owner", "Owner").Value))
+        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
             return Result.Fail("You don't have permission to delete this board");
         
         await _boardRepository.DeleteAsync(board, ct);

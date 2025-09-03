@@ -36,7 +36,7 @@ internal sealed class DeleteListCardCommandHandler : ICommandHandler<DeleteListC
         if (boardMember is null)
             return Result.Fail("You are not a member of this board");
         
-        if(!board.MemberHasRole(boardMember.UserId, Role.Create("Owner", "Owner").Value))
+        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
             return Result.Fail("You don't have permission to delete a card in this board");
         
         var boardList = await _boardListRepository.GetByIdAsync(command.BoardListId, ct);

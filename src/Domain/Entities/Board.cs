@@ -88,6 +88,28 @@ public sealed class Board
         return Result.Ok(memberResult.Value);
     }
     
+    public Result RemoveMember(Guid userIdToRemove, Guid requestingUserId)
+    {
+        var requestingMember = HasMember(requestingUserId);
+        if (requestingMember is null)
+            return Result.Fail("You are not a member of this board");
+        
+        if(!MemberHasRole(requestingUserId, Role.Owner))
+            return Result.Fail("You don't have permission to remove members from this board");
+        
+        var memberToRemove = HasMember(userIdToRemove);
+        if (memberToRemove is null)
+            return Result.Fail("User is not a member of this board");
+        
+        if (Equals(memberToRemove.Role, Role.Owner))
+            return Result.Fail("Cannot remove the owner of the board");
+        
+        _members.Remove(memberToRemove);
+        UpdatedAt = DateTime.UtcNow;
+        
+        return Result.Ok();
+    }
+    
     public bool HasVisibility(VisibilityLevel requiredVisibility) 
         => Visibility == requiredVisibility;
     

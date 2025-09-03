@@ -10,9 +10,9 @@ internal sealed class KeycloakService : IKeycloakService
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _config;
     
-    public KeycloakService(HttpClient httpClient, IConfiguration config)
+    public KeycloakService(IHttpClientFactory httpClient, IConfiguration config)
     {
-        _httpClient = httpClient;
+        _httpClient = httpClient.CreateClient(nameof(KeycloakService));
         _config = config;
     }
     

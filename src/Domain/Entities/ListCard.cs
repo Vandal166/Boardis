@@ -8,7 +8,6 @@ public sealed class ListCard
     public Guid BoardListId { get; private set; }
     public string Title { get; private set; }
     public string? Description { get; private set; }
-   // public bool IsCompleted { get; private set; } = false; //TODO CompletedAt instead
     public DateTime? CompletedAt { get; private set; } // null if not completed, timestamp if completed
     public int Position { get; private set; } // position/order of the card in the list
 

@@ -34,7 +34,7 @@ internal sealed class CreateBoardListCommandHandler : ICommandHandler<CreateBoar
         if (boardMember is null)
             return Result.Fail<BoardList>("You are not a member of this board");
         
-        if(!board.MemberHasRole(boardMember.UserId, Role.Create("Owner", "Owner").Value))
+        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
             return Result.Fail<BoardList>("You don't have permission to create a list in this board");
         
         var boardListResult = BoardList.Create(command.BoardId, command.Title);
