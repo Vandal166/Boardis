@@ -58,7 +58,7 @@
       - boardis-network
         
   web.keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:latest # TODO use explicit version
     container_name: web.keycloak
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -80,7 +80,7 @@
         condition: service_healthy # wait for PostgreSQL to be healthy
     command: start-dev
     volumes:
-      - ./keycloak_theme/keycloak-theme-for-kc-22-to-25.jar:/opt/keycloak/providers/keycloak-theme-for-kc-22-to-25.jar # mounting custom theme
+      - ./keycloak/theme/keycloak-theme-for-kc-22-to-25.jar:/opt/keycloak/providers/keycloak-theme-for-kc-22-to-25.jar # mounting custom theme
     networks:
       - boardis-network
         

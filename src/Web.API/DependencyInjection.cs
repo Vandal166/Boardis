@@ -18,8 +18,6 @@ public static class DependencyInjection
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme; // cookies for session management
-           // options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            //options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme; // OIDC for authentication with Keycloak
             options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -91,24 +89,6 @@ public static class DependencyInjection
                 RoleClaimType = "realm_access.roles"
             };
             
-            /*// Set Authority for config validation (internal URL to match the discovered issuer)
-            options.Authority = "http://web.keycloak:8081/auth/realms/BoardisRealm";
-            options.Audience = keycloakSettings["Api:Audience"];
-            options.RequireHttpsMetadata = false; // for dev
-            options.MetadataAddress = "http://web.keycloak:8081/auth/realms/BoardisRealm/.well-known/openid-configuration";
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                // Override to match the token's actual issuer (external URL)
-                ValidIssuer = keycloakSettings["Authority"], // "http://localhost/auth/realms/BoardisRealm"
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                NameClaimType = "preferred_username",
-                RoleClaimType = "realm_access.roles"
-            };*/
-            
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = ctx =>
@@ -141,7 +121,6 @@ public static class DependencyInjection
         {
             options.Authority = "http://web.keycloak:8081/auth/realms/BoardisRealm";
             options.ClientId = keycloakSettings["Web:ClientId"];
-            //options.ClientSecret = keycloakSettings["ClientSecret"];
             options.ResponseType = OpenIdConnectResponseType.Code;
             options.SaveTokens = true; // Save access/refresh and ID tokens in auth cookie
             options.GetClaimsFromUserInfoEndpoint = true; // Fetch additional claims
@@ -164,34 +143,6 @@ public static class DependencyInjection
                 NameClaimType = "preferred_username",
                 RoleClaimType = "realm_access.roles"
             };
-            
-            /*
-            // Set Authority for config validation (internal)
-            options.Authority = "http://web.keycloak:8081/auth/realms/BoardisRealm";
-            options.ClientId = keycloakSettings["Web:ClientId"];
-            //options.ClientSecret = keycloakSettings["ClientSecret"];
-            options.ResponseType = OpenIdConnectResponseType.Code;
-            options.SaveTokens = true;
-            options.GetClaimsFromUserInfoEndpoint = true;
-
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-            options.Scope.Add("email");
-
-            options.CallbackPath = "/api/auth/callback";
-            options.SignedOutCallbackPath = "/api/auth/signout-callback";
-            options.RequireHttpsMetadata = false; // for dev
-            options.SkipUnrecognizedRequests = true;
-            options.MetadataAddress = "http://web.keycloak:8081/auth/realms/BoardisRealm/.well-known/openid-configuration";
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                // Override to external issuer
-                ValidIssuer = keycloakSettings["Authority"],
-                NameClaimType = "preferred_username",
-                RoleClaimType = "realm_access.roles"
-            };*/
             
             options.Events = new OpenIdConnectEvents
             {

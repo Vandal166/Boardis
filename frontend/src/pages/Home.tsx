@@ -69,6 +69,12 @@ function Home() {
             <p>Please log in to view your Kanban boards.</p>
             <button onClick={() => keycloak.login({ redirectUri: window.location.origin + '/' })}>
               Login
+              </button>
+              <button
+              style={{ marginLeft: '1em' }}
+              onClick={() => keycloak.register({ redirectUri: window.location.origin + '/' })}
+            >
+              Register
             </button>
           </>
         )
