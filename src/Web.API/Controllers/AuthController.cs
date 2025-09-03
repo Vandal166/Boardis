@@ -18,30 +18,6 @@ public class AuthController : ControllerBase
     {
         _currentUser = currentUser;
     }
-    /*
-     * [HttpGet("login")]
-    public IActionResult Login(string returnUrl = "/")
-    {
-        return Challenge(new AuthenticationProperties
-        {
-            RedirectUri = Url.Action(nameof(Callback), new { returnUrl }),
-            IsPersistent = true
-        }, OpenIdConnectDefaults.AuthenticationScheme); //TODO if the user is disabled, display msg that account is disabled
-    }
-    
-    [HttpGet("register")]
-    public IActionResult Register(string returnUrl = "/")
-    {
-        var redirectUri = Url.Action(nameof(Login), "Auth", new { returnUrl }, protocol: Request.Scheme)?.ToLowerInvariant();
-        var registrationUrl = "http://localhost:8081/auth/realms/BoardisRealm/protocol/openid-connect/registrations" +
-                              "?client_id=boardis-api" +
-                              "&response_type=code" +
-                              "&scope=openid profile email" +
-                              $"&redirect_uri={Uri.EscapeDataString(redirectUri ?? "http://localhost:5185/api/auth/login")}";
-
-        return Redirect(registrationUrl);
-    }
-     */
 
     [HttpGet("login")]
     public IActionResult Login(string returnUrl = "/")

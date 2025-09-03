@@ -38,7 +38,6 @@ public sealed class BoardsController : ControllerBase
     [HttpGet("{boardId:guid}")]
     public async Task<IActionResult> GetBoardById(Guid boardId, CancellationToken ct = default)
     {
-        Console.WriteLine($"GetBoardById called by user {_currentUser.Id} for board {boardId}");
         var query = new GetBoardByIdQuery
         {
             BoardId = boardId,
@@ -63,12 +62,6 @@ public sealed class BoardsController : ControllerBase
         if (result.IsFailed)
             return NotFound(result.Errors);
 
-        /*return Ok(new BoardResponse
-        {
-            Id = new Guid("00000000-0000-0000-0000-000000000001"),
-            Title = "Personal Board",
-            Description = "This is your personal board."
-        });*/
         return Ok(result.Value);
     }
 
