@@ -51,7 +51,7 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
         var getClientUUUIDReq = new HttpRequestMessage
         (
             HttpMethod.Get,
-            "http://localhost:8081/auth/admin/realms/BoardisRealm/clients?clientId=boardis-api"
+            "http://web.keycloak:8081/auth/admin/realms/BoardisRealm/clients?clientId=boardis-api"
         );
         getClientUUUIDReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         
@@ -69,7 +69,7 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
         var getReq = new HttpRequestMessage
         (
             HttpMethod.Get,
-            $"http://localhost:8081/auth/admin/realms/BoardisRealm/clients/{uuuid}/roles"
+            $"http://web.keycloak:8081/auth/admin/realms/BoardisRealm/clients/{uuuid}/roles"
         );
         getReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         

@@ -15,7 +15,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
 
         services.AddScoped<ICurrentUser, CurrentUser>();
-        
+
         // Registering Command Handlers and Query Handlers using Scrutor and adding them as scoped services
         services.Scan(scan => scan
             .FromAssembliesOf(typeof(DependencyInjection))
@@ -28,6 +28,10 @@ public static class DependencyInjection
             .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<,>)), publicOnly: false)
             .AsImplementedInterfaces()
             .WithScopedLifetime());
+        
+        services.Decorate(typeof(ICommandHandler<,>), typeof(ValidationCommandHandlerDecorator<,>));
+        services.Decorate(typeof(ICommandHandler<>), typeof(ValidationCommandHandlerDecorator<>));
+
         
         return services;
     }

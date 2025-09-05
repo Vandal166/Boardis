@@ -1,0 +1,100 @@
+﻿using FluentResults;
+using FluentValidation.Results;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Web.API.Common;
+
+public static class ProblemDetailsExtensions
+{
+    /// <summary>
+    /// Converts a FluentValidation result to ValidationProblemDetails.
+    /// </summary>
+    public static IActionResult ToValidationBadRequest(this ValidationResult validationResult,
+        ControllerBase controller)
+    {
+        if (validationResult.IsValid)
+            throw new InvalidOperationException("Cannot convert valid result to problem details.");
+
+        var errorDict = validationResult.Errors
+            .GroupBy(e => e.PropertyName)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => e.ErrorMessage).ToArray()
+            );
+
+        var problems = new ValidationProblemDetails(errorDict)
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "One or more validation errors occurred.",
+            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+            Instance = controller.HttpContext.Request.Path //request context
+        };
+
+        return controller.BadRequest(problems);
+    }
+    
+    /// <summary>
+    /// Converts a failed FluentResults Result (non-generic) to ProblemDetails.
+    /// </summary>
+    public static IActionResult ToProblemResponse(this Result result, ControllerBase controller, int defaultStatus = StatusCodes.Status400BadRequest) 
+        => CreateProblemResponse(result.Errors, controller, defaultStatus);
+
+    /// <summary>
+    /// Converts a failed FluentResults Result generic to ProblemDetails.
+    /// </summary>
+    public static IActionResult ToProblemResponse<T>(this Result<T> result, ControllerBase controller, int defaultStatus = StatusCodes.Status400BadRequest)
+        => CreateProblemResponse(result.Errors, controller, defaultStatus);
+
+    private static IActionResult CreateProblemResponse(IReadOnlyList<IError> errors, ControllerBase controller, int defaultStatus)
+    {
+        // Check if any errors have PropertyName metadata
+        var isPropertySpecific = errors.Any(e => e.Metadata.ContainsKey("PropertyName"));
+        int status = errors.SelectMany(e => e.Metadata)
+            .Where(m => m.Key == "Status")
+            .Select(m => Convert.ToInt32(m.Value))
+            .FirstOrDefault();
+
+        if (status == 0)
+            status = defaultStatus;
+        
+        if (isPropertySpecific)
+        {
+            // Group errors by PropertyName for ValidationProblemDetails
+            var errorDict = errors
+                .GroupBy(e => e.Metadata.TryGetValue("PropertyName", out var prop) ? prop?.ToString() : "General")
+                .ToDictionary(
+                    g => g.Key ?? "General",
+                    g => g.Select(e => e.Message).ToArray()
+                );
+
+            var problems = new ValidationProblemDetails(errorDict)
+            {
+                Status = status,
+                Title = "One or more validation errors occurred.",
+                Type = GetProblemType(status),
+                Instance = controller.HttpContext.Request.Path
+            };
+
+            return status == 404 ? controller.NotFound(problems) : controller.BadRequest(problems);
+        }
+
+        // Fallback for non-property-specific errors
+        var problemDetails = new ProblemDetails
+        {
+            Status = status,
+            Title = status == 404 ? "Resource not found." : "Operation failed.",
+            Type = GetProblemType(status),
+            Instance = controller.HttpContext.Request.Path,
+            Detail = string.Join("; ", errors.Select(e => e.Message))
+        };
+
+        return status == 404 ? controller.NotFound(problemDetails) : controller.BadRequest(problemDetails);
+    }
+
+    private static string GetProblemType(int status) =>
+        status switch
+        {
+            404 => "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+            _ => "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+        };
+}

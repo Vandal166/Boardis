@@ -14,7 +14,12 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   --main-h2-color: oklch(0.47 0.21 263.09);
+  --base-gradient: linear-gradient(135deg, #cb3767 0%, #c1708b 50%, #ff5a00 100%);
 
+}
+
+.base-gradient-bg {
+  background: var(--base-gradient);
 }
 
 a {
@@ -34,7 +39,7 @@ body {
   display: block;
   min-width: 320px;
   min-height: 100vh;
-  background: linear-gradient(135deg, #cb3767 0%, #c1708b 50%, #ff5a00 100%);
+  background: var(--base-gradient);
 }
 
 h1 {
@@ -50,7 +55,7 @@ button {
   /* padding: 0.6em 1.2em; */
   /* margin: 10px;*/
   /* font-size: 1em; */
-  font-weight: 500;
+  /*  font-weight: 500; */
   font-family: inherit;
   cursor: pointer;
   /* transition: border-color 0.25s; */

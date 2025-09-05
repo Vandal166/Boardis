@@ -24,9 +24,11 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route element={<App />}>
             <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/boards" element={<Boards />} />
-            <Route path="/board/:boardId" element={<BoardView />} />
+            {/* Dashboard layout with nested routes */}
+            <Route path="/dashboard" element={<Dashboard />}>
+              <Route index element={<Boards />} />
+              <Route path="board/:boardId" element={<BoardView />} />
+            </Route>
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<PlaceholderPage title="Your Profile" />} />
             <Route path="/features" element={<PlaceholderPage title="Features" />} />

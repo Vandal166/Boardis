@@ -1,56 +1,10 @@
-import { useKeycloak } from '@react-keycloak/web';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import Boards from './Boards';
-
-interface Board
-{
-    id: string;
-    title: string;
-    description?: string;
-    wallpaperImageId?: string;
-}
 
 function Dashboard()
 {
-    const { keycloak, initialized } = useKeycloak();
     const navigate = useNavigate();
-    const [, setBoards] = useState<Board[]>([]);
-    const [, setError] = useState<string | null>(null);
-    const [, setIsLoading] = useState(false);
-
-    useEffect(() =>
-    {
-        if (initialized && keycloak.authenticated && keycloak.token)
-        {
-            const fetchBoards = async () =>
-            {
-                setIsLoading(true);
-                try
-                {
-                    const response = await axios.get('/api/boards', {
-                        headers: { Authorization: `Bearer ${keycloak.token}` },
-                    });
-                    setBoards(response.data);
-                    setError(null);
-                } catch (error)
-                {
-                    console.error('Failed to fetch boards:', error);
-                    setError('Failed to load boards. Please try again later.');
-                } finally
-                {
-                    setIsLoading(false);
-                }
-            };
-            fetchBoards();
-        } else if (initialized && !keycloak.authenticated)
-        {
-            navigate('/'); // Redirect to home if not authenticated
-        }
-    }, [initialized, keycloak, navigate]);
 
     return (
         <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
@@ -77,7 +31,7 @@ function Dashboard()
                         </li>
                         <li>
                             <button
-                                onClick={() => <Boards />}
+                                onClick={() => navigate('/boards')}
                                 className="group w-full flex justify-between items-center text-left px-4 py-2 text-sm bg-transparent hover:bg-gray-700 rounded-md transition"
                             >
                                 Boards
@@ -117,7 +71,9 @@ function Dashboard()
                     </ul>
                 </aside>
                 {/* Main Content */}
-                <Boards />
+                <main className="flex-1">
+                    <Outlet />
+                </main>
             </div>
             <Footer />
         </div>

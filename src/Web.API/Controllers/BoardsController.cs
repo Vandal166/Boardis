@@ -4,9 +4,9 @@ using Application.DTOs.Boards;
 using Application.Features.Boards.Commands;
 using Application.Features.Boards.Queries;
 using Domain.Entities;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Web.API.Common;
 
 namespace Web.API.Controllers;
 
@@ -19,19 +19,17 @@ public sealed class BoardsController : ControllerBase
     private readonly ICommandHandler<DeleteBoardCommand> _deleteBoardHandler;
     private readonly IQueryHandler<GetBoardByIdQuery, BoardResponse> _getBoardByIdHandler;
     private readonly IQueryHandler<GetBoardsQuery, List<BoardResponse>> _getBoardsHandler;
-    private readonly IValidator<CreateBoardCommand> _createBoardValidator;
     private readonly ICurrentUser _currentUser;
     
     public BoardsController(ICommandHandler<CreateBoardCommand, Board> createBoardHandler,
         ICommandHandler<DeleteBoardCommand> deleteBoardHandler, IQueryHandler<GetBoardByIdQuery, BoardResponse> getBoardByIdHandler,
-        IQueryHandler<GetBoardsQuery, List<BoardResponse>> getBoardsHandler, IValidator<CreateBoardCommand> createBoardValidator,
+        IQueryHandler<GetBoardsQuery, List<BoardResponse>> getBoardsHandler,
         ICurrentUser currentUser)
     {
         _createBoardHandler = createBoardHandler;
         _deleteBoardHandler = deleteBoardHandler;
         _getBoardByIdHandler = getBoardByIdHandler;
         _getBoardsHandler = getBoardsHandler;
-        _createBoardValidator = createBoardValidator;
         _currentUser = currentUser;
     }
     
@@ -45,7 +43,7 @@ public sealed class BoardsController : ControllerBase
         };
         var board = await _getBoardByIdHandler.Handle(query, ct);
         if (board.IsFailed)
-            return NotFound(board.Errors);
+            return board.ToProblemResponse(this, StatusCodes.Status404NotFound);
         
         
         return Ok(board.Value);
@@ -60,12 +58,12 @@ public sealed class BoardsController : ControllerBase
         };
         var result = await _getBoardsHandler.Handle(query, ct);
         if (result.IsFailed)
-            return NotFound(result.Errors);
+            return result.ToProblemResponse(this, StatusCodes.Status404NotFound);
 
         return Ok(result.Value);
     }
 
-    [HttpPost]//[ValidateAntiForgeryToken]
+    [HttpPost]
     public async Task<IActionResult> CreateBoard([FromBody] CreateBoardRequest request, CancellationToken ct = default)
     {
         var command = new CreateBoardCommand
@@ -76,13 +74,9 @@ public sealed class BoardsController : ControllerBase
             OwnerId = _currentUser.Id
         };
         
-        var validationResult = await _createBoardValidator.ValidateAsync(command, ct);
-        if (!validationResult.IsValid)
-            return BadRequest(new {Errors = validationResult.Errors.Select(e => e.ErrorMessage)});
-        
         var board = await _createBoardHandler.Handle(command, ct);
         if (board.IsFailed)
-            return BadRequest(board.Errors);
+            return board.ToProblemResponse(this);
         
         return CreatedAtAction(nameof(GetBoardById), new { boardId = board.Value.Id }, board.Value);
     }
@@ -98,7 +92,7 @@ public sealed class BoardsController : ControllerBase
         
         var result = await _deleteBoardHandler.Handle(command, ct);
         if (result.IsFailed)
-            return BadRequest(result.Errors);
+            return result.ToProblemResponse(this);
         
         return NoContent();
     }

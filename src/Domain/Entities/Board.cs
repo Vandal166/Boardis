@@ -24,22 +24,26 @@ public sealed class Board
     
     private Board() { }
     
-    public static Result<Board> Create(string title, string? description, Guid? wallpaperImageId, VisibilityLevel visibility = VisibilityLevel.Private)
+    public static Result<Board> Create(string Title, string? Description, Guid? wallpaperImageId, VisibilityLevel visibility = VisibilityLevel.Private)
     {
-        if (string.IsNullOrWhiteSpace(title))
-            return Result.Fail<Board>("Title cannot be empty.");
+        var errors = new List<Error>();
+        if (string.IsNullOrWhiteSpace(Title))
+            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
         
-        if (title.Length > 100)
-            return Result.Fail<Board>("Title cannot exceed 100 characters.");
+        if (Title.Length > 100)
+            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
         
-        if (description is { Length: > 500 })
-            return Result.Fail<Board>("Description cannot exceed 500 characters.");
+        if (Description is { Length: > 500 })
+            errors.Add(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
+        
+        if (errors.Count != 0)
+            return Result.Fail<Board>(errors);
         
         return Result.Ok(new Board
         {
             Id = Guid.NewGuid(),
-            Title = title,
-            Description = description,
+            Title = Title,
+            Description = Description,
             WallpaperImageId = wallpaperImageId,
             Visibility = visibility,
             CreatedAt = DateTime.UtcNow

@@ -29,7 +29,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var request = new HttpRequestMessage
         (
             HttpMethod.Get, 
-            $"http://localhost:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users?username={username}"
+            $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users?username={username}"
         );
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         
@@ -51,7 +51,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var request = new HttpRequestMessage
         (
             HttpMethod.Get, 
-            $"http://localhost:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users/{userId}"
+            $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users/{userId}"
         );
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         
@@ -94,7 +94,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var getSessionsRequest = new HttpRequestMessage
         (
             HttpMethod.Get, 
-            $"http://localhost:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users/{userId}/sessions"
+            $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users/{userId}/sessions"
         );
         getSessionsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
 
@@ -113,7 +113,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
             var logoutRequest = new HttpRequestMessage
             (
                 HttpMethod.Delete, 
-                $"http://localhost:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/sessions/{sessionId}"
+                $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/sessions/{sessionId}"
             );
             logoutRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
 
