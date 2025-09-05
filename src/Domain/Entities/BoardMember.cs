@@ -15,18 +15,22 @@ public sealed class BoardMember
    
     private BoardMember() { }
     
-    public static Result<BoardMember> Create(Guid boardId, Guid userId, Role userBoardRole)
+    public static Result<BoardMember> Create(Guid BoardId, Guid UserId, Role userBoardRole)
     {
-        if (boardId == Guid.Empty)
-            return Result.Fail<BoardMember>("Board ID cannot be empty.");
+        var errors = new List<Error>();
+        if (BoardId == Guid.Empty)
+            errors.Add(new Error("Board ID cannot be empty.").WithMetadata("PropertyName", nameof(BoardId)));
         
-        if (userId == Guid.Empty)
-            return Result.Fail<BoardMember>("User ID cannot be empty.");
+        if (UserId == Guid.Empty)
+            errors.Add(new Error("User ID cannot be empty.").WithMetadata("PropertyName", nameof(UserId)));
+        
+        if(errors.Count != 0)
+            return Result.Fail<BoardMember>(errors);
         
         return Result.Ok(new BoardMember
         {
-            BoardId = boardId,
-            UserId = userId,
+            BoardId = BoardId,
+            UserId = UserId,
             Role = userBoardRole,
             JoinedAt = DateTime.UtcNow
         });

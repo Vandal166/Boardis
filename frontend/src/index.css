@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -5,12 +7,19 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --main-h2-color: oklch(0.47 0.21 263.09);
+  --base-gradient: linear-gradient(135deg, #cb3767 0%, #c1708b 50%, #ff5a00 100%);
+
+}
+
+.base-gradient-bg {
+  background: var(--base-gradient);
 }
 
 a {
@@ -26,11 +35,11 @@ a:hover {
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  padding: 20px;
-  display: flex;
-  place-items: center;
+  padding: 0;
+  display: block;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--base-gradient);
 }
 
 h1 {
@@ -40,25 +49,25 @@ h1 {
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  margin: 10px;
-  font-size: 1em;
-  font-weight: 500;
+  @apply shadow-2xl;
+  border-radius: 4px;
+  border: none;
+  /* padding: 0.6em 1.2em; */
+  /* margin: 10px;*/
+  /* font-size: 1em; */
+  /*  font-weight: 500; */
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  /* transition: border-color 0.25s; */
 }
 
 button:hover {
-  border-color: #646cff;
+  /*border-color: #646cff;*/
 }
 
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none;
 }
 
 @media (prefers-color-scheme: light) {

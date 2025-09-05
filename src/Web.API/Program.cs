@@ -1,13 +1,15 @@
 using Application;
 using Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Logging;
 using Serilog;
 using Web.API;
 
 var builder = WebApplication.CreateBuilder(args);
 IdentityModelEventSource.ShowPII = true;
+
 builder.Services.AddControllers();
+
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {

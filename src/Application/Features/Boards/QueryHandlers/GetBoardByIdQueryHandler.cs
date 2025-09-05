@@ -4,6 +4,7 @@ using Application.Features.Boards.Queries;
 using Domain.Constants;
 using Domain.Contracts;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.Boards.QueryHandlers;
 
@@ -26,7 +27,8 @@ internal sealed class GetBoardByIdQueryHandler : IQueryHandler<GetBoardByIdQuery
         if (board.HasVisibility(VisibilityLevel.Private))
         {
             if(board.HasMember(query.RequestingUserId) is null)
-                return Result.Fail("You are not a member of this board");
+                return Result.Fail(new Error("You are not a member of this board")
+                    .WithMetadata("Status", StatusCodes.Status403Forbidden));
         }
         
         var boardResponse = new BoardResponse

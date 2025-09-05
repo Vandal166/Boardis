@@ -16,26 +16,30 @@ public sealed class ListCard
 
     private ListCard() { }
 
-    public static Result<ListCard> Create(Guid listId, string title, string? description = null)
+    public static Result<ListCard> Create(Guid ListId, string Title, string? Description = null)
     {
-        if (listId == Guid.Empty)
-            return Result.Fail<ListCard>("List ID cannot be empty.");
+        var errors = new List<Error>();
+        if (ListId == Guid.Empty)
+            errors.Add(new Error("List ID cannot be empty.").WithMetadata("PropertyName", nameof(ListId)));
 
-        if (string.IsNullOrWhiteSpace(title))
-            return Result.Fail<ListCard>("Title cannot be empty.");
+        if (string.IsNullOrWhiteSpace(Title))
+            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
 
-        if (title.Length > 100)
-            return Result.Fail<ListCard>("Title cannot exceed 100 characters.");
+        if (Title.Length > 100)
+            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
 
-        if (description is { Length: > 500 })
-            return Result.Fail<ListCard>("Description cannot exceed 500 characters.");
+        if (Description is { Length: > 500 })
+            errors.Add(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
 
+        if (errors.Count != 0)
+            return Result.Fail<ListCard>(errors);
+        
         var card = new ListCard
         {
             Id = Guid.NewGuid(),
-            BoardListId = listId,
-            Title = title,
-            Description = description,
+            BoardListId = ListId,
+            Title = Title,
+            Description = Description,
             CreatedAt = DateTime.UtcNow
         };
 
