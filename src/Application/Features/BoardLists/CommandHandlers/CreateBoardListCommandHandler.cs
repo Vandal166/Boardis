@@ -6,6 +6,7 @@ using Domain.Contracts;
 using Domain.Entities;
 using Domain.ValueObjects;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.BoardLists.CommandHandlers;
 
@@ -32,12 +33,18 @@ internal sealed class CreateBoardListCommandHandler : ICommandHandler<CreateBoar
         //permission check
         var boardMember = board.HasMember(command.RequestingUserId);
         if (boardMember is null)
-            return Result.Fail<BoardList>("You are not a member of this board");
+            return Result.Fail<BoardList>(new Error("You are not a member of this board")
+                .WithMetadata("Status", StatusCodes.Status403Forbidden));
         
         if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
-            return Result.Fail<BoardList>("You don't have permission to create a list in this board");
+            return Result.Fail<BoardList>(new Error("You don't have permission to create a list in this board")
+                .WithMetadata("Status", StatusCodes.Status403Forbidden));
         
-        var boardListResult = BoardList.Create(command.BoardId, command.Title);
+        if(board.BoardLists.Any(l => l.Position == command.Position))
+            return Result.Fail<BoardList>(new Error("A list in the same position already exists in this board. Reorder the existing lists first.")
+                .WithMetadata("Status", StatusCodes.Status409Conflict));
+        
+        var boardListResult = BoardList.Create(command.BoardId, command.Title, command.Position);
         if (boardListResult.IsFailed)
             return Result.Fail<BoardList>(boardListResult.Errors);
         

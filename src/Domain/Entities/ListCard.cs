@@ -16,7 +16,7 @@ public sealed class ListCard
 
     private ListCard() { }
 
-    public static Result<ListCard> Create(Guid ListId, string Title, string? Description = null)
+    public static Result<ListCard> Create(Guid ListId, string Title, int Position, string? Description = null)
     {
         var errors = new List<Error>();
         if (ListId == Guid.Empty)
@@ -40,10 +40,34 @@ public sealed class ListCard
             BoardListId = ListId,
             Title = Title,
             Description = Description,
+            Position = Position,
             CreatedAt = DateTime.UtcNow
         };
 
         return Result.Ok(card);
+    }
+    
+    public Result Update(string Title, int Position, string? Description = null)
+    {
+        var errors = new List<Error>();
+        if (string.IsNullOrWhiteSpace(Title))
+            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
+
+        if (Title.Length > 100)
+            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
+
+        if (Description is { Length: > 500 })
+            errors.Add(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
+
+        if (errors.Count != 0)
+            return Result.Fail(errors);
+
+        this.Title = Title;
+        this.Position = Position;
+        this.Description = Description;
+        UpdatedAt = DateTime.UtcNow;
+
+        return Result.Ok();
     }
     
     public Result ToggleCompletion()

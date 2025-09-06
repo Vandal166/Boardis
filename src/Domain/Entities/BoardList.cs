@@ -24,25 +24,54 @@ public sealed class BoardList
     
     private BoardList() { }
     
-    public static Result<BoardList> Create(Guid boardId, string title)
+    public static Result<BoardList> Create(Guid BoardId, string Title, int Position)
     {
-        if (boardId == Guid.Empty)
-            return Result.Fail<BoardList>("Board ID cannot be empty.");
+        var errors = new List<Error>();
+        if (BoardId == Guid.Empty)
+            errors.Add(new Error("BoardId is required.").WithMetadata("PropertyName", nameof(BoardId)));
         
-        if (string.IsNullOrWhiteSpace(title))
-            return Result.Fail<BoardList>("Title cannot be empty.");
+        if (string.IsNullOrWhiteSpace(Title))
+            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
         
-        if (title.Length > 100)
-            return Result.Fail<BoardList>("Title cannot exceed 100 characters.");
+        if (Title.Length > 100)
+            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
+        
+        if (errors.Count != 0)
+            return Result.Fail<BoardList>(errors);
         
         return Result.Ok(new BoardList
         {
             Id = Guid.NewGuid(),
-            BoardId = boardId,
-            Title = title,
+            BoardId = BoardId,
+            Title = Title,
+            Position = Position,
             CreatedAt = DateTime.UtcNow
         });
     }
+    
+    public Result Update(string Title, int Position, int ColorArgb)
+    {
+        var errors = new List<Error>();
+        if (string.IsNullOrWhiteSpace(Title))
+            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
+        
+        if (Title.Length > 100)
+            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
+        
+        if (Position < 0)
+            errors.Add(new Error("Position must be a non-negative integer.").WithMetadata("PropertyName", nameof(Position)));
+        
+        if (errors.Count != 0)
+            return Result.Fail(errors);
+        
+        this.Title = Title;
+        this.Position = Position;
+        this.ListColor = Color.FromArgb(ColorArgb);
+        this.UpdatedAt = DateTime.UtcNow;
+        
+        return Result.Ok();
+    }
+    
     
     public Result UpdateColor(Color newColor)
     {
