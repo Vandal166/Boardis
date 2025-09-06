@@ -4,13 +4,14 @@ using Application.DTOs.BoardLists;
 using Application.Features.BoardLists.Commands;
 using Application.Features.BoardLists.Queries;
 using Domain.Entities;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Web.API.Common;
 
 namespace Web.API.Controllers;
 
-[ApiController][Route("api/boards/{boardId:guid}/lists")]
+[ApiController]
+[Route("api/boards/{boardId:guid}/lists")]
 [Authorize]
 public sealed class BoardListController : ControllerBase
 {
@@ -18,20 +19,19 @@ public sealed class BoardListController : ControllerBase
     private readonly ICommandHandler<DeleteBoardListCommand> _deleteBoardListHandler;
     private readonly IQueryHandler<GetBoardListByIdQuery, BoardListResponse> _getBoardListByIdHandler;
     private readonly IQueryHandler<GetBoardListsQuery, List<BoardListResponse>> _getBoardListsHandler;
-    private readonly IValidator<CreateBoardListCommand> _createBoardListValidator;
+    private readonly ICommandHandler<UpdateBoardListCommand> _updateBoardListHandler;
     private readonly ICurrentUser _currentUser;
     
     public BoardListController(ICommandHandler<CreateBoardListCommand, BoardList> createBoardListHandler,
         ICommandHandler<DeleteBoardListCommand> deleteBoardListHandler, IQueryHandler<GetBoardListByIdQuery, BoardListResponse> getBoardListByIdHandler,
-        IQueryHandler<GetBoardListsQuery, List<BoardListResponse>> getBoardListsHandler, IValidator<CreateBoardListCommand> createBoardListValidator,
-        ICurrentUser currentUser)
+        IQueryHandler<GetBoardListsQuery, List<BoardListResponse>> getBoardListsHandler, ICurrentUser currentUser, ICommandHandler<UpdateBoardListCommand> updateBoardListHandler)
     {
         _createBoardListHandler = createBoardListHandler;
         _deleteBoardListHandler = deleteBoardListHandler;
         _getBoardListByIdHandler = getBoardListByIdHandler;
         _getBoardListsHandler = getBoardListsHandler;
-        _createBoardListValidator = createBoardListValidator;
         _currentUser = currentUser;
+        _updateBoardListHandler = updateBoardListHandler;
     }
 
     //GET: api/boards/{boardId}/lists/{listId}
@@ -46,7 +46,7 @@ public sealed class BoardListController : ControllerBase
         };
         var boardList = await _getBoardListByIdHandler.Handle(query, ct);
         if (boardList.IsFailed)
-            return NotFound(boardList.Errors);
+            return boardList.ToProblemResponse(this, StatusCodes.Status404NotFound);
         
         return Ok(boardList.Value);
     }
@@ -61,28 +61,25 @@ public sealed class BoardListController : ControllerBase
         };
         var result = await _getBoardListsHandler.Handle(query, ct);
         if (result.IsFailed)
-            return NotFound(result.Errors);
+            return result.ToProblemResponse(this, StatusCodes.Status404NotFound);
         
         return Ok(result.Value);
     }
     
-    [HttpPost]//[ValidateAntiForgeryToken]
+    [HttpPost]
     public async Task<IActionResult> CreateBoardList(Guid boardId, [FromBody] CreateBoardListRequest request, CancellationToken ct = default)
     {
         var command = new CreateBoardListCommand
         {
             BoardId = boardId,
             Title = request.Title,
+            Position = request.Position,
             RequestingUserId = _currentUser.Id
         };
         
-        var validationResult = await _createBoardListValidator.ValidateAsync(command, ct);
-        if (!validationResult.IsValid)
-            return BadRequest(new {Errors = validationResult.Errors.Select(e => e.ErrorMessage)});
-        
         var boardList = await _createBoardListHandler.Handle(command, ct);
         if (boardList.IsFailed)
-            return BadRequest(boardList.Errors);
+            return boardList.ToProblemResponse(this);
         
         return CreatedAtAction(nameof(GetBoardListById), new { boardId, listId = boardList.Value.Id }, boardList.Value);
     }
@@ -99,7 +96,28 @@ public sealed class BoardListController : ControllerBase
         };
         var result = await _deleteBoardListHandler.Handle(command, ct);
         if (result.IsFailed)
-            return BadRequest(result.Errors);
+            return result.ToProblemResponse(this);
+        
+        return NoContent();
+    }
+
+
+    [HttpPut("{listId:guid}")]
+    public async Task<IActionResult> UpdateBoardList(Guid boardId, Guid listId, [FromBody] UpdateBoardListRequest request, CancellationToken ct = default)
+    {
+        var command = new UpdateBoardListCommand
+        {
+            BoardId = boardId,
+            BoardListId = listId,
+            Title = request.Title,
+            Position = request.Position,
+            ColorArgb = request.ColorArgb,
+            RequestingUserId = _currentUser.Id
+        };
+        
+        var result = await _updateBoardListHandler.Handle(command, ct);
+        if (result.IsFailed)
+            return result.ToProblemResponse(this);
         
         return NoContent();
     }

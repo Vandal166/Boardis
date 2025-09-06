@@ -25,6 +25,12 @@ internal sealed class BoardListRepository : IBoardListRepository
         return Task.CompletedTask;
     }
 
+    public async Task UpdateAsync(BoardList boardList, CancellationToken ct = default)
+    {
+        _dbContext.BoardLists.Update(boardList);
+        await Task.CompletedTask;
+    }
+
     public async Task<BoardList?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _dbContext.BoardLists
@@ -36,6 +42,6 @@ internal sealed class BoardListRepository : IBoardListRepository
     {
         return await _dbContext.BoardLists
             .AsNoTracking()
-            .Where(bl => bl.BoardId == boardId).ToListAsync(ct);
+            .Where(bl => bl.BoardId == boardId).ToListAsync(ct); //TODO pagination
     }
 }

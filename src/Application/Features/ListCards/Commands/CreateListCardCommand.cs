@@ -9,5 +9,6 @@ public sealed record CreateListCardCommand : ICommand<ListCard>
     public required Guid BoardListId { get; init; }
     public required string Title { get; init; }
     public string Description { get; init; } = string.Empty;
+    public required int Position { get; init; }
     public required Guid RequestingUserId { get; init; }
 }

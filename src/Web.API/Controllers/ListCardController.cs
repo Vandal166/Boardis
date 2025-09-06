@@ -4,9 +4,9 @@ using Application.DTOs.ListCards;
 using Application.Features.ListCards.Commands;
 using Application.Features.ListCards.Queries;
 using Domain.Entities;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Web.API.Common;
 
 namespace Web.API.Controllers;
 
@@ -19,7 +19,6 @@ public sealed class ListCardController : ControllerBase
     private readonly ICommandHandler<DeleteListCardCommand> _deleteListCardHandler;
     private readonly IQueryHandler<GetListCardByIdQuery, ListCardResponse> _getListCardByIdHandler;
     private readonly IQueryHandler<GetListCardsQuery, List<ListCardResponse>> _getListCardsHandler;
-    private readonly IValidator<CreateListCardCommand> _createListCardValidator;
     private readonly ICurrentUser _currentUser;
     
     public ListCardController(
@@ -27,18 +26,15 @@ public sealed class ListCardController : ControllerBase
         ICommandHandler<DeleteListCardCommand> deleteListCardHandler,
         IQueryHandler<GetListCardByIdQuery, ListCardResponse> getListCardByIdHandler,
         IQueryHandler<GetListCardsQuery, List<ListCardResponse>> getListCardsHandler,
-        IValidator<CreateListCardCommand> createListCardValidator,
         ICurrentUser currentUser)
     {
         _createListCardHandler = createListCardHandler;
         _deleteListCardHandler = deleteListCardHandler;
         _getListCardByIdHandler = getListCardByIdHandler;
         _getListCardsHandler = getListCardsHandler;
-        _createListCardValidator = createListCardValidator;
         _currentUser = currentUser;
     }
 
-    //GET: api/boards/{boardId}/lists/{listId}/cards/{cardId}
     [HttpGet("{cardId:guid}")]
     public async Task<IActionResult> GetListCardById(Guid boardId, Guid listId, Guid cardId, CancellationToken ct = default)
     {
@@ -51,7 +47,7 @@ public sealed class ListCardController : ControllerBase
         };
         var boardList = await _getListCardByIdHandler.Handle(query, ct);
         if (boardList.IsFailed)
-            return NotFound(boardList.Errors);
+            return boardList.ToProblemResponse(this, StatusCodes.Status404NotFound);
         
         return Ok(boardList.Value);
     }
@@ -67,12 +63,12 @@ public sealed class ListCardController : ControllerBase
         };
         var result = await _getListCardsHandler.Handle(query, ct);
         if (result.IsFailed)
-            return NotFound(result.Errors);
+            return result.ToProblemResponse(this, StatusCodes.Status404NotFound);
         
         return Ok(result.Value);
     }
     
-    [HttpPost]//[ValidateAntiForgeryToken]
+    [HttpPost]
     public async Task<IActionResult> CreateListCard(Guid boardId, Guid listId, [FromBody] CreateListCardRequest request, CancellationToken ct = default)
     {
         var command = new CreateListCardCommand
@@ -81,16 +77,13 @@ public sealed class ListCardController : ControllerBase
             BoardListId = listId,
             Title = request.Title,
             Description = request.Description,
+            Position = request.Position,
             RequestingUserId = _currentUser.Id
         };
         
-        var validationResult = await _createListCardValidator.ValidateAsync(command, ct);
-        if (!validationResult.IsValid)
-            return BadRequest(new {Errors = validationResult.Errors.Select(e => e.ErrorMessage)});
-        
         var boardList = await _createListCardHandler.Handle(command, ct);
         if (boardList.IsFailed)
-            return BadRequest(boardList.Errors);
+            return boardList.ToProblemResponse(this);
         
         return CreatedAtAction(nameof(GetListCardById), new { boardId, listId, cardId = boardList.Value.Id }, boardList.Value);
     }
@@ -108,7 +101,7 @@ public sealed class ListCardController : ControllerBase
         
         var result = await _deleteListCardHandler.Handle(command, ct);
         if (result.IsFailed)
-            return BadRequest(result.Errors);
+            return result.ToProblemResponse(this);
         
         return NoContent();
     }

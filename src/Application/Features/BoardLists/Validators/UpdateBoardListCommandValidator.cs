@@ -4,13 +4,17 @@ using FluentValidation;
 
 namespace Application.Features.BoardLists.Validators;
 
-public sealed class CreateBoardListCommandValidator : AbstractValidator<CreateBoardListCommand>
+public sealed class UpdateBoardListCommandValidator : AbstractValidator<UpdateBoardListCommand>
 {
-    public CreateBoardListCommandValidator(IKeycloakUserService keycloakUserService)
+    public UpdateBoardListCommandValidator(IKeycloakUserService keycloakUserService)
     {
         RuleFor(c => c.BoardId)
             .NotEmpty().WithMessage("Board ID is required.")
             .NotEqual(Guid.Empty).WithMessage("Board ID cannot be an empty GUID.");
+        
+        RuleFor(c => c.BoardListId)
+            .NotEmpty().WithMessage("Board List ID is required.")
+            .NotEqual(Guid.Empty).WithMessage("Board List ID cannot be an empty GUID.");
         
         RuleFor(c => c.Title)
             .NotEmpty().WithMessage("Title is required.")

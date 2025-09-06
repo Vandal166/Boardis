@@ -7,6 +7,7 @@ using Domain.Contracts;
 using Domain.Entities;
 using Domain.ValueObjects;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.ListCards.CommandHandlers;
 
@@ -33,12 +34,14 @@ internal sealed class CreateListCardCommandHandler : ICommandHandler<CreateListC
         //permission check
         var boardMember = board.HasMember(command.RequestingUserId);
         if (boardMember is null)
-            return Result.Fail<ListCard>("You are not a member of this board");
+            return Result.Fail<ListCard>(new Error("You are not a member of this board")
+                .WithMetadata("Status", StatusCodes.Status403Forbidden));
         
         if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
-            return Result.Fail<ListCard>("You don't have permission to create a card in this list");
-        
-        var listCardResult = ListCard.Create(command.BoardListId, command.Title, command.Description);
+            return Result.Fail<ListCard>(new Error("You don't have permission to create a card in this list")
+                .WithMetadata("Status", StatusCodes.Status403Forbidden));
+
+        var listCardResult = ListCard.Create(command.BoardListId, command.Title, command.Position, command.Description);
         if (listCardResult.IsFailed)
             return Result.Fail<ListCard>(listCardResult.Errors);
         
