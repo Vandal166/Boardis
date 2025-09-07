@@ -1,20 +1,27 @@
 import './App.css';
 import { useKeycloak } from '@react-keycloak/web';
+import { Toaster } from 'react-hot-toast';
 import { Outlet } from 'react-router-dom';
+import { setTokenGetter } from './api';
+import { useEffect } from 'react';
 
-function App() {
-  const { initialized } = useKeycloak();
+function App()
+{
+  const { keycloak, initialized } = useKeycloak();
+
+  // Set the token getter once Keycloak is available
+  useEffect(() =>
+  {
+    setTokenGetter(() => keycloak?.token);
+  }, [keycloak]);
 
   return (
     <div>
-      {/* <nav style={{ marginBottom: 20 }}>
-        <Link to="/">Home</Link> | <Link to="/settings">Settings</Link>
-      </nav> */}
-      {initialized ? (
-        <Outlet /> // Render child routes (Home, BoardView, Settings)
+      <Toaster position="top-right" />
+      {initialized ? ( // waiting for keycloak to initialize, all routes do not render until then
+        <Outlet />
       ) : (
         <div>
-         {/*  <p>Loading Keycloak...</p> */}
           <Outlet />
         </div>
       )}

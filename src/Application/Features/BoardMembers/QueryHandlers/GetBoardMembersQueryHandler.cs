@@ -5,6 +5,7 @@ using Application.Features.BoardMembers.Queries;
 using Domain.Constants;
 using Domain.Contracts;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.BoardMembers.QueryHandlers;
 
@@ -32,11 +33,12 @@ internal sealed class GetBoardMembersQueryHandler : IQueryHandler<GetBoardMember
         if (board.HasVisibility(VisibilityLevel.Private))
         {
             if(board.HasMember(query.RequestingUserId) is null)
-                return Result.Fail("You are not a member of this board");
+                return Result.Fail(new Error("You are not a member of this board")
+                    .WithMetadata("StatusCode", StatusCodes.Status403Forbidden));
         }
         
         var members = await _boardMemberRepository.GetByBoardIdAsync(query.BoardId, ct);
-        if (members is null || members.Count == 0)
+        if (members is null || members.Count == 0)//TODO if no members ??? how
             return Result.Ok(new List<BoardMemberResponse>());
 
         var memberResponses = new List<BoardMemberResponse>();
@@ -49,6 +51,7 @@ internal sealed class GetBoardMembersQueryHandler : IQueryHandler<GetBoardMember
                 {
                     UserId = member.UserId,
                     Username = userResult.Value.Username,
+                    Email = userResult.Value.Email,
                     Role = member.Role.Key
                 });
             }

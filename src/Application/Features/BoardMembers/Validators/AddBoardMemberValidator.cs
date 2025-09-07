@@ -9,10 +9,12 @@ public sealed class AddBoardMemberValidator : AbstractValidator<AddBoardMemberCo
     public AddBoardMemberValidator(IKeycloakRoleService keycloakRoleService, IKeycloakUserService keycloakUserService)
     {
         RuleFor(x => x.BoardId)
-            .NotEmpty().WithMessage("Board is required.");
+            .NotEmpty().WithMessage("Board is required.")
+            .NotEqual(Guid.Empty).WithMessage("ID cannot be an empty GUID.");
         
         RuleFor(x => x.UserIdToAdd)
             .NotEmpty().WithMessage("User to add is required.")
+            .NotEqual(Guid.Empty).WithMessage("ID cannot be an empty GUID.")
             .MustAsync(async (userId, ct) => 
             {
                 var result = await keycloakUserService.GetUserByIdAsync(userId, ct);
@@ -22,6 +24,7 @@ public sealed class AddBoardMemberValidator : AbstractValidator<AddBoardMemberCo
         
         RuleFor(x => x.RequestingUserId)
             .NotEmpty().WithMessage("Requesting user is required.")
+            .NotEqual(Guid.Empty).WithMessage("ID cannot be an empty GUID.")
             .MustAsync(async (userId, ct) => 
             {
                 var result = await keycloakUserService.GetUserByIdAsync(userId, ct);

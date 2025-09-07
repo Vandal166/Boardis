@@ -34,7 +34,6 @@ public sealed class BoardListController : ControllerBase
         _updateBoardListHandler = updateBoardListHandler;
     }
 
-    //GET: api/boards/{boardId}/lists/{listId}
     [HttpGet("{listId:guid}")]
     public async Task<IActionResult> GetBoardListById(Guid boardId, Guid listId, CancellationToken ct = default)
     {

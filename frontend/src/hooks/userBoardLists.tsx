@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export interface BoardList
 {
@@ -8,19 +8,8 @@ export interface BoardList
     title: string;
     position: number;
     colorArgb: number;
-    cards: BoardCard[];
 }
 
-export interface BoardCard
-{
-    id: string;
-    boardId: string;
-    boardListId: string;
-    title: string;
-    description?: string;
-    completedAt?: string;
-    position: number;
-}
 
 export function useBoardLists(boardId: string | undefined, keycloak: any, navigate: (path: string) => void, initialized: boolean)
 {
@@ -41,40 +30,11 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
                 setIsLoading(true);
                 try
                 {
-                    const listsResponse = await axios.get(`/api/boards/${boardId}/lists`, {
-                        headers: { Authorization: `Bearer ${keycloak.token}` },
-                    });
+                    const listsResponse = await api.get(`/api/boards/${boardId}/lists`);
 
-                    const listsData: Omit<BoardList, 'cards'>[] = listsResponse.data;
-                    const cardsByList: { [key: string]: BoardCard[] } = {};
+                    const listsData: BoardList[] = listsResponse.data;
 
-                    await Promise.all(
-                        listsData.map(async (list) =>
-                        {
-                            try
-                            {
-                                const cardsResponse = await axios.get(
-                                    `/api/boards/${boardId}/lists/${list.id}/cards`,
-                                    {
-                                        headers: { Authorization: `Bearer ${keycloak.token}` },
-                                    }
-                                );
-                                cardsByList[list.id] = cardsResponse.data.sort((a: BoardCard, b: BoardCard) => a.position - b.position);
-                            } catch
-                            {
-                                cardsByList[list.id] = [];
-                            }
-                        })
-                    );
-
-                    const enrichedLists: BoardList[] = listsData
-                        .map((list) => ({
-                            ...list,
-                            cards: cardsByList[list.id] || [],
-                        }))
-                        .sort((a, b) => a.position - b.position);
-
-                    setLists(enrichedLists);
+                    setLists(listsData.sort((a, b) => a.position - b.position));
                     setError(null);
                 }
                 catch (error)
@@ -103,15 +63,12 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
 
         try
         {
-            const response = await axios.post(
+            const response = await api.post(
                 `/api/boards/${boardId}/lists`,
-                { ...data, position: maxPosition + 1 },
-                {
-                    headers: { Authorization: `Bearer ${keycloak.token}` },
-                }
+                { ...data, position: maxPosition + 1 }
             );
             const newList = response.data;
-            newList.cards = [];
+
             setLists((prev) => [...prev, newList].sort((a, b) => a.position - b.position));
             return true;
         } catch (error: any)
