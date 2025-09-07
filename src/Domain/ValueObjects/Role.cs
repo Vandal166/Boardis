@@ -21,11 +21,8 @@ public sealed class Role
 
     public static Result<Role> Create(string key, string displayName)
     {
-        if (string.IsNullOrWhiteSpace(key))
-            return Result.Fail<Role>("Role key cannot be empty");
-
-        if (string.IsNullOrWhiteSpace(displayName))
-            return Result.Fail<Role>("Role display name cannot be empty");
+        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(displayName))
+            return Result.Fail<Role>("Role name cannot be empty");
 
         return Result.Ok(new Role
         (

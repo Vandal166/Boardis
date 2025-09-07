@@ -71,16 +71,20 @@ public sealed class Board
         //permission check
         var requestingMember = HasMember(requestingUserId);
         if (requestingMember is null)
-            return Result.Fail<BoardMember>("You are not a member of this board");
+            return Result.Fail<BoardMember>(new Error("You are not a member of this board")
+                .WithMetadata("Status", 403));
         
         if(!MemberHasRole(requestingUserId, Role.Owner))
-            return Result.Fail<BoardMember>("You don't have permission to add members to this board");
+            return Result.Fail<BoardMember>(new Error("You don't have permission to add members to this board")
+                .WithMetadata("Status", 403));
         
         if (HasMember(userIdToAdd) is not null)
-            return Result.Fail<BoardMember>("User is already a member of this board");
+            return Result.Fail<BoardMember>(new Error("User is already a member of this board")
+                .WithMetadata("Status", 409));
         
         if(Equals(role, Role.Owner))
-            return Result.Fail<BoardMember>("An owner is already assigned when the board is created. Cannot add another owner.");
+            return Result.Fail<BoardMember>(new Error("An owner is already assigned when the board is created. Cannot add another owner.")
+                .WithMetadata("Status", 400));
         
         var memberResult = BoardMember.Create(Id, userIdToAdd, role);
         if (memberResult.IsFailed)
@@ -96,17 +100,21 @@ public sealed class Board
     {
         var requestingMember = HasMember(requestingUserId);
         if (requestingMember is null)
-            return Result.Fail("You are not a member of this board");
+            return Result.Fail(new Error("You are not a member of this board")
+                .WithMetadata("Status", 403));
         
         if(!MemberHasRole(requestingUserId, Role.Owner))
-            return Result.Fail("You don't have permission to remove members from this board");
+            return Result.Fail(new Error("You don't have permission to remove members from this board")
+                .WithMetadata("Status", 403));
         
         var memberToRemove = HasMember(userIdToRemove);
         if (memberToRemove is null)
-            return Result.Fail("User is not a member of this board");
+            return Result.Fail(new Error("User is not a member of this board")
+                .WithMetadata("Status", 409));
         
         if (Equals(memberToRemove.Role, Role.Owner))
-            return Result.Fail("Cannot remove the owner of the board");
+            return Result.Fail(new Error("Cannot remove the owner of the board")
+                .WithMetadata("Status", 400));
         
         _members.Remove(memberToRemove);
         UpdatedAt = DateTime.UtcNow;

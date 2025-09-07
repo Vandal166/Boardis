@@ -5,7 +5,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
+import { Cog6ToothIcon, EllipsisHorizontalIcon, UserPlusIcon } from '@heroicons/react/24/solid';
 import Spinner from '../components/Spinner';
 import BoardCards from '../components/BoardCards';
 import AddListButton from '../components/AddListButton';
@@ -13,6 +13,9 @@ import { useBoardLists } from '../hooks/userBoardLists';
 import { useEffect, useRef, useState } from 'react';
 import AddCardButton from '../components/AddCardButton';
 import { useUserListCards } from '../hooks/userListCard';
+import BoardSettingsPanel from '../components/BoardSettingsPanel';
+import BoardAddMemberModal from '../components/ManageBoardMembersModal';
+import toast from 'react-hot-toast';
 
 interface BoardList
 {
@@ -21,18 +24,6 @@ interface BoardList
   title: string;
   position: number;
   colorArgb: number;
-  cards: BoardCard[];
-}
-
-interface BoardCard
-{
-  id: string;
-  boardId: string;
-  boardListId: string;
-  title: string;
-  description?: string;
-  completedAt?: string;
-  position: number;
 }
 
 const argbToRgba = (color: number) =>
@@ -183,12 +174,13 @@ function BoardView()
   const { boardId } = useParams<{ boardId: string }>();
   const { keycloak, initialized } = useKeycloak();
   const navigate = useNavigate();
+  const [showSettings, setShowSettings] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
 
   const {
     lists,
     setLists,
     error,
-    setError,
     isLoading,
     fieldErrors,
     setFieldErrors,
@@ -201,6 +193,103 @@ function BoardView()
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const [roles, setRoles] = useState<{ key: string; displayName: string }[]>([]);
+
+  const [members, setMembers] = useState<{ id: string; username: string; email: string; role: string }[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+
+  useEffect(() =>
+  {
+    if (!keycloak.token) return;
+    axios.get('/api/roles', {
+      headers: { Authorization: `Bearer ${keycloak.token}` }
+    })
+      .then(res => setRoles(res.data))
+      .catch(() => setRoles([]));
+  }, [keycloak.token]);
+
+  useEffect(() =>
+  {
+    if (!boardId || !keycloak.token) return;
+    setMembersLoading(true);
+    axios.get(`/api/boards/${boardId}/members`, {
+      headers: { Authorization: `Bearer ${keycloak.token}` }
+    })
+      .then(res => setMembers(res.data))
+      .catch(() => setMembers([]))
+      .finally(() => setMembersLoading(false));
+  }, [boardId, keycloak.token]);
+
+
+  const handleAddMember = async (emailOrUsername: string, role: string) =>
+  {
+    if (!boardId || !keycloak.token)
+      return;
+
+    try
+    {
+      // 1. Lookup user by email or username
+      let userRes;
+      const by = emailOrUsername.includes('@') ? 'email' : 'username';
+      userRes = await axios.get(`/api/users/${by}/${encodeURIComponent(emailOrUsername)}`, {
+        headers: { Authorization: `Bearer ${keycloak.token}` }
+      });
+
+      const user = userRes.data;
+      if (!user?.id)
+      {
+        toast.error('User not found.');
+        return;
+      }
+
+      // 2. Add user as board member
+      await axios.post(
+        `/api/boards/${boardId}/members`,
+        {
+          userId: user.id,
+          role: role
+        },
+        { headers: { Authorization: `Bearer ${keycloak.token}` } }
+      );
+
+      // 3. Refresh members list
+      setMembersLoading(true);
+      const membersRes = await axios.get(`/api/boards/${boardId}/members`, {
+        headers: { Authorization: `Bearer ${keycloak.token}` }
+      });
+      setMembers(membersRes.data);
+      toast.success('Member added successfully!');
+    }
+    catch (err: any)
+    {
+      let message = '';
+      if (err.response?.data?.errors)
+      {
+        message = Object.values(err.response.data.errors)
+          .flat()
+          .join(' ');
+      }
+      if (!message && err.response?.data?.detail)
+      {
+        message = err.response.data.detail;
+      }
+      if (!message && err.response?.data?.title)
+      {
+        message = err.response.data.title;
+      }
+      if (!message)
+      {
+        message = 'Failed to add member. Please try again.';
+      }
+      toast.error(message);
+    }
+    finally
+    {
+      setMembersLoading(false);
+    }
+  };
+
 
 
   const handleDragEnd = async (event: DragEndEvent) =>
@@ -248,8 +337,6 @@ function BoardView()
     }
     catch (error)
     {
-      console.error('Failed to update list positions:', error);
-      setError('Failed to update positions. Please refresh.');
       setLists(lists); // Revert on error
     }
   };
@@ -276,6 +363,43 @@ function BoardView()
         onDragEnd={handleDragEnd}
       >
         <div className="w-full p-6">
+          {/* Top bar with Add Member and Settings */}
+          <div className="flex justify-between items-center mb-4">
+            <button
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              onClick={() => setShowAddMember(true)}
+            >
+              <UserPlusIcon className="w-5 h-5" />
+              Manage members
+            </button>
+            <button
+              className="p-2 rounded-full hover:bg-gray-200 transition"
+              onClick={() => setShowSettings(v => !v)}
+              aria-label="Board settings"
+            >
+              <Cog6ToothIcon className="w-7 h-7 text-gray-700" />
+            </button>
+          </div>
+
+          {/* Add Member Modal */}
+          {showAddMember && (
+            <>
+              <BoardAddMemberModal
+                onClose={() => setShowAddMember(false)}
+                members={members}
+                onAdd={handleAddMember}
+                onRemove={id => setMembers(members => members.filter(m => m.id !== id))}
+                roles={roles}
+                isLoading={membersLoading}
+              />
+            </>
+          )}
+
+          {/* Board Settings Panel */}
+          {showSettings && (
+            <BoardSettingsPanel onClose={() => setShowSettings(false)} />
+          )}
+
           <div className="max-w-[1664px] mx-auto">
             <SortableContext
               items={lists.map(list => list.id)}
@@ -294,7 +418,6 @@ function BoardView()
                   fieldErrors={fieldErrors}
                   clearErrors={() =>
                   {
-                    setError(null);
                     setFieldErrors({});
                   }}
                 />

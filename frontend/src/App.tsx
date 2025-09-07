@@ -1,20 +1,19 @@
 import './App.css';
 import { useKeycloak } from '@react-keycloak/web';
+import { Toaster } from 'react-hot-toast';
 import { Outlet } from 'react-router-dom';
 
-function App() {
+function App()
+{
   const { initialized } = useKeycloak();
 
   return (
     <div>
-      {/* <nav style={{ marginBottom: 20 }}>
-        <Link to="/">Home</Link> | <Link to="/settings">Settings</Link>
-      </nav> */}
+      <Toaster position="top-right" />
       {initialized ? (
-        <Outlet /> // Render child routes (Home, BoardView, Settings)
+        <Outlet />
       ) : (
         <div>
-         {/*  <p>Loading Keycloak...</p> */}
           <Outlet />
         </div>
       )}

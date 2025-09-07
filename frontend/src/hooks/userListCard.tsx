@@ -39,7 +39,6 @@ export function useUserListCards(
                 setIsLoading(true);
                 try
                 {
-                    //TODO way too many cards are being fetched for sm reason.
                     const response = await axios.get(`/api/boards/${boardId}/lists/${listId}/cards`, {
                         headers: { Authorization: `Bearer ${keycloak.token}` },
                     });
@@ -82,7 +81,6 @@ export function useUserListCards(
                 { headers: { Authorization: `Bearer ${keycloak.token}` } }
             );
             setCards((prevCards) => [...prevCards, response.data]);
-            //setCardError(null);
             return true;
         }
         catch (error: any)

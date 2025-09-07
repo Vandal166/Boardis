@@ -12,6 +12,13 @@ internal sealed class KeycloakUserService : IKeycloakUserService
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _config;
     private readonly IKeycloakService _keycloakService;
+
+    private enum QueryType
+    {
+        UserId,
+        Username,
+        Email
+    }
     
     public KeycloakUserService(IHttpClientFactory httpClient, IConfiguration config, IKeycloakService keycloakService)
     {
@@ -41,8 +48,8 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var users = json.RootElement.EnumerateArray();
         return Result.Ok(users.Any());
     }
-    
-    public async Task<Result<UserResponse>> GetUserByIdAsync(Guid userId, CancellationToken ct = default)
+
+    private async Task<Result<UserResponse>> GetUserResponseAsync(string identifier, QueryType type, CancellationToken ct = default)
     {
         var accessToken = await _keycloakService.GetAccessTokenAsync(ct);
         if (accessToken.IsFailed)
@@ -51,7 +58,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var request = new HttpRequestMessage
         (
             HttpMethod.Get, 
-            $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users/{userId}"
+            $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users" + (type == QueryType.UserId ? $"/{identifier}" : $"?{type}={identifier}&exact=true")
         );
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         
@@ -61,27 +68,62 @@ internal sealed class KeycloakUserService : IKeycloakUserService
             
         
         var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
-        bool isEnabled = json.RootElement.GetProperty("enabled").GetBoolean();
-        if (!isEnabled) // treating a disabled user as non-existent
+        var root = json.RootElement;
+        if (root.ValueKind == JsonValueKind.Array) // when querying by username or email the result is an array not an single object
+        {
+            JsonElement? match = null;
+            if (root.GetArrayLength() == 0)
+                return Result.Fail<UserResponse>("User not found.");
+
+            root = root[0];
+        }
+
+        bool isEnabled = root.GetProperty("enabled").GetBoolean();
+        if (!isEnabled)
             return Result.Fail<UserResponse>("User is disabled.");
-        
-        var keycloakUserId = Guid.Parse(json.RootElement.GetProperty("id").GetString()!);
+
+        var keycloakUserId = Guid.Parse(root.GetProperty("id").GetString()!);
         if (keycloakUserId == Guid.Empty)
             return Result.Fail<UserResponse>("User not found.");
-        
-        var username = json.RootElement.GetProperty("username").GetString();
+
+        var username = root.GetProperty("username").GetString();
         if (string.IsNullOrEmpty(username))
             return Result.Fail<UserResponse>("Username is missing.");
-        
+
         var user = new UserResponse
         {
-            ID = keycloakUserId,
+            Id = keycloakUserId,
             Username = username,
         };
-        
+
         return Result.Ok(user);
     }
     
+    public async Task<Result<UserResponse>> GetUserByIdAsync(Guid userId, CancellationToken ct = default)
+    {
+        if (userId == Guid.Empty)
+            return Result.Fail<UserResponse>("User ID is invalid");
+        
+        return await GetUserResponseAsync(userId.ToString(), QueryType.UserId, ct);
+    }
+
+    public async Task<Result<UserResponse>> GetUserByNameAsync(string username, CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(username) || username.Length > 50 || username.Length < 3)
+            return Result.Fail<UserResponse>("Username is invalid");
+        
+        return await GetUserResponseAsync(username, QueryType.Username, ct);
+    }
+
+    public async Task<Result<UserResponse>> GetUserByEmailAsync(string email, CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(email) || email.Length > 254 || email.Length < 4 || !email.Contains("@"))
+            return Result.Fail<UserResponse>("Email is invalid");
+        
+        return await GetUserResponseAsync(email, QueryType.Email, ct);
+    }
+
+    //TODO into its own service
     public async Task<Result> RevokeUserSessionAsync(Guid userId, CancellationToken ct = default)
     {
         if (userId == Guid.Empty)

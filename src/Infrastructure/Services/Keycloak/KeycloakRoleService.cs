@@ -42,7 +42,7 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
     private sealed record KeycloakRole(string Name);
     
     
-    private async Task<Result<IReadOnlyList<Role>>> GetValidRolesAsync(CancellationToken ct = default)
+    public async Task<Result<IReadOnlyList<Role>>> GetValidRolesAsync(CancellationToken ct = default)
     {
         var accessToken = await _keycloakService.GetAccessTokenAsync(ct);
         if (accessToken.IsFailed)

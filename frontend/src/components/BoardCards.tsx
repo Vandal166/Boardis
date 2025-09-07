@@ -25,7 +25,7 @@ const BoardCards: React.FC<BoardCardsProps> = ({ cards }) =>
             {cards.map((card) => (
                 <li
                     key={card.id}
-                    className="bg-white p-3 rounded shadow"
+                    className="bg-white p-3 rounded shadow-md"
                 >
                     <h4 className="font-medium text-blue-800">{card.title}</h4>
                     {card.description && (
