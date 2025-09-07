@@ -51,6 +51,7 @@ internal sealed class GetBoardMembersQueryHandler : IQueryHandler<GetBoardMember
                 {
                     UserId = member.UserId,
                     Username = userResult.Value.Username,
+                    Email = userResult.Value.Email,
                     Role = member.Role.Key
                 });
             }

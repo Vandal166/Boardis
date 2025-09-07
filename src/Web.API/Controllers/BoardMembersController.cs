@@ -55,10 +55,6 @@ public sealed class BoardMembersController : ControllerBase
             Role = request.Role,
             RequestingUserId = _currentUser.Id
         };
-
-        /*var validationResult = await _addBoardMemberValidator.ValidateAsync(command, ct);
-        if (!validationResult.IsValid)
-            return BadRequest(new { Errors = validationResult.Errors.Select(e => e.ErrorMessage) });*/
         
         var result = await _addBoardMemberHandler.Handle(command, ct);
         if (result.IsFailed)

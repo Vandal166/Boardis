@@ -8,17 +8,23 @@ const keycloak = new Keycloak({
   clientId: 'boardis-web',
 });
 
-interface KeycloakProviderProps {
+interface KeycloakProviderProps
+{
   children: ReactNode;
 }
 
-export const KeycloakProvider = ({ children }: KeycloakProviderProps) => {
-  const handleOnEvent = (event: string, error?: any) => {
+
+export const KeycloakProvider = ({ children }: KeycloakProviderProps) =>
+{
+  const handleOnEvent = (event: string, error?: any) =>
+  {
     console.log('Keycloak event:', event, error || '');
-    if (event === 'onAuthError' || event === 'onAuthFailure') {
+    if (event === 'onAuthError' || event === 'onAuthFailure')
+    {
       console.error('Keycloak auth error:', error);
     }
-    if (event === 'onReady') {
+    if (event === 'onReady')
+    {
       console.log('Keycloak initialized, authenticated:', keycloak.authenticated);
     }
   };

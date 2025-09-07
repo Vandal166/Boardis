@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export interface BoardList
 {
@@ -30,9 +30,7 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
                 setIsLoading(true);
                 try
                 {
-                    const listsResponse = await axios.get(`/api/boards/${boardId}/lists`, {
-                        headers: { Authorization: `Bearer ${keycloak.token}` },
-                    });
+                    const listsResponse = await api.get(`/api/boards/${boardId}/lists`);
 
                     const listsData: BoardList[] = listsResponse.data;
 
@@ -65,12 +63,9 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
 
         try
         {
-            const response = await axios.post(
+            const response = await api.post(
                 `/api/boards/${boardId}/lists`,
-                { ...data, position: maxPosition + 1 },
-                {
-                    headers: { Authorization: `Bearer ${keycloak.token}` },
-                }
+                { ...data, position: maxPosition + 1 }
             );
             const newList = response.data;
 

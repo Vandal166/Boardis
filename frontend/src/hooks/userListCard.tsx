@@ -1,5 +1,5 @@
-import axios from "axios";
 import { useState, useEffect } from "react";
+import api from "../api";
 
 
 export interface ListCard
@@ -39,10 +39,7 @@ export function useUserListCards(
                 setIsLoading(true);
                 try
                 {
-                    const response = await axios.get(`/api/boards/${boardId}/lists/${listId}/cards`, {
-                        headers: { Authorization: `Bearer ${keycloak.token}` },
-                    });
-
+                    const response = await api.get(`/api/boards/${boardId}/lists/${listId}/cards`);
                     setCards(response.data);
                     setError(null);
                 } catch (error)
@@ -71,14 +68,13 @@ export function useUserListCards(
 
         try
         {
-            const response = await axios.post(
+            const response = await api.post(
                 `/api/boards/${boardId}/lists/${listId}/cards`,
                 {
                     title: data.title,
                     description: data.description,
                     position: cards.length + 1,
-                },
-                { headers: { Authorization: `Bearer ${keycloak.token}` } }
+                }
             );
             setCards((prevCards) => [...prevCards, response.data]);
             return true;

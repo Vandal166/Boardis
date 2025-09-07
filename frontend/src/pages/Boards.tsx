@@ -1,9 +1,9 @@
 import { useKeycloak } from '@react-keycloak/web';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import CreateBoardDropdown from '../components/CreateBoardDropdown';
 import Spinner from '../components/Spinner';
+import api from '../api';
 
 interface Board
 {
@@ -36,9 +36,7 @@ function Boards()
       {
         try
         {
-          const response = await axios.get('/api/boards', {
-            headers: { Authorization: `Bearer ${keycloak.token}` },
-          });
+          const response = await api.get('/api/boards');
           setBoards(response.data);
           setError(null);
         } catch (error)
@@ -79,9 +77,7 @@ function Boards()
       if (data.description) payload.description = data.description;
       if (data.wallpaperImageId) payload.wallpaperImageId = data.wallpaperImageId;
 
-      const response = await axios.post('/api/boards', payload, {
-        headers: { Authorization: `Bearer ${keycloak.token}` },
-      });
+      const response = await api.post('/api/boards', payload);
 
       // Success: redirect to the new board
       if (response.data?.id)

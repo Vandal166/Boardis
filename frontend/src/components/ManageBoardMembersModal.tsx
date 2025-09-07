@@ -125,33 +125,39 @@ const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
                 {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
                 <div>
                     <h3 className="font-semibold mb-2">Current Members</h3>
-                    <ul className="space-y-2 max-h-60 overflow-y-auto">
-                        {members.map(member => (
-                            <li key={member.id} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
-                                {/* Avatar icon (simple circle with initials) */}
-                                <div className="w-9 h-9 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">
-                                    {member.username.slice(0, 2).toUpperCase()}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium">{member.username}</span>
-                                        <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">{member.role}</span>
+                    {isLoading ? (
+                        <div className="flex justify-center py-8">
+                            <Spinner />
+                        </div>
+                    ) : (
+                        <ul className="space-y-2 max-h-90 overflow-y-auto">
+                            {members.map(member => (
+                                <li key={member.id} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
+                                    {/* Avatar icon (simple circle with initials) */}
+                                    <div className="w-9 h-9 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">
+                                        {member.username.slice(0, 2).toUpperCase()}
                                     </div>
-                                    <div className="text-xs text-gray-500">{member.email}</div>
-                                </div>
-                                <button
-                                    className="ml-2 text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded transition"
-                                    onClick={() => onRemove(member.id)}
-                                    title="Remove from board"
-                                >
-                                    Remove
-                                </button>
-                            </li>
-                        ))}
-                        {members.length === 0 && (
-                            <li className="text-gray-400 text-sm">No members yet.</li>
-                        )}
-                    </ul>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">{member.username}</span>
+                                            <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">{member.role}</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500">{member.email}</div>
+                                    </div>
+                                    <button
+                                        className="ml-2 text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded transition"
+                                        onClick={() => onRemove(member.id)}
+                                        title="Remove from board"
+                                    >
+                                        Remove
+                                    </button>
+                                </li>
+                            ))}
+                            {members.length === 0 && (
+                                <li className="text-gray-400 text-sm">No members yet.</li>
+                            )}
+                        </ul>
+                    )}
                 </div>
             </div>
         </div>

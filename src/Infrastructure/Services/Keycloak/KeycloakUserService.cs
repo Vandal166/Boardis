@@ -36,7 +36,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var request = new HttpRequestMessage
         (
             HttpMethod.Get, 
-            $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users?username={username}"
+            $"http://web.keycloak:8081/auth/admin/realms/{_config["Keycloak:Realm"]}/users?username={username}&exact=true"
         );
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Value);
         
@@ -46,7 +46,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         
         var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
         var users = json.RootElement.EnumerateArray();
-        return Result.Ok(users.Any());
+        return Result.Ok(users.Count() == 1);
     }
 
     private async Task<Result<UserResponse>> GetUserResponseAsync(string identifier, QueryType type, CancellationToken ct = default)
@@ -71,7 +71,6 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var root = json.RootElement;
         if (root.ValueKind == JsonValueKind.Array) // when querying by username or email the result is an array not an single object
         {
-            JsonElement? match = null;
             if (root.GetArrayLength() == 0)
                 return Result.Fail<UserResponse>("User not found.");
 
@@ -89,11 +88,16 @@ internal sealed class KeycloakUserService : IKeycloakUserService
         var username = root.GetProperty("username").GetString();
         if (string.IsNullOrEmpty(username))
             return Result.Fail<UserResponse>("Username is missing.");
+        
+        var email = root.GetProperty("email").GetString();
+        if (string.IsNullOrEmpty(email))
+            return Result.Fail<UserResponse>("Email is missing.");
 
         var user = new UserResponse
         {
             Id = keycloakUserId,
             Username = username,
+            Email = email
         };
 
         return Result.Ok(user);
