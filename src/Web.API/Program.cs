@@ -1,6 +1,5 @@
 using Application;
 using Infrastructure;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Logging;
 using Serilog;
 using Web.API;
@@ -24,6 +23,11 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddWebAPI(builder.Configuration);
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+});
 
 builder.Host.UseSerilog((context, configuration) =>
 {

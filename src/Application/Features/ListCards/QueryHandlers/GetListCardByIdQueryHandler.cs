@@ -33,13 +33,15 @@ internal sealed class GetListCardByIdQueryHandler : IQueryHandler<GetListCardByI
         }
         
         var boardList = await _boardListRepository.GetByIdAsync(query.BoardListId, ct);
-        if (boardList is null)
-            return Result.Fail("Board list not found");
+        if (boardList is null || boardList.BoardId != query.BoardId)
+            return Result.Fail("Board list not found in this board");
         
         
         var listCard = await _listCardRepository.GetByIdAsync(query.CardId, ct);
-        if (listCard is null)
-            return Result.Fail("Card not found");
+        if (listCard is null || listCard.BoardListId != query.BoardListId)
+            return Result.Fail("Card not found in this list");
+        
+        
         
         return Result.Ok(new ListCardResponse
         {

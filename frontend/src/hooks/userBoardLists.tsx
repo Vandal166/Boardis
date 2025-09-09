@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '../api';
 
 export interface BoardList
@@ -10,7 +10,6 @@ export interface BoardList
     colorArgb: number;
 }
 
-
 export function useBoardLists(boardId: string | undefined, keycloak: any, navigate: (path: string) => void, initialized: boolean)
 {
     const [lists, setLists] = useState<BoardList[]>([]);
@@ -18,42 +17,41 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
     const [isLoading, setIsLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string[] }>({});
 
+    const loadLists = useCallback(async () =>
+    {
+        if (!keycloak?.authenticated || !keycloak.token || !boardId) return;
+
+        setIsLoading(true);
+        try
+        {
+            const listsResponse = await api.get(`/api/boards/${boardId}/lists`);
+            const listsData: BoardList[] = listsResponse.data;
+            setLists(listsData.sort((a, b) => a.position - b.position));
+            setError(null);
+        }
+        catch
+        {
+            setError('Failed to load board data. Please try again later.');
+        }
+        finally
+        {
+            setIsLoading(false);
+        }
+    }, [boardId, keycloak?.authenticated, keycloak?.token]);
+
     useEffect(() =>
     {
-        if (!initialized)
-            return; // waiting for keycloak to initialize
+        if (!initialized) return;
 
         if (keycloak?.authenticated && keycloak.token && boardId)
         {
-            const fetchData = async () =>
-            {
-                setIsLoading(true);
-                try
-                {
-                    const listsResponse = await api.get(`/api/boards/${boardId}/lists`);
-
-                    const listsData: BoardList[] = listsResponse.data;
-
-                    setLists(listsData.sort((a, b) => a.position - b.position));
-                    setError(null);
-                }
-                catch (error)
-                {
-                    setError('Failed to load board data. Please try again later.');
-                }
-                finally
-                {
-                    setIsLoading(false);
-                }
-            };
-
-            fetchData();
+            void loadLists();
         }
         else if (keycloak && !keycloak.authenticated)
         {
             navigate('/');
         }
-    }, [keycloak, boardId, navigate]);
+    }, [initialized, keycloak, boardId, navigate, loadLists]);
 
     const handleCreateList = async (data: { title: string }) =>
     {
@@ -63,15 +61,16 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
 
         try
         {
-            const response = await api.post(
-                `/api/boards/${boardId}/lists`,
-                { ...data, position: maxPosition + 1 }
-            );
-            const newList = response.data;
+            var response = await api.post(`/api/boards/${boardId}/lists`, { ...data, position: maxPosition + 1 });
 
-            setLists((prev) => [...prev, newList].sort((a, b) => a.position - b.position));
+            // Refetch to get authoritative positions/colors
+            const listsResponse = await api.get(`/api/boards/${boardId}/lists/${response.data.id}`);
+            const newList: BoardList = listsResponse.data;
+            setLists(prev => [...prev, newList].sort((a, b) => a.position - b.position));
+            setError(null);
             return true;
-        } catch (error: any)
+        }
+        catch (error: any)
         {
             if (error.response?.data?.errors)
             {

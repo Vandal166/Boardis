@@ -27,38 +27,37 @@ export function useUserListCards(
     const [isLoading, setIsLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string[] }>({});
 
-    useEffect(() =>
+    const fetchData = async () =>
     {
         if (!initialized)
             return; // waiting for keycloak to initialize
 
         if (keycloak?.authenticated && keycloak.token && listId)
         {
-            const fetchData = async () =>
+            setIsLoading(true);
+            try
             {
-                setIsLoading(true);
-                try
-                {
-                    const response = await api.get(`/api/boards/${boardId}/lists/${listId}/cards`);
-                    setCards(response.data);
-                    setError(null);
-                } catch (error)
-                {
-                    console.error('Failed to fetch list cards:', error);
-                    setError('Failed to load list cards. Please try again later.');
-                }
-                finally
-                {
-                    setIsLoading(false);
-                }
-            };
-
-            fetchData();
+                const response = await api.get(`/api/boards/${boardId}/lists/${listId}/cards`);
+                setCards(response.data);
+                setError(null);
+            } catch (error)
+            {
+                console.error('Failed to fetch list cards:', error);
+                setError('Failed to load list cards. Please try again later.');
+            } finally
+            {
+                setIsLoading(false);
+            }
         }
         else if (initialized && !keycloak?.authenticated)
         {
             navigate('/'); // Redirect to home if not authenticated
         }
+    };
+
+    useEffect(() =>
+    {
+        fetchData();
     }, [keycloak, listId, navigate, initialized]);
 
     const handleAddCard = async (data: { title: string; description?: string }) =>
@@ -97,5 +96,5 @@ export function useUserListCards(
         }
     };
 
-    return { cards, setCards, error, isLoading, fieldErrors, setFieldErrors, handleAddCard };
+    return { cards, setCards, error, isLoading, fieldErrors, setFieldErrors, handleAddCard, refetch: fetchData };
 }

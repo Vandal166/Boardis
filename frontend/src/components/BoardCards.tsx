@@ -21,7 +21,7 @@ const BoardCards: React.FC<BoardCardsProps> = ({ cards }) =>
     if (!cards || cards.length === 0) return null;
 
     return (
-        <ul className="space-y-3 flex-1">
+        <div className="mb-3">
             {cards.map((card) => (
                 <li
                     key={card.id}
@@ -38,7 +38,7 @@ const BoardCards: React.FC<BoardCardsProps> = ({ cards }) =>
                     )}
                 </li>
             ))}
-        </ul>
+        </div>
     );
 };
 

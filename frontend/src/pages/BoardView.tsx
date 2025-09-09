@@ -1,18 +1,19 @@
 import { useKeycloak } from '@react-keycloak/web';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
 
 import { Cog6ToothIcon, UserPlusIcon } from '@heroicons/react/24/solid';
 import Spinner from '../components/Spinner';
 import AddListButton from '../components/AddListButton';
 import { useBoardLists } from '../hooks/userBoardLists';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import BoardSettingsPanel from '../components/BoardSettingsPanel';
-import BoardAddMemberModal from '../components/ManageBoardMembersModal';
+import ManageBoardMembersModal from '../components/ManageBoardMembersModal';
 import toast from 'react-hot-toast';
 import SortableList from '../components/SortableList';
 import api from '../api';
+import EmptySlot from '../components/EmptySlot';
 
 
 function BoardView()
@@ -42,8 +43,33 @@ function BoardView()
 
   const [roles, setRoles] = useState<{ key: string; displayName: string }[]>([]);
 
-  const [members, setMembers] = useState<{ id: string; username: string; email: string; role: string; }[]>([]);
+  const [members, setMembers] = useState<{ userId: string; username: string; email: string; role: string; }[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
+
+  // Build a fast lookup per render
+  const listByPos = useMemo(() =>
+  {
+    const m = new Map<number, typeof lists[number]>();
+    for (const l of lists) m.set(l.position, l);
+    return m;
+  }, [lists]);
+
+  const maxPosition = useMemo(
+    () => (lists.length ? Math.max(...lists.map(l => l.position)) : 0),
+    [lists]
+  );
+
+  const positions = useMemo(
+    () => Array.from({ length: maxPosition }, (_, i) => i + 1),
+    [maxPosition]
+  );
+
+  // Include empty slots to preserve gaps during drag
+  const sortableItems = useMemo(
+    () => positions.map(pos => listByPos.get(pos)?.id ?? `empty-${pos}`),
+    [positions, listByPos]
+  );
+
 
   useEffect(() =>
   {
@@ -62,7 +88,7 @@ function BoardView()
       const res = await api.get(`/api/boards/${boardId}/members`);
       setMembers(res.data);
     }
-    catch
+    catch (err: any)
     {
       setMembers([]);
     }
@@ -144,54 +170,122 @@ function BoardView()
   };
 
 
-
-  const handleDragEnd = async (event: DragEndEvent) =>
+  const handleRemoveMember = async (memberId: string) =>
   {
-    const { active, over } = event;
-
-    if (!over || active.id === over.id || !keycloak.token || !boardId) return;
-
-    const oldIndex = lists.findIndex((list) => list.id === active.id);
-    const newIndex = lists.findIndex((list) => list.id === over.id);
-
-    const newLists = arrayMove(lists, oldIndex, newIndex);
-
-    const updatedLists = newLists.map((list, index) => ({ ...list, position: index + 1 }));
-
-    setLists(updatedLists);
-
-    // Only update lists that have changed
-    const changedLists = updatedLists.filter((updated) =>
-    {
-      const original = lists.find(l => l.id === updated.id);
-      return (
-        !original ||
-        original.position !== updated.position ||
-        original.title !== updated.title ||
-        original.colorArgb !== updated.colorArgb
-      );
-    });
+    if (!boardId || !keycloak.token)
+      return;
 
     try
     {
+      await api.delete(`/api/boards/${boardId}/members/${memberId}`);
+      setMembers(members => members.filter(m => m.userId !== memberId));
+      toast.success('Member removed successfully!');
+    }
+    catch (err: any)
+    {
+      let message = '';
+      if (err.response?.data?.errors)
+      {
+        message = Object.values(err.response.data.errors)
+          .flat()
+          .join(' ');
+      }
+      if (!message && err.response?.data?.detail)
+      {
+        message = err.response.data.detail;
+      }
+      if (!message && err.response?.data?.title)
+      {
+        message = err.response.data.title;
+      }
+      if (!message)
+      {
+        message = 'Failed to remove member. Please try again.';
+      }
+      toast.error(message);
+    }
+    finally
+    {
+      setMembersLoading(false);
+    }
+  };
+
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) =>
+  {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !keycloak.token || !boardId) return;
+
+    const prevLists = lists;
+
+    // Dropped on an empty slot: move exactly there (keep gaps)
+    if (typeof over.id === 'string' && over.id.startsWith('empty-'))
+    {
+      const emptyPos = parseInt(over.id.replace('empty-', ''), 10);
+      const updated = prevLists.map(l => (l.id === active.id ? { ...l, position: emptyPos } : l));
+      const sorted = [...updated].sort((a, b) => a.position - b.position);
+      setLists(sorted);
+
+      try
+      {
+        const moved = sorted.find(l => l.id === active.id);
+        if (moved)
+        {
+          await api.put(`/api/boards/${boardId}/lists/${moved.id}`, {
+            title: moved.title, position: moved.position, colorArgb: moved.colorArgb
+          });
+        }
+      }
+      catch
+      {
+        setLists(prevLists); // revert snapshot
+      }
+      return;
+    }
+
+    // Dropped over another list: shift only the range (preserve gaps)
+    const source = prevLists.find(l => l.id === active.id);
+    const target = prevLists.find(l => l.id === over.id);
+    if (!source || !target || source.position === target.position) return;
+
+    const beforePos = new Map(prevLists.map(l => [l.id, l.position]));
+
+    const changed =
+      source.position < target.position
+        ? prevLists.map(l =>
+          l.id === source.id
+            ? { ...l, position: target.position }
+            : l.position > source.position && l.position <= target.position
+              ? { ...l, position: l.position - 1 }
+              : l
+        )
+        : prevLists.map(l =>
+          l.id === source.id
+            ? { ...l, position: target.position }
+            : l.position >= target.position && l.position < source.position
+              ? { ...l, position: l.position + 1 }
+              : l
+        );
+
+    const sorted = [...changed].sort((a, b) => a.position - b.position);
+    setLists(sorted);
+
+    try
+    {
+      const toUpdate = changed.filter(l => l.position !== beforePos.get(l.id));
       await Promise.all(
-        changedLists.map((list) =>
-          api.put(
-            `/api/boards/${boardId}/lists/${list.id}`,
-            {
-              title: list.title,
-              position: list.position,
-              colorArgb: list.colorArgb,
-            }
-          )
+        toUpdate.map(l =>
+          api.put(`/api/boards/${boardId}/lists/${l.id}`, {
+            title: l.title, position: l.position, colorArgb: l.colorArgb
+          })
         )
       );
     }
-    catch (error)
+    catch
     {
-      setLists(lists); // Revert on error
+      setLists(prevLists); // revert snapshot
     }
-  };
+  }, [lists, keycloak.token, boardId]);
 
   if (isLoading)
   {
@@ -236,11 +330,11 @@ function BoardView()
           {/* Add Member Modal */}
           {showAddMember && (
             <>
-              <BoardAddMemberModal
+              <ManageBoardMembersModal
                 onClose={() => setShowAddMember(false)}
                 members={members}
                 onAdd={handleAddMember}
-                onRemove={id => setMembers(members => members.filter(m => m.id !== id))}
+                onRemove={handleRemoveMember}
                 roles={roles}
                 isLoading={membersLoading}
               />
@@ -254,16 +348,29 @@ function BoardView()
 
           <div className="max-w-[1664px] mx-auto">
             <SortableContext
-              items={lists.map(list => list.id)}
+              items={sortableItems}
               strategy={rectSortingStrategy}
             >
               <div className="grid grid-cols-5 gap-4 auto-rows-fr">
-                {lists
-                  .slice()
-                  .sort((a, b) => a.position - b.position)
-                  .map((list) => (
-                    <SortableList key={list.id} list={list} />
-                  ))}
+                {positions.map((pos) =>
+                {
+                  const list = listByPos.get(pos);
+                  return list ? (
+                    <SortableList
+                      key={list.id}
+                      list={list}
+                      onDeleted={() => setLists(prev => prev.filter(l => l.id !== list.id))}
+                      onTitleUpdated={(newTitle) =>
+                        setLists(prev => prev.map(l => l.id === list.id ? { ...l, title: newTitle } : l))
+                      }
+                      onColorUpdated={(newColor) =>
+                        setLists(prev => prev.map(l => l.id === list.id ? { ...l, colorArgb: newColor } : l))
+                      }
+                    />
+                  ) : (
+                    <EmptySlot key={`empty-${pos}`} id={`empty-${pos}`} />
+                  );
+                })}
                 <AddListButton
                   onCreate={handleCreateList}
                   error={error}

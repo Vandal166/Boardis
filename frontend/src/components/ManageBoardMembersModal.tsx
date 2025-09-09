@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Spinner from './Spinner';
+import AddBoardMemberButton from './AddBoardMemberButton';
+import RemoveBoardMemberButton from './RemoveBoardMemberButton';
+import { useConfirmationDialogOpen } from './ConfirmationDialog';
 
 interface Member
 {
-    id: string;
+    userId: string;
     username: string;
     email: string;
     role: string;
@@ -15,7 +18,7 @@ interface Role
     displayName: string;
 }
 
-interface BoardAddMemberModalProps
+interface ManageBoardMembersModalProps
 {
     onClose: () => void;
     members: Member[];
@@ -26,7 +29,7 @@ interface BoardAddMemberModalProps
 }
 
 
-const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
+const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
     onClose,
     members,
     onAdd,
@@ -36,21 +39,18 @@ const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
 }) =>
 {
     const [show, setShow] = useState(false);
-    const [input, setInput] = useState('');
-    const [role, setRole] = useState(roles[0]?.key ?? '');
-    const [error, setError] = useState('');
+    const [error] = useState('');
     const panelRef = useRef<HTMLDivElement>(null);
+    const confirmationDialogOpen = useConfirmationDialogOpen();
 
     useEffect(() => setShow(true), []);
-    useEffect(() =>
-    {
-        if (roles.length > 0) setRole(roles[0].key);
-    }, [roles]);
+
     // Close on click outside
     useEffect(() =>
     {
         function handleClick(event: MouseEvent)
         {
+            if (confirmationDialogOpen) return; // Prevent closing if dialog is open
             if (panelRef.current && !panelRef.current.contains(event.target as Node))
             {
                 onClose();
@@ -58,16 +58,8 @@ const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
         }
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
-    }, [onClose]);
+    }, [onClose, confirmationDialogOpen]);
 
-    const handleAdd = (e?: React.FormEvent) =>
-    {
-        e?.preventDefault();
-        setError('');
-        onAdd(input.trim(), role);
-        setInput('');
-        setRole(roles[0]?.key ?? '');
-    };
     return (
         <div className="fixed inset-0 z-50">
             {/* Overlay */}
@@ -93,35 +85,11 @@ const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
                         ×
                     </button>
                 </div>
-                <div className="mb-4 flex gap-2">
-                    <input
-                        type="text"
-                        className="flex-1 border rounded px-3 py-2"
-                        placeholder="Email or username" required
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        disabled={isLoading}
-                    />
-                    <select
-                        className="border rounded px-2 py-2"
-                        value={role}
-                        onChange={e => setRole(e.target.value)}
-                        disabled={isLoading}
-                    >
-                        {roles.map(r => (
-                            <option key={r.key} value={r.key}>{r.displayName}</option>
-                        ))}
-                    </select>
-                    <button
-                        type="button"
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                        onClick={handleAdd}
-                        disabled={isLoading}
-                    >
-                        Add
-                        {isLoading && <span className="ml-2"><Spinner /></span>}
-                    </button>
-                </div>
+                <AddBoardMemberButton
+                    onAdd={onAdd}
+                    roles={roles}
+                    isLoading={isLoading}
+                />
                 {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
                 <div>
                     <h3 className="font-semibold mb-2">Current Members</h3>
@@ -132,7 +100,8 @@ const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
                     ) : (
                         <ul className="space-y-2 max-h-90 overflow-y-auto">
                             {members.map(member => (
-                                <li key={member.id} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
+                                console.log(member),
+                                <li key={member.userId} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
                                     {/* Avatar icon (simple circle with initials) */}
                                     <div className="w-9 h-9 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">
                                         {member.username.slice(0, 2).toUpperCase()}
@@ -144,13 +113,12 @@ const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
                                         </div>
                                         <div className="text-xs text-gray-500">{member.email}</div>
                                     </div>
-                                    <button
-                                        className="ml-2 text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded transition"
-                                        onClick={() => onRemove(member.id)}
-                                        title="Remove from board"
-                                    >
-                                        Remove
-                                    </button>
+
+                                    <RemoveBoardMemberButton
+                                        memberId={member.userId}
+                                        onRemove={onRemove}
+                                        isLoading={isLoading}
+                                    />
                                 </li>
                             ))}
                             {members.length === 0 && (
@@ -164,4 +132,4 @@ const BoardAddMemberModal: React.FC<BoardAddMemberModalProps> = ({
     );
 };
 
-export default BoardAddMemberModal;
+export default ManageBoardMembersModal;

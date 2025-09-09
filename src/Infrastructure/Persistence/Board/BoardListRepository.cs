@@ -34,7 +34,6 @@ internal sealed class BoardListRepository : IBoardListRepository
     public async Task<BoardList?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _dbContext.BoardLists
-            .Include(bl => bl.Cards)
             .FirstOrDefaultAsync(bl => bl.Id == id, ct);
     }
 

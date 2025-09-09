@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Data.Migrations
 {
     [DbContext(typeof(BoardisDbContext))]
-    partial class BoardisDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250909163440_Add Unique boardlistid and position index")]
+    partial class AddUniqueboardlistidandpositionindex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -159,7 +162,9 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BoardListId", "Position");
+                    b.HasIndex("BoardListId", "Position")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ListCard_BoardListId_Position");
 
                     b.ToTable("ListCards");
                 });

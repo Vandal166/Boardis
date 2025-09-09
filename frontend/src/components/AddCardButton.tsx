@@ -32,6 +32,7 @@ function AddCardButton({ value, error, fieldErrors, onChange, onAdd, onCancel }:
                 >
                     Add card
                 </button>
+                {/* TODO ^^ should be spawned below an existing Card, not on the bottom of the list */}
                 <button
                     type="button"
                     className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 transition"
