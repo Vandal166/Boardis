@@ -19,6 +19,8 @@ public sealed class ListCardController : ControllerBase
     private readonly ICommandHandler<DeleteListCardCommand> _deleteListCardHandler;
     private readonly IQueryHandler<GetListCardByIdQuery, ListCardResponse> _getListCardByIdHandler;
     private readonly IQueryHandler<GetListCardsQuery, List<ListCardResponse>> _getListCardsHandler;
+    private readonly ICommandHandler<UpdateListCardCommand> _updateListCardHandler;
+    private readonly ICommandHandler<UpdateListCardsOrderCommand> _updateListCardsOrderHandler;
     private readonly ICurrentUser _currentUser;
     
     public ListCardController(
@@ -26,12 +28,16 @@ public sealed class ListCardController : ControllerBase
         ICommandHandler<DeleteListCardCommand> deleteListCardHandler,
         IQueryHandler<GetListCardByIdQuery, ListCardResponse> getListCardByIdHandler,
         IQueryHandler<GetListCardsQuery, List<ListCardResponse>> getListCardsHandler,
+        ICommandHandler<UpdateListCardCommand> updateListCardHandler,
+        ICommandHandler<UpdateListCardsOrderCommand> updateListCardsOrderHandler,
         ICurrentUser currentUser)
     {
         _createListCardHandler = createListCardHandler;
         _deleteListCardHandler = deleteListCardHandler;
         _getListCardByIdHandler = getListCardByIdHandler;
         _getListCardsHandler = getListCardsHandler;
+        _updateListCardHandler = updateListCardHandler;
+        _updateListCardsOrderHandler = updateListCardsOrderHandler;
         _currentUser = currentUser;
     }
 
@@ -100,6 +106,47 @@ public sealed class ListCardController : ControllerBase
         };
         
         var result = await _deleteListCardHandler.Handle(command, ct);
+        if (result.IsFailed)
+            return result.ToProblemResponse(this);
+        
+        return NoContent();
+    }
+    
+    [HttpPut("{cardId:guid}")]
+    public async Task<IActionResult> UpdateListCard(Guid boardId, Guid listId, Guid cardId, [FromBody] UpdateListCardRequest request, CancellationToken ct = default)
+    {
+        var command = new UpdateListCardCommand
+        {
+            BoardId = boardId,
+            BoardListId = listId,
+            CardId = cardId,
+            Title = request.Title,
+            Description = request.Description,
+            Position = request.Position,
+            CompletedAt = request.CompletedAt,
+            RequestingUserId = _currentUser.Id
+        };
+        
+        var result = await _updateListCardHandler.Handle(command, ct);
+        if (result.IsFailed)
+            return result.ToProblemResponse(this);
+        
+        return NoContent();
+    }
+    
+    
+    [HttpPatch("order")]
+    public async Task<IActionResult> UpdateListCardsOrder(Guid boardId, Guid listId, [FromBody] UpdateListCardsOrderRequest request, CancellationToken ct = default)
+    {
+        var command = new UpdateListCardsOrderCommand
+        {
+            BoardId = boardId,
+            BoardListId = listId,
+            Cards = request.Cards,
+            RequestingUserId = _currentUser.Id
+        };
+        
+        var result = await _updateListCardsOrderHandler.Handle(command, ct);
         if (result.IsFailed)
             return result.ToProblemResponse(this);
         

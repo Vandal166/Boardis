@@ -47,7 +47,7 @@ public sealed class ListCard
         return Result.Ok(card);
     }
     
-    public Result Update(string Title, int Position, string? Description = null)
+    public Result Update(string Title, int Position, string? Description = null, DateTime? CompletedAt = null)
     {
         var errors = new List<Error>();
         if (string.IsNullOrWhiteSpace(Title))
@@ -59,12 +59,16 @@ public sealed class ListCard
         if (Description is { Length: > 500 })
             errors.Add(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
 
+        if( CompletedAt is not null && CompletedAt > DateTime.UtcNow)
+            errors.Add(new Error("CompletedAt cannot be in the future.").WithMetadata("PropertyName", nameof(CompletedAt)));
+        
         if (errors.Count != 0)
             return Result.Fail(errors);
 
         this.Title = Title;
         this.Position = Position;
         this.Description = Description;
+        this.CompletedAt = CompletedAt;
         UpdatedAt = DateTime.UtcNow;
 
         return Result.Ok();

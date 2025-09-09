@@ -25,6 +25,18 @@ internal sealed class ListCardRepository : IListCardRepository
         return Task.CompletedTask;
     }
 
+    public Task UpdateAsync(ListCard listCard, CancellationToken ct = default)
+    {
+        _dbContext.ListCards.Update(listCard);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateRangeAsync(IEnumerable<ListCard> listCards, CancellationToken ct = default)
+    {
+        _dbContext.ListCards.UpdateRange(listCards);
+        return Task.CompletedTask;
+    }
+
     public async Task<ListCard?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _dbContext.ListCards
