@@ -26,6 +26,12 @@ internal sealed class BoardRepository : IBoardRepository
         return Task.CompletedTask;
     }
 
+    public Task UpdateAsync(Board board, CancellationToken ct = default)
+    {
+        _dbContext.Boards.Update(board);
+        return Task.CompletedTask;
+    }
+
     public async Task<Board?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _dbContext.Boards

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import camelcaseKeys from 'camelcase-keys';
 
 
 const api = axios.create();
@@ -41,6 +42,17 @@ api.interceptors.response.use(
 
         return Promise.reject(error);
     }
+);
+api.interceptors.response.use(
+    (response) =>
+    {
+        if (response.data && typeof response.data === 'object')
+        {
+            response.data = camelcaseKeys(response.data, { deep: true });
+        }
+        return response;
+    },
+    (error) => Promise.reject(error)
 );
 
 export default api;

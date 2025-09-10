@@ -55,8 +55,8 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
         {
             const rect = menuButtonRef.current.getBoundingClientRect();
             setMenuPos({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom + window.scrollY + 6,
+                left: rect.left + window.scrollX - 8, // shift to left by 8px
             });
         }
     }, [showMenu]);
@@ -132,11 +132,7 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
         setLoading(true);
         try
         {
-            //TODO: USE PATCH
-            await api.put(`/api/boards/${card.boardId}/lists/${card.boardListId}/cards/${card.id}`, {
-                title: card.title,
-                description: card.description ?? '',
-                position: card.position,
+            await api.patch(`/api/boards/${card.boardId}/lists/${card.boardListId}/cards/${card.id}`, {
                 completedAt: newCompletedAt ?? null,
             });
             setCompletedAt(newCompletedAt);
@@ -261,7 +257,7 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
                                 </button>
                                 <button
                                     className="flex items-center gap-2 w-full text-left px-5 py-2 text-gray-800 hover:bg-blue-50 transition"
-                                    onClick={() => { setShowMenu(false); /* TODO: Mark as completed logic */ }}
+                                    onClick={() => { setShowMenu(false); handleComplete(); }}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-green-400"></span>
                                     Mark as completed

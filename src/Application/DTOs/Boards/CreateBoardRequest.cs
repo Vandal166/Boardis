@@ -1,6 +1,4 @@
-﻿using Domain.Constants;
-
-namespace Application.DTOs.Boards;
+﻿namespace Application.DTOs.Boards;
 
 public sealed class CreateBoardRequest
 {

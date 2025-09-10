@@ -1,4 +1,5 @@
-﻿using Application.Abstractions.CQRS;
+﻿using System.Text.Json;
+using Application.Abstractions.CQRS;
 using Application.Contracts.Keycloak;
 using Application.DTOs.BoardMembers;
 using Application.Features.BoardMembers.Queries;
@@ -6,6 +7,7 @@ using Domain.Constants;
 using Domain.Contracts;
 using FluentResults;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Application.Features.BoardMembers.QueryHandlers;
 
@@ -14,13 +16,14 @@ internal sealed class GetBoardMembersQueryHandler : IQueryHandler<GetBoardMember
     private readonly IBoardRepository _boardRepository;
     private readonly IBoardMemberRepository _boardMemberRepository;
     private readonly IKeycloakUserService _keycloakUserService;
-    
+    private readonly IDistributedCache _cache;
     public GetBoardMembersQueryHandler(IBoardRepository boardRepository, IBoardMemberRepository boardMemberRepository,
-        IKeycloakUserService keycloakUserService)
+        IKeycloakUserService keycloakUserService, IDistributedCache cache)
     {
         _boardRepository = boardRepository;
         _boardMemberRepository = boardMemberRepository;
         _keycloakUserService = keycloakUserService;
+        _cache = cache;
     }
     
     public async Task<Result<List<BoardMemberResponse>>> Handle(GetBoardMembersQuery query, CancellationToken ct = default)
@@ -41,6 +44,14 @@ internal sealed class GetBoardMembersQueryHandler : IQueryHandler<GetBoardMember
         if (members is null || members.Count == 0)//TODO if no members ??? how
             return Result.Ok(new List<BoardMemberResponse>());
 
+        string cacheKey = $"board_members_{query.BoardId}";
+        string? cachedJson = await _cache.GetStringAsync(cacheKey, ct);
+        if (!string.IsNullOrEmpty(cachedJson))
+        {
+            var cachedResponses = JsonSerializer.Deserialize<List<BoardMemberResponse>>(cachedJson);
+            return Result.Ok(cachedResponses!);
+        }
+        
         var memberResponses = new List<BoardMemberResponse>();
         foreach (var member in members)
         {
@@ -55,6 +66,16 @@ internal sealed class GetBoardMembersQueryHandler : IQueryHandler<GetBoardMember
                     Role = member.Role.Key
                 });
             }
+        }
+        
+        if(memberResponses.Count > 0)
+        {
+            var serializedData = JsonSerializer.Serialize(memberResponses);
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) // Cache for 10 minutes
+            };
+            await _cache.SetStringAsync(cacheKey, serializedData, options, ct);
         }
         
         return Result.Ok(memberResponses);

@@ -74,9 +74,12 @@ public sealed class ListCard
         return Result.Ok();
     }
     
-    public Result ToggleCompletion()
+    public Result MarkAsCompleted(DateTime? completedAt)
     {
-        //IsCompleted = !IsCompleted;
+        if (completedAt is not null && completedAt > DateTime.UtcNow)
+            return Result.Fail(new Error("CompletedAt cannot be in the future.").WithMetadata("PropertyName", nameof(CompletedAt)));
+
+        CompletedAt = completedAt;
         UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
     }

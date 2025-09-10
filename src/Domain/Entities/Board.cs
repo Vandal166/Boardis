@@ -1,4 +1,5 @@
-﻿using Domain.Constants;
+﻿using Domain.Common;
+using Domain.Constants;
 using Domain.ValueObjects;
 using FluentResults;
 
@@ -50,19 +51,82 @@ public sealed class Board
         });
     }
     
-    public Result SetVisibility(VisibilityLevel newVisibility, Guid requestingUserId)
+    public Result Update(string Title, string? Description, Guid? wallpaperImageId, VisibilityLevel visibility)
     {
-        // Only allow changing visibility if the requesting user is an owner
-        var member = HasMember(requestingUserId);
-        if (member is null)
-            return Result.Fail("User is not a member of the board.");
+        var errors = new List<Error>();
+        if (string.IsNullOrWhiteSpace(Title))
+            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
         
-        if(!MemberHasRole(requestingUserId, Role.Owner))
-            return Result.Fail("Only board owners can change visibility.");
+        if (Title.Length > 100)
+            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
         
-        Visibility = newVisibility;
+        if (Description is { Length: > 500 })
+            errors.Add(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
+        
+        if (errors.Count != 0)
+            return Result.Fail(errors);
+        
+        this.Title = Title;
+        this.Description = Description;
+        this.WallpaperImageId = wallpaperImageId;
+        this.Visibility = visibility;
+        this.UpdatedAt = DateTime.UtcNow;
+        
+        return Result.Ok();
+    }
+    
+    public Result Patch(
+        PatchValue<string?> title,
+        PatchValue<string?> description,
+        PatchValue<Guid?> wallpaperImageId,
+        PatchValue<VisibilityLevel?> visibility)
+    {
+        var errors = new List<IError>();
+
+        if (title.IsSet)
+        {
+            if (title.Value is null)
+            {
+                errors.Add(new Error("Title cannot be null").WithMetadata("PropertyName", nameof(Title)));
+            }
+            else
+            {
+                var titleResult = UpdateTitle(title.Value);
+                if (titleResult.IsFailed) 
+                    errors.AddRange(titleResult.Errors);
+            }
+        }
+
+        if (description.IsSet)
+        {
+            var descriptionResult = UpdateDescription(description.Value);
+            if (descriptionResult.IsFailed) errors.AddRange(descriptionResult.Errors);
+        }
+
+        if (wallpaperImageId.IsSet)
+        {
+            var wallpaperResult = UpdateWallpaperImageId(wallpaperImageId.Value);
+            if (wallpaperResult.IsFailed) errors.AddRange(wallpaperResult.Errors);
+        }
+
+        if (visibility.IsSet)
+        {
+            if (visibility.Value is null)
+            {
+                errors.Add(new Error("Visibility cannot be null.").WithMetadata("PropertyName", nameof(Visibility)));
+            }
+            else
+            {
+                var visibilityResult = UpdateVisibility(visibility.Value.Value);
+                if (visibilityResult.IsFailed) 
+                    errors.AddRange(visibilityResult.Errors);
+            }
+        }
+
+        if (errors.Count != 0)
+            return Result.Fail(errors);
+
         UpdatedAt = DateTime.UtcNow;
-        
         return Result.Ok();
     }
     
@@ -119,6 +183,40 @@ public sealed class Board
         _members.Remove(memberToRemove);
         UpdatedAt = DateTime.UtcNow;
         
+        return Result.Ok();
+    }
+    
+    private Result UpdateTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return Result.Fail(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
+        if (title.Length > 100)
+            return Result.Fail(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
+        Title = title;
+        UpdatedAt = DateTime.UtcNow;
+        return Result.Ok();
+    }
+
+    private Result UpdateDescription(string? description)
+    {
+        if (description is { Length: > 500 })
+            return Result.Fail(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
+        Description = description;
+        UpdatedAt = DateTime.UtcNow;
+        return Result.Ok();
+    }
+
+    private Result UpdateWallpaperImageId(Guid? wallpaperImageId)
+    {
+        WallpaperImageId = wallpaperImageId;
+        UpdatedAt = DateTime.UtcNow;
+        return Result.Ok();
+    }
+
+    private Result UpdateVisibility(VisibilityLevel visibility)
+    {
+        Visibility = visibility;
+        UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
     }
     

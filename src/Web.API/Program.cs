@@ -1,13 +1,20 @@
 using Application;
 using Infrastructure;
 using Microsoft.IdentityModel.Logging;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using Web.API;
 
 var builder = WebApplication.CreateBuilder(args);
 IdentityModelEventSource.ShowPII = true;
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore; // Handle reference loops
+        options.SerializerSettings.ContractResolver = new DefaultContractResolver(); // default property naming (PascalCase)
+    })
+    .AddJsonOptions(_ => {});
 
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>

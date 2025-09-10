@@ -1,9 +1,10 @@
 import { useKeycloak } from '@react-keycloak/web';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateBoardDropdown from '../components/CreateBoardDropdown';
 import Spinner from '../components/Spinner';
 import api from '../api';
+import BoardSettingsPanel from '../components/BoardSettingsPanel';
 
 interface Board
 {
@@ -26,6 +27,10 @@ function Boards()
   const [showModal, setShowModal] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // Track which board's settings panel is open
+  const [openSettingsBoardId, setOpenSettingsBoardId] = useState<string | null>(null);
+  const [settingsPanelPosition, setSettingsPanelPosition] = useState<{ top: number; right: number } | null>(null);
+  const ellipsisRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   useEffect(() =>
   {
@@ -152,20 +157,24 @@ function Boards()
       ) : (
         <>
 
+
           <div className="w-full max-w-6xl p-6 mx-auto">
             <h2 className="text-3xl font-bold text-blue-800 mb-6">
               Boards
             </h2>
             {/* {error && <p className="text-red-600 mb-4 text-center">{error}</p>} */}
             {boards.length > 0 ? (
-              <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center cursor-pointer">
                 {filteredBoards.map((board) => (
                   <li
                     key={board.id}
                     className="w-full max-w-xs"
                   >
-                    <button
+                    {/* Card container with clickable navigation, plus an ellipsis button for settings */}
+                    <div
                       onClick={() => navigate(`board/${board.id}`)}
+                      role="button"
+                      tabIndex={0}
                       className="group w-full h-full bg-white rounded-lg shadow hover:shadow-lg transition-transform duration-200 hover:scale-105 flex flex-col items-stretch text-left p-0 overflow-hidden"
                       style={{ minHeight: '220px' }}
                     >
@@ -180,17 +189,44 @@ function Boards()
                       ) : (
                         <div className="h-32 w-full base-gradient-bg" />
                       )}
-                      {/* Title */}
+                      {/* Title row with ellipsis button */}
                       <div className="flex-1 flex flex-col px-4 py-3">
-                        <div className="text-xl font-semibold text-blue-800 mb-1 truncate">
-                          {board.title}
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="text-xl font-semibold text-blue-800 truncate">
+                            {board.title}
+                          </div>
+                          <button
+                            className="text-gray-500 hover:text-gray-700 rounded p-2 min-w-8 min-h-8 flex items-center justify-center -mr-1 cursor-pointer transition-colors duration-150 hover:bg-gray-200"
+                            aria-label="Open board settings"
+                            ref={el => { ellipsisRefs.current[board.id] = el; }}
+                            onClick={e =>
+                            {
+                              e.stopPropagation();
+                              const btn = ellipsisRefs.current[board.id];
+                              if (btn)
+                              {
+                                const rect = btn.getBoundingClientRect();
+                                // Position relative to viewport, adjust for scroll and panel width
+                                setSettingsPanelPosition({
+                                  top: rect.bottom + window.scrollY + 8, // 8px offset
+                                  right: window.innerWidth - rect.right - 43
+                                });
+                              } else
+                              {
+                                setSettingsPanelPosition(null);
+                              }
+                              setOpenSettingsBoardId(board.id);
+                            }}
+                          >
+                            ⋮
+                          </button>
                         </div>
                         {/* Description */}
-                        <div className="text-sm text-gray-500 line-clamp-2">
+                        <div className="text-sm text-gray-500 line-clamp-2 truncate">
                           {board.description || "No description"}
                         </div>
                       </div>
-                    </button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -202,6 +238,26 @@ function Boards()
           </div>
         </>
       )}
+
+      {/* Settings panel overlay */}
+      {openSettingsBoardId && (() =>
+      {
+        const board = boards.find(b => b.id === openSettingsBoardId);
+        if (!board) return null;
+        return (
+          <BoardSettingsPanel
+            onClose={() =>
+            {
+              setOpenSettingsBoardId(null);
+              setSettingsPanelPosition(null);
+            }}
+            position={settingsPanelPosition || undefined}
+            boardId={board.id}
+            title={board.title}
+            description={board.description}
+          />
+        );
+      })()}
     </>
   );
 }

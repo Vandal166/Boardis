@@ -5,6 +5,7 @@ using Domain.Contracts;
 using Domain.ValueObjects;
 using FluentResults;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Application.Features.BoardLists.CommandHandlers;
 
@@ -13,12 +14,13 @@ internal sealed class UpdateBoardListCommandHandler : ICommandHandler<UpdateBoar
     private readonly IBoardRepository _boardRepository;
     private readonly IBoardListRepository _boardListRepository;
     private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateBoardListCommandHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IUnitOfWork unitOfWork)
+    private readonly IDistributedCache _cache;
+    public UpdateBoardListCommandHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IUnitOfWork unitOfWork, IDistributedCache cache)
     {
         _boardRepository = boardRepository;
         _boardListRepository = boardListRepository;
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task<Result> Handle(UpdateBoardListCommand command, CancellationToken ct = default)
@@ -48,6 +50,10 @@ internal sealed class UpdateBoardListCommandHandler : ICommandHandler<UpdateBoar
 
         await _boardListRepository.UpdateAsync(boardList, ct);
         await _unitOfWork.SaveChangesAsync(ct);
+        
+        // Invalidate cache
+        string cacheKey = $"lists_{command.BoardId}";
+        await _cache.RemoveAsync(cacheKey, ct);
 
         return Result.Ok();
     }

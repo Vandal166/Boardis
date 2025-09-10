@@ -1,38 +1,10 @@
 ﻿using FluentResults;
-using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Web.API.Common;
 
 public static class ProblemDetailsExtensions
 {
-    /// <summary>
-    /// Converts a FluentValidation result to ValidationProblemDetails.
-    /// </summary>
-    public static IActionResult ToValidationBadRequest(this ValidationResult validationResult,
-        ControllerBase controller)
-    {
-        if (validationResult.IsValid)
-            throw new InvalidOperationException("Cannot convert valid result to problem details.");
-
-        var errorDict = validationResult.Errors
-            .GroupBy(e => e.PropertyName)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(e => e.ErrorMessage).ToArray()
-            );
-
-        var problems = new ValidationProblemDetails(errorDict)
-        {
-            Status = StatusCodes.Status400BadRequest,
-            Title = "One or more validation errors occurred.",
-            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-            Instance = controller.HttpContext.Request.Path //request context
-        };
-
-        return controller.BadRequest(problems);
-    }
-    
     /// <summary>
     /// Converts a failed FluentResults Result (non-generic) to ProblemDetails.
     /// </summary>
@@ -57,11 +29,21 @@ public static class ProblemDetailsExtensions
         if (status == 0)
             status = defaultStatus;
         
+        var problemType = GetProblemType(status);
+        
         if (isPropertySpecific)
         {
             // Group errors by PropertyName for ValidationProblemDetails
             var errorDict = errors
-                .GroupBy(e => e.Metadata.TryGetValue("PropertyName", out var prop) ? prop?.ToString() : "General")
+                .GroupBy(e =>
+                {
+                    if (!e.Metadata.TryGetValue("PropertyName", out var propNameObj) || propNameObj is not string propName)
+                        return "General";
+
+                    return propName.EndsWith(".Value")
+                        ? propName.Substring(0, propName.Length - ".Value".Length)
+                        : propName;
+                })
                 .ToDictionary(
                     g => g.Key ?? "General",
                     g => g.Select(e => e.Message).ToArray()
@@ -71,11 +53,11 @@ public static class ProblemDetailsExtensions
             {
                 Status = status,
                 Title = "One or more validation errors occurred.",
-                Type = GetProblemType(status),
+                Type = problemType,
                 Instance = controller.HttpContext.Request.Path
             };
 
-            return status == 404 ? controller.NotFound(problems) : controller.BadRequest(problems);
+            return new ObjectResult(problems) { StatusCode = status, Value = problems };
         }
 
         // Fallback for non-property-specific errors
@@ -83,7 +65,7 @@ public static class ProblemDetailsExtensions
         {
             Status = status,
             Title = status == 404 ? "Resource not found." : "Operation failed.",
-            Type = GetProblemType(status),
+            Type = problemType,
             Instance = controller.HttpContext.Request.Path,
             Detail = string.Join("; ", errors.Select(e => e.Message))
         };
@@ -95,6 +77,6 @@ public static class ProblemDetailsExtensions
         status switch
         {
             404 => "https://tools.ietf.org/html/rfc7231#section-6.5.4",
-            _ => "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+            _ => "https://tools.ietf.org/html/rfc7807#section-3.1"
         };
 }

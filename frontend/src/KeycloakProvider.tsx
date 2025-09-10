@@ -1,6 +1,7 @@
 import { ReactKeycloakProvider } from '@react-keycloak/web';
 import Keycloak from 'keycloak-js';
 import type { ReactNode } from 'react';
+import { setTokenGetter } from './api';
 
 const keycloak = new Keycloak({
   url: '/auth', // proxied path
@@ -13,6 +14,8 @@ interface KeycloakProviderProps
   children: ReactNode;
 }
 
+// Set the token getter for axios
+setTokenGetter(() => keycloak.token);
 
 export const KeycloakProvider = ({ children }: KeycloakProviderProps) =>
 {

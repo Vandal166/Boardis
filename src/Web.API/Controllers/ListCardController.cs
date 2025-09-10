@@ -21,6 +21,7 @@ public sealed class ListCardController : ControllerBase
     private readonly IQueryHandler<GetListCardsQuery, List<ListCardResponse>> _getListCardsHandler;
     private readonly ICommandHandler<UpdateListCardCommand> _updateListCardHandler;
     private readonly ICommandHandler<UpdateListCardsOrderCommand> _updateListCardsOrderHandler;
+    private readonly ICommandHandler<UpdateListCardCompletedAtCommand> _updateListCardCompletedAtHandler;
     private readonly ICurrentUser _currentUser;
     
     public ListCardController(
@@ -30,6 +31,7 @@ public sealed class ListCardController : ControllerBase
         IQueryHandler<GetListCardsQuery, List<ListCardResponse>> getListCardsHandler,
         ICommandHandler<UpdateListCardCommand> updateListCardHandler,
         ICommandHandler<UpdateListCardsOrderCommand> updateListCardsOrderHandler,
+        ICommandHandler<UpdateListCardCompletedAtCommand> updateListCardCompletedAtHandler,
         ICurrentUser currentUser)
     {
         _createListCardHandler = createListCardHandler;
@@ -38,6 +40,7 @@ public sealed class ListCardController : ControllerBase
         _getListCardsHandler = getListCardsHandler;
         _updateListCardHandler = updateListCardHandler;
         _updateListCardsOrderHandler = updateListCardsOrderHandler;
+        _updateListCardCompletedAtHandler = updateListCardCompletedAtHandler;
         _currentUser = currentUser;
     }
 
@@ -150,6 +153,25 @@ public sealed class ListCardController : ControllerBase
         if (result.IsFailed)
             return result.ToProblemResponse(this);
         
+        return NoContent();
+    }
+
+    [HttpPatch("{cardId:guid}")]
+    public async Task<IActionResult> PatchListCardCompletedAt(Guid boardId, Guid listId, Guid cardId, [FromBody] UpdateListCardCompletedAtRequest request, CancellationToken ct = default)
+    {
+        var command = new UpdateListCardCompletedAtCommand
+        {
+            BoardId = boardId,
+            BoardListId = listId,
+            CardId = cardId,
+            CompletedAt = request.CompletedAt,
+            RequestingUserId = _currentUser.Id
+        };
+
+        var result = await _updateListCardCompletedAtHandler.Handle(command, ct);
+        if (result.IsFailed)
+            return result.ToProblemResponse(this);
+
         return NoContent();
     }
 }

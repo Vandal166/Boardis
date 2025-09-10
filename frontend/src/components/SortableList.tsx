@@ -284,7 +284,7 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
                         {showMenu && (
                             <div
                                 ref={menuRef}
-                                className="absolute left-0 mt-2 w-52 bg-white rounded-xl shadow-xl z-50 py-2 border border-gray-220"
+                                className="absolute -left-1 mt-2 w-52 bg-white rounded-xl shadow-xl z-50 py-2 border border-gray-200"
                                 onPointerDown={e => e.stopPropagation()}
                             >
                                 {/* Arrow */}

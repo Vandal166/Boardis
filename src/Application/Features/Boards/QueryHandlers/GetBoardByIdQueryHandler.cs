@@ -36,7 +36,8 @@ internal sealed class GetBoardByIdQueryHandler : IQueryHandler<GetBoardByIdQuery
             Id = board.Id,
             Title = board.Title,
             Description = board.Description,
-            WallpaperImageId = board.WallpaperImageId
+            WallpaperImageId = board.WallpaperImageId,
+            Visibility = board.Visibility,
         };
         
         return Result.Ok(boardResponse);

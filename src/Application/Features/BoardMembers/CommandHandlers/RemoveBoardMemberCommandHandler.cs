@@ -4,6 +4,7 @@ using Application.Features.BoardMembers.Commands;
 using Domain.Contracts;
 using Domain.ValueObjects;
 using FluentResults;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Application.Features.BoardMembers.CommandHandlers;
 
@@ -12,13 +13,14 @@ internal sealed class RemoveBoardMemberCommandHandler : ICommandHandler<RemoveBo
     private readonly IBoardRepository _boardRepository;
     private readonly IBoardMemberRepository _boardMemberRepository;
     private readonly IUnitOfWork _unitOfWork;
-    
+    private readonly IDistributedCache _cache;
     public RemoveBoardMemberCommandHandler(IBoardRepository boardRepository, IBoardMemberRepository boardMemberRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork, IDistributedCache cache)
     {
         _boardRepository = boardRepository;
         _boardMemberRepository = boardMemberRepository;
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
     
     
@@ -38,6 +40,10 @@ internal sealed class RemoveBoardMemberCommandHandler : ICommandHandler<RemoveBo
         
         await _boardMemberRepository.DeleteAsync(member, ct);
         await _unitOfWork.SaveChangesAsync(ct);
+        
+        // Invalidate cache
+        string cacheKey = $"board_members_{command.BoardId}";
+        await _cache.RemoveAsync(cacheKey, ct);
         
         return Result.Ok();
     }

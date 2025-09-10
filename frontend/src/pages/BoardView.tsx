@@ -23,6 +23,8 @@ function BoardView()
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  // Board info for settings panel
+  const [boardInfo, setBoardInfo] = useState<{ id: string; title: string; description?: string } | null>(null);
 
   const {
     lists,
@@ -73,7 +75,8 @@ function BoardView()
 
   useEffect(() =>
   {
-    if (!keycloak.token) return;
+    if (!initialized || !keycloak.authenticated || !keycloak.token) return;
+
     api.get('/api/roles')
       .then(res => setRoles(res.data))
       .catch(() => setRoles([]));
@@ -81,7 +84,8 @@ function BoardView()
 
   const fetchMembers = async () =>
   {
-    if (!boardId || !keycloak.token) return;
+    if (!boardId || !initialized || !keycloak.authenticated || !keycloak.token) return;
+
     try
     {
       setMembersLoading(true);
@@ -287,6 +291,14 @@ function BoardView()
     }
   }, [lists, keycloak.token, boardId]);
 
+  useEffect(() =>
+  {
+    if (!boardId || !initialized || !keycloak.authenticated || !keycloak.token) return;
+    api.get(`/api/boards/${boardId}`)
+      .then(res => setBoardInfo(res.data))
+      .catch(() => setBoardInfo(null));
+  }, [boardId, initialized, keycloak.authenticated, keycloak.token]);
+
   if (isLoading)
   {
     return (
@@ -342,8 +354,13 @@ function BoardView()
           )}
 
           {/* Board Settings Panel */}
-          {showSettings && (
-            <BoardSettingsPanel onClose={() => setShowSettings(false)} />
+          {showSettings && boardInfo && (
+            <BoardSettingsPanel
+              onClose={() => setShowSettings(false)}
+              boardId={boardInfo.id}
+              title={boardInfo.title}
+              description={boardInfo.description}
+            />
           )}
 
           <div className="max-w-[1664px] mx-auto">

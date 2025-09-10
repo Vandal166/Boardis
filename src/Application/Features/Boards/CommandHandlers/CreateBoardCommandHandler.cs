@@ -1,11 +1,11 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
 using Application.Features.Boards.Commands;
-using Domain.Constants;
 using Domain.Contracts;
 using Domain.Entities;
 using Domain.ValueObjects;
 using FluentResults;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Application.Features.Boards.CommandHandlers;
 
@@ -14,12 +14,13 @@ internal sealed class CreateBoardCommandHandler : ICommandHandler<CreateBoardCom
     private readonly IBoardRepository _boardRepo;
     private readonly IBoardMemberRepository _boardMemberRepo;
     private readonly IUnitOfWork _unitOfWork;
-    
-    public CreateBoardCommandHandler(IBoardRepository boardRepo, IBoardMemberRepository boardMemberRepo, IUnitOfWork unitOfWork)
+    private readonly IDistributedCache _cache;
+    public CreateBoardCommandHandler(IBoardRepository boardRepo, IBoardMemberRepository boardMemberRepo, IUnitOfWork unitOfWork, IDistributedCache cache)
     {
         _boardRepo = boardRepo;
         _boardMemberRepo = boardMemberRepo;
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
     
     
@@ -39,6 +40,10 @@ internal sealed class CreateBoardCommandHandler : ICommandHandler<CreateBoardCom
         await _boardMemberRepo.AddAsync(memberResult.Value, ct);
         
         await _unitOfWork.SaveChangesAsync(ct);
+        
+        // Invalidate cache
+        string cacheKey = $"boards_{command.OwnerId}";
+        await _cache.RemoveAsync(cacheKey, ct);
         
         return Result.Ok(board);
     }

@@ -1,14 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
+import api from '../api';
 
 interface BoardSettingsPanelProps
 {
     onClose: () => void;
+    position?: { top: number; right: number };
+    boardId: string;
+    title: string;
+    description?: string;
 }
 
-const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose }) =>
+const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, position, boardId, title, description }) =>
 {
     const [show, setShow] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
+
+    // Editing state
+    const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
+    const [editTitle, setEditTitle] = useState(title);
+    const [editDescription, setEditDescription] = useState(description || '');
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() =>
+    {
+        setEditTitle(title);
+        setEditDescription(description || '');
+    }, [title, description]);
 
     useEffect(() =>
     {
@@ -30,10 +48,52 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose }) =>
         return () => document.removeEventListener('mousedown', handleClick);
     }, [onClose]);
 
+    // Compute style for positioning
+    const panelStyle: React.CSSProperties = position
+        ? {
+            position: 'absolute',
+            top: position.top,
+            right: position.right,
+            willChange: 'opacity, transform',
+        }
+        : { willChange: 'opacity, transform' };
+
+    // Save handler
+    const handleSave = async () =>
+    {
+        setSaving(true);
+        setError(null);
+        try
+        {
+            const patchOps: any[] = [];
+            if (editingField === 'title') patchOps.push({ op: 'replace', path: '/title', value: editTitle });
+            if (editingField === 'description') patchOps.push({ op: 'replace', path: '/description', value: editDescription });
+            if (patchOps.length === 0)
+            {
+                setEditingField(null);
+                setSaving(false);
+                return;
+            }
+            await api.patch(`/api/boards/${boardId}`, patchOps, { headers: { 'Content-Type': 'application/json-patch+json' } });
+            setEditingField(null);
+        }
+        catch (err: any)
+        {
+            setError('Failed to update.');
+        }
+        finally
+        {
+            setSaving(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50">
             {/* Overlay */}
-            <div className="absolute inset-0 bg-opacity-0" />
+            <div
+                className="absolute inset-0 bg-opacity-0"
+                onClick={onClose}
+            />
             {/* Modal */}
             <div
                 ref={panelRef}
@@ -43,7 +103,8 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose }) =>
                     transition-all duration-300 ease-out
                     ${show ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'}
                 `}
-                style={{ willChange: 'opacity, transform' }}
+                style={panelStyle}
+                onClick={e => e.stopPropagation()}
             >
                 {/* Arrow pointing to the gearbox */}
                 <div className="absolute -top-2 right-8 w-4 h-4 z-10">
@@ -62,7 +123,68 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose }) =>
                 <div className="space-y-4">
                     <div>
                         <h3 className="font-semibold text-gray-700 mb-1">About this board</h3>
-                        <p className="text-gray-500 text-sm">Board description and details go here.</p>
+                        {/* Editable Title */}
+                        <div className="mb-2">
+                            {editingField === 'title' ? (
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        className="border rounded px-2 py-1 w-full text-lg font-semibold"
+                                        value={editTitle}
+                                        onChange={e => setEditTitle(e.target.value)}
+                                        disabled={saving}
+                                        autoFocus
+                                    />
+                                    <button
+                                        className="text-green-600 text-xl px-1"
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        title="Save title"
+                                    >
+                                        ✓
+                                    </button>
+                                </div>
+                            ) : (
+                                <div
+                                    className="text-lg font-semibold text-blue-900 cursor-pointer hover:bg-blue-200 hover:rounded px-1 transition"
+                                    onClick={() => setEditingField('title')}
+                                    title="Click to edit title"
+                                >
+                                    {editTitle}
+                                </div>
+                            )}
+                        </div>
+                        {/* Editable Description */}
+                        <div>
+                            {editingField === 'description' ? (
+                                <div className="flex items-center gap-2">
+                                    <textarea
+                                        className="border rounded px-2 py-1 w-full text-sm"
+                                        value={editDescription}
+                                        onChange={e => setEditDescription(e.target.value)}
+                                        rows={2}
+                                        disabled={saving}
+                                        autoFocus
+                                    />
+                                    <button
+                                        className="text-green-600 text-xl px-1"
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        title="Save description"
+                                    >
+                                        ✓
+                                    </button>
+                                </div>
+                            ) : (
+                                <div
+                                    className="text-gray-600 text-sm cursor-pointer italic hover:bg-blue-200 hover:rounded px-1 transition"
+                                    onClick={() => setEditingField('description')}
+                                    title="Click to edit description"
+                                >
+                                    {editDescription || <span className="italic text-gray-400">No description</span>}
+                                </div>
+                            )}
+                        </div>
+                        {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-700 mb-1">Visibility</h3>
