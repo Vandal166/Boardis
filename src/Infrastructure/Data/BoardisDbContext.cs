@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using Domain.Constants;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,8 @@ public sealed class BoardisDbContext : DbContext
     public DbSet<BoardMember> BoardMembers => Set<BoardMember>();
     public DbSet<BoardList> BoardLists => Set<BoardList>();
     public DbSet<ListCard> ListCards => Set<ListCard>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<MemberPermission> MemberPermissions => Set<MemberPermission>();
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -66,14 +69,18 @@ public sealed class BoardisDbContext : DbContext
             
             bm.Property(b => b.UserId).IsRequired();
 
-            bm.OwnsOne(b => b.Role, role =>
-            {
-                role.Property(r => r.Key)
-                    .IsRequired()
-                    .HasColumnName("Role")
-                    .HasMaxLength(50);
-            });
-
+            bm.Property(b => b.RoleId).IsRequired();
+            
+            bm.HasOne<Role>() // BoardMember has one Role
+                .WithMany()   // Role can have many BoardMembers (no navigation property on Role)
+                .HasForeignKey(b => b.RoleId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a Role if it's assigned to a member
+            
+            bm.HasMany(b => b.Permissions)
+                .WithOne()
+                .HasForeignKey(mp => new { mp.BoardId, mp.BoardMemberId })
+                .OnDelete(DeleteBehavior.Cascade); // delete permissions of this member if member removed
+                
             bm.Property(b => b.JoinedAt).HasDefaultValueSql("now()")
                 .ValueGeneratedOnAdd();
             
@@ -83,7 +90,25 @@ public sealed class BoardisDbContext : DbContext
             bm.HasIndex(b => b.UserId); // Index on UserId for faster lookups
         });
         
-        // ------ BoardList -------
+        // ------ Role -------
+        builder.Entity<Role>(r =>
+        {
+            r.HasKey(role => role.Id);
+            r.Property(role => role.Key).HasMaxLength(256).IsRequired();
+        });
+        
+        // ------ RolePermission -------
+        builder.Entity<MemberPermission>(bm =>
+        {
+            bm.HasKey(r => r.Id);
+
+            bm.Property(r => r.Permission)
+                .IsRequired()
+                .HasConversion<string>();
+        });
+        
+        
+        // // ------ BoardList -------
         builder.Entity<BoardList>(bl =>
         {
             bl.HasKey(list => list.Id);
@@ -96,6 +121,7 @@ public sealed class BoardisDbContext : DbContext
             bl.Property(list => list.Position)
                 .IsRequired().HasDefaultValue(0);
             
+            bl.Ignore(list => list.ListColorArgb); // Ignore backing field
             bl.Property(list => list.ListColor)
                 .IsRequired()
                 .HasConversion(
@@ -128,9 +154,9 @@ public sealed class BoardisDbContext : DbContext
                 .HasMaxLength(500);
             
             c.Property(card => card.CompletedAt);
-            
+
             c.Property(card => card.Position)
-                .IsRequired().HasDefaultValue(0);
+                .IsRequired().HasDefaultValue(1024.0); // def pos to allow easy insertions
 
             c.Property(card => card.CreatedAt)
                 .HasDefaultValueSql("now()")
@@ -142,5 +168,18 @@ public sealed class BoardisDbContext : DbContext
             // Index for sorting by Pos
             c.HasIndex(card => new { ListId = card.BoardListId, card.Position });
         });
+        
+        SeedRolesAndPermissions(builder);
+    }
+    
+    private static void SeedRolesAndPermissions(ModelBuilder builder)
+    {
+        var ownerRoleId = new Guid("a1b2c3d4-e5f6-7890-1234-567890abcdef");
+        var memberRoleId = new Guid("fedcba98-7654-3210-fedc-ba9876543210");
+
+        builder.Entity<Role>().HasData(
+            new { Id = ownerRoleId, Key = "Owner" },
+            new { Id = memberRoleId, Key = "Member" }
+        );
     }
 }

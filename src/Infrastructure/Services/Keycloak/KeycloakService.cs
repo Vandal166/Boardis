@@ -21,8 +21,7 @@ internal sealed class KeycloakService : IKeycloakService
     {
         var request = new HttpRequestMessage
         (
-            HttpMethod.Post, 
-            //$"{_config["Keycloak:Authority"]}/protocol/openid-connect/token"
+            HttpMethod.Post,
             "http://web.keycloak:8081/auth/realms/BoardisRealm/protocol/openid-connect/token"
         );
         var content = new FormUrlEncodedContent(new Dictionary<string, string>

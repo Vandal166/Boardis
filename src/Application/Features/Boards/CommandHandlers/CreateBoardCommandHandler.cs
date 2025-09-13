@@ -4,8 +4,8 @@ using Application.Features.Boards.Commands;
 using Domain.Constants;
 using Domain.Contracts;
 using Domain.Entities;
-using Domain.ValueObjects;
 using FluentResults;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Application.Features.Boards.CommandHandlers;
 
@@ -14,12 +14,13 @@ internal sealed class CreateBoardCommandHandler : ICommandHandler<CreateBoardCom
     private readonly IBoardRepository _boardRepo;
     private readonly IBoardMemberRepository _boardMemberRepo;
     private readonly IUnitOfWork _unitOfWork;
-    
-    public CreateBoardCommandHandler(IBoardRepository boardRepo, IBoardMemberRepository boardMemberRepo, IUnitOfWork unitOfWork)
+    private readonly IDistributedCache _cache;
+    public CreateBoardCommandHandler(IBoardRepository boardRepo, IBoardMemberRepository boardMemberRepo, IUnitOfWork unitOfWork, IDistributedCache cache)
     {
         _boardRepo = boardRepo;
         _boardMemberRepo = boardMemberRepo;
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
     
     
@@ -30,15 +31,22 @@ internal sealed class CreateBoardCommandHandler : ICommandHandler<CreateBoardCom
             return Result.Fail<Board>(boardResult.Errors);
 
         var board = boardResult.Value;
-        
-        var memberResult = BoardMember.Create(board.Id, command.OwnerId, Role.Owner); // self-adding as owner
+
+        var memberResult = BoardMember.Create(board.Id, command.OwnerId, Roles.OwnerId); // self-adding as owner
         if (memberResult.IsFailed)
             return Result.Fail<Board>(memberResult.Errors);
 
+        var member = memberResult.Value;
+        member.AddPermission(Permissions.Create | Permissions.Read | Permissions.Update | Permissions.Delete);
+        
         await _boardRepo.AddAsync(board, ct);
-        await _boardMemberRepo.AddAsync(memberResult.Value, ct);
+        await _boardMemberRepo.AddAsync(member, ct);
         
         await _unitOfWork.SaveChangesAsync(ct);
+        
+        // Invalidate cache
+        string cacheKey = $"boards_{command.OwnerId}";
+        await _cache.RemoveAsync(cacheKey, ct);
         
         return Result.Ok(board);
     }

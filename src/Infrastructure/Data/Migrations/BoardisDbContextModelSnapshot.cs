@@ -111,11 +111,16 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("BoardId", "UserId");
+
+                    b.HasIndex("RoleId");
 
                     b.HasIndex("UserId");
 
@@ -143,10 +148,10 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<int>("Position")
+                    b.Property<double>("Position")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(1024.0);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -162,6 +167,60 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("BoardListId", "Position");
 
                     b.ToTable("ListCards");
+                });
+
+            modelBuilder.Entity("Domain.Entities.MemberPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BoardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BoardMemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Permission")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoardId", "BoardMemberId");
+
+                    b.ToTable("MemberPermissions");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-e5f6-7890-1234-567890abcdef"),
+                            Key = "Owner"
+                        },
+                        new
+                        {
+                            Id = new Guid("fedcba98-7654-3210-fedc-ba9876543210"),
+                            Key = "Member"
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.BoardList", b =>
@@ -181,29 +240,10 @@ namespace Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("Domain.ValueObjects.Role", "Role", b1 =>
-                        {
-                            b1.Property<Guid>("BoardMemberBoardId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<Guid>("BoardMemberUserId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Key")
-                                .IsRequired()
-                                .HasMaxLength(50)
-                                .HasColumnType("character varying(50)")
-                                .HasColumnName("Role");
-
-                            b1.HasKey("BoardMemberBoardId", "BoardMemberUserId");
-
-                            b1.ToTable("BoardMembers");
-
-                            b1.WithOwner()
-                                .HasForeignKey("BoardMemberBoardId", "BoardMemberUserId");
-                        });
-
-                    b.Navigation("Role")
+                    b.HasOne("Domain.Entities.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -212,6 +252,15 @@ namespace Infrastructure.Data.Migrations
                     b.HasOne("Domain.Entities.BoardList", null)
                         .WithMany("Cards")
                         .HasForeignKey("BoardListId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.MemberPermission", b =>
+                {
+                    b.HasOne("Domain.Entities.BoardMember", null)
+                        .WithMany("Permissions")
+                        .HasForeignKey("BoardId", "BoardMemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -226,6 +275,11 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.BoardList", b =>
                 {
                     b.Navigation("Cards");
+                });
+
+            modelBuilder.Entity("Domain.Entities.BoardMember", b =>
+                {
+                    b.Navigation("Permissions");
                 });
 #pragma warning restore 612, 618
         }

@@ -3,8 +3,11 @@ using Application.Contracts.User;
 using Application.DTOs.Boards;
 using Application.Features.Boards.Commands;
 using Application.Features.Boards.Queries;
+using Domain.Common;
+using Domain.Constants;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Web.API.Common;
 
@@ -19,21 +22,24 @@ public sealed class BoardsController : ControllerBase
     private readonly ICommandHandler<DeleteBoardCommand> _deleteBoardHandler;
     private readonly IQueryHandler<GetBoardByIdQuery, BoardResponse> _getBoardByIdHandler;
     private readonly IQueryHandler<GetBoardsQuery, List<BoardResponse>> _getBoardsHandler;
+    private readonly ICommandHandler<PatchBoardCommand> _patchBoardHandler;
     private readonly ICurrentUser _currentUser;
     
     public BoardsController(ICommandHandler<CreateBoardCommand, Board> createBoardHandler,
         ICommandHandler<DeleteBoardCommand> deleteBoardHandler, IQueryHandler<GetBoardByIdQuery, BoardResponse> getBoardByIdHandler,
         IQueryHandler<GetBoardsQuery, List<BoardResponse>> getBoardsHandler,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser, ICommandHandler<PatchBoardCommand> patchBoardHandler)
     {
         _createBoardHandler = createBoardHandler;
         _deleteBoardHandler = deleteBoardHandler;
         _getBoardByIdHandler = getBoardByIdHandler;
         _getBoardsHandler = getBoardsHandler;
         _currentUser = currentUser;
+        _patchBoardHandler = patchBoardHandler;
     }
     
     [HttpGet("{boardId:guid}")]
+    [HasPermission(Permissions.Read)]
     public async Task<IActionResult> GetBoardById(Guid boardId, CancellationToken ct = default)
     {
         var query = new GetBoardByIdQuery
@@ -82,6 +88,7 @@ public sealed class BoardsController : ControllerBase
     }
 
     [HttpDelete("{boardId:guid}")]
+    [HasPermission(Permissions.Delete)]
     public async Task<IActionResult> DeleteBoard(Guid boardId, CancellationToken ct = default)
     {
         var command = new DeleteBoardCommand
@@ -93,6 +100,60 @@ public sealed class BoardsController : ControllerBase
         var result = await _deleteBoardHandler.Handle(command, ct);
         if (result.IsFailed)
             return result.ToProblemResponse(this);
+        
+        return NoContent();
+    }
+    
+    
+    [HttpPatch("{boardId:guid}")]
+    [HasPermission(Permissions.Update)]
+    [Consumes("application/json-patch+json")]
+    public async Task<IActionResult> PatchBoard(Guid boardId, [FromBody] JsonPatchDocument<PatchBoardRequest> patchDoc, CancellationToken ct = default)
+    {
+        if (patchDoc is null || patchDoc.Operations.Count == 0)
+            return BadRequest("Invalid patch document.");
+        
+        var query = new GetBoardByIdQuery
+        {
+            BoardId = boardId,
+            RequestingUserId = _currentUser.Id
+        };
+        var currentBoard = await _getBoardByIdHandler.Handle(query, ct);
+        if (currentBoard.IsFailed)
+            return currentBoard.ToProblemResponse(this, StatusCodes.Status404NotFound);
+
+        var boardToPatch = new PatchBoardRequest();
+        
+        // here the patch is applied, so boardToPatch now has the values from the patchDoc
+        patchDoc.ApplyTo(boardToPatch, error =>
+        {
+            ModelState.AddModelError(error.AffectedObject?.ToString() ?? string.Empty, error.ErrorMessage);
+        });
+        if(!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var command = new PatchBoardCommand
+        {
+            BoardId = boardId,
+            RequestingUserId = _currentUser.Id,
+            Title = boardToPatch.HasProperty(nameof(boardToPatch.Title)) 
+                ? PatchValue<string?>.Set(boardToPatch.Title) 
+                : PatchValue<string?>.Unset(),
+            Description = boardToPatch.HasProperty(nameof(boardToPatch.Description)) 
+                ? PatchValue<string?>.Set(boardToPatch.Description) 
+                : PatchValue<string?>.Unset(),
+            WallpaperImageId = boardToPatch.HasProperty(nameof(boardToPatch.WallpaperImageId)) 
+                ? PatchValue<Guid?>.Set(boardToPatch.WallpaperImageId) 
+                : PatchValue<Guid?>.Unset(),
+            Visibility = boardToPatch.HasProperty(nameof(boardToPatch.Visibility)) 
+                ? PatchValue<VisibilityLevel?>.Set(boardToPatch.Visibility) 
+                : PatchValue<VisibilityLevel?>.Unset()
+        };
+        
+        var updateResult = await _patchBoardHandler.Handle(command, ct);
+        if (updateResult.IsFailed)
+            return updateResult.ToProblemResponse(this);
+        
         
         return NoContent();
     }

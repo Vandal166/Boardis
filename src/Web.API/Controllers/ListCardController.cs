@@ -3,8 +3,11 @@ using Application.Contracts.User;
 using Application.DTOs.ListCards;
 using Application.Features.ListCards.Commands;
 using Application.Features.ListCards.Queries;
+using Domain.Common;
+using Domain.Constants;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Web.API.Common;
 
@@ -19,8 +22,7 @@ public sealed class ListCardController : ControllerBase
     private readonly ICommandHandler<DeleteListCardCommand> _deleteListCardHandler;
     private readonly IQueryHandler<GetListCardByIdQuery, ListCardResponse> _getListCardByIdHandler;
     private readonly IQueryHandler<GetListCardsQuery, List<ListCardResponse>> _getListCardsHandler;
-    private readonly ICommandHandler<UpdateListCardCommand> _updateListCardHandler;
-    private readonly ICommandHandler<UpdateListCardsOrderCommand> _updateListCardsOrderHandler;
+    private readonly ICommandHandler<PatchCardCommand> _patchCardHandler;
     private readonly ICurrentUser _currentUser;
     
     public ListCardController(
@@ -28,20 +30,18 @@ public sealed class ListCardController : ControllerBase
         ICommandHandler<DeleteListCardCommand> deleteListCardHandler,
         IQueryHandler<GetListCardByIdQuery, ListCardResponse> getListCardByIdHandler,
         IQueryHandler<GetListCardsQuery, List<ListCardResponse>> getListCardsHandler,
-        ICommandHandler<UpdateListCardCommand> updateListCardHandler,
-        ICommandHandler<UpdateListCardsOrderCommand> updateListCardsOrderHandler,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser, ICommandHandler<PatchCardCommand> patchCardHandler)
     {
         _createListCardHandler = createListCardHandler;
         _deleteListCardHandler = deleteListCardHandler;
         _getListCardByIdHandler = getListCardByIdHandler;
         _getListCardsHandler = getListCardsHandler;
-        _updateListCardHandler = updateListCardHandler;
-        _updateListCardsOrderHandler = updateListCardsOrderHandler;
         _currentUser = currentUser;
+        _patchCardHandler = patchCardHandler;
     }
 
     [HttpGet("{cardId:guid}")]
+    [HasPermission(Permissions.Read)]
     public async Task<IActionResult> GetListCardById(Guid boardId, Guid listId, Guid cardId, CancellationToken ct = default)
     {
         var query = new GetListCardByIdQuery
@@ -59,6 +59,7 @@ public sealed class ListCardController : ControllerBase
     }
     
     [HttpGet]
+    [HasPermission(Permissions.Read)]
     public async Task<IActionResult> GetListCards(Guid boardId, Guid listId, CancellationToken ct = default)
     {
         var query = new GetListCardsQuery
@@ -75,6 +76,7 @@ public sealed class ListCardController : ControllerBase
     }
     
     [HttpPost]
+    [HasPermission(Permissions.Create)]
     public async Task<IActionResult> CreateListCard(Guid boardId, Guid listId, [FromBody] CreateListCardRequest request, CancellationToken ct = default)
     {
         var command = new CreateListCardCommand
@@ -95,6 +97,7 @@ public sealed class ListCardController : ControllerBase
     }
     
     [HttpDelete("{cardId:guid}")]
+    [HasPermission(Permissions.Delete)]
     public async Task<IActionResult> DeleteListCard(Guid boardId, Guid listId, Guid cardId, CancellationToken ct = default)
     {
         var command = new DeleteListCardCommand
@@ -112,43 +115,60 @@ public sealed class ListCardController : ControllerBase
         return NoContent();
     }
     
-    [HttpPut("{cardId:guid}")]
-    public async Task<IActionResult> UpdateListCard(Guid boardId, Guid listId, Guid cardId, [FromBody] UpdateListCardRequest request, CancellationToken ct = default)
+    [HttpPatch("{cardId:guid}")]
+    [HasPermission(Permissions.Update)]
+    [Consumes("application/json-patch+json")]
+    public async Task<IActionResult> PatchCard(Guid boardId, Guid listId, Guid cardId, [FromBody] JsonPatchDocument<PatchCardRequest> patchDoc, CancellationToken ct = default)
     {
-        var command = new UpdateListCardCommand
+        if (patchDoc is null || patchDoc.Operations.Count == 0)
+            return BadRequest("Invalid patch document.");
+        
+        var query = new GetListCardByIdQuery
         {
             BoardId = boardId,
             BoardListId = listId,
             CardId = cardId,
-            Title = request.Title,
-            Description = request.Description,
-            Position = request.Position,
-            CompletedAt = request.CompletedAt,
             RequestingUserId = _currentUser.Id
         };
+        var currentCard = await _getListCardByIdHandler.Handle(query, ct);
+        if (currentCard.IsFailed)
+            return currentCard.ToProblemResponse(this, StatusCodes.Status404NotFound);
+
+        var cardToPatch = new PatchCardRequest();
         
-        var result = await _updateListCardHandler.Handle(command, ct);
-        if (result.IsFailed)
-            return result.ToProblemResponse(this);
-        
-        return NoContent();
-    }
-    
-    
-    [HttpPatch("order")]
-    public async Task<IActionResult> UpdateListCardsOrder(Guid boardId, Guid listId, [FromBody] UpdateListCardsOrderRequest request, CancellationToken ct = default)
-    {
-        var command = new UpdateListCardsOrderCommand
+        // here the patch is applied, so cardToPatch now has the values from the patchDoc
+        patchDoc.ApplyTo(cardToPatch, error =>
+        {
+            ModelState.AddModelError(error.AffectedObject?.ToString() ?? string.Empty, error.ErrorMessage);
+        });
+        if(!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var command = new PatchCardCommand
         {
             BoardId = boardId,
             BoardListId = listId,
-            Cards = request.Cards,
-            RequestingUserId = _currentUser.Id
+            CardId = cardId,
+            RequestingUserId = _currentUser.Id,
+            
+            Title = cardToPatch.HasProperty(nameof(cardToPatch.Title)) 
+                ? PatchValue<string?>.Set(cardToPatch.Title) 
+                : PatchValue<string?>.Unset(),
+            Description = cardToPatch.HasProperty(nameof(cardToPatch.Description)) 
+                ? PatchValue<string?>.Set(cardToPatch.Description) 
+                : PatchValue<string?>.Unset(),
+            Position = cardToPatch.HasProperty(nameof(cardToPatch.Position)) 
+                ? PatchValue<double?>.Set(cardToPatch.Position) 
+                : PatchValue<double?>.Unset(),
+            CompletedAt = cardToPatch.HasProperty(nameof(cardToPatch.CompletedAt)) 
+                ? PatchValue<DateTime?>.Set(cardToPatch.CompletedAt) 
+                : PatchValue<DateTime?>.Unset()
         };
         
-        var result = await _updateListCardsOrderHandler.Handle(command, ct);
-        if (result.IsFailed)
-            return result.ToProblemResponse(this);
+        var updateResult = await _patchCardHandler.Handle(command, ct);
+        if (updateResult.IsFailed)
+            return updateResult.ToProblemResponse(this);
+        
         
         return NoContent();
     }

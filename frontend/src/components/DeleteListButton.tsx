@@ -30,10 +30,8 @@ const DeleteListButton: React.FC<DeleteListButtonProps> = ({ listId, onDeleted }
             await api.delete(`/api/boards/${boardId}/lists/${listId}`);
             toast.success('List deleted');
             onDeleted();
-        } catch (err: any)
-        {
-            toast.error('Failed to delete list');
         }
+        catch { }
     };
 
     return (

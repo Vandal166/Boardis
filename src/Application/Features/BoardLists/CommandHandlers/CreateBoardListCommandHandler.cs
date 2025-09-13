@@ -1,10 +1,8 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
 using Application.Features.BoardLists.Commands;
-using Domain.Constants;
 using Domain.Contracts;
 using Domain.Entities;
-using Domain.ValueObjects;
 using FluentResults;
 using Microsoft.AspNetCore.Http;
 
@@ -16,7 +14,8 @@ internal sealed class CreateBoardListCommandHandler : ICommandHandler<CreateBoar
     private readonly IBoardListRepository _boardListRepository;
     private readonly IUnitOfWork _unitOfWork;
     
-    public CreateBoardListCommandHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IUnitOfWork unitOfWork)
+    public CreateBoardListCommandHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, 
+        IUnitOfWork unitOfWork)
     {
         _boardRepository = boardRepository;
         _boardListRepository = boardListRepository;
@@ -30,17 +29,8 @@ internal sealed class CreateBoardListCommandHandler : ICommandHandler<CreateBoar
         if (board is null)
             return Result.Fail<BoardList>("Board not found");
         
-        //permission check
-        var boardMember = board.HasMember(command.RequestingUserId);
-        if (boardMember is null)
-            return Result.Fail<BoardList>(new Error("You are not a member of this board")
-                .WithMetadata("Status", StatusCodes.Status403Forbidden));
-        
-        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
-            return Result.Fail<BoardList>(new Error("You don't have permission to create a list in this board")
-                .WithMetadata("Status", StatusCodes.Status403Forbidden));
-        
-        if(board.BoardLists.Any(l => l.Position == command.Position))
+        var existingList = await _boardListRepository.GetByBoardIdAsync(command.BoardId, ct);
+        if (existingList is null || existingList.Any(l => l.Position == command.Position))
             return Result.Fail<BoardList>(new Error("A list in the same position already exists in this board. Reorder the existing lists first.")
                 .WithMetadata("Status", StatusCodes.Status409Conflict));
         

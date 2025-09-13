@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+﻿/*using System.Net.Http.Headers;
 using System.Text.Json;
 using Application.Contracts.Keycloak;
 using Domain.ValueObjects;
@@ -35,7 +35,7 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
         if (keycloakRole is null)
             return Result.Fail<Role>($"Role {roleName} does not exist.");
 
-        var roleResult = Role.Create(keycloakRole.Key, keycloakRole.DisplayName);
+        var roleResult = Role.Create(keycloakRole.Key);
         return roleResult;
     }
 
@@ -84,10 +84,10 @@ internal sealed class KeycloakRoleService : IKeycloakRoleService
         var json = await response.Content.ReadAsStringAsync(ct);
         var keycloakRoles = JsonSerializer.Deserialize<List<KeycloakRole>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         var roles = keycloakRoles?
-            .Select(r => Role.Create(r.Name.ToLowerInvariant(), r.Name).Value)
+            .Select(r => Role.Create(r.Name.ToLowerInvariant()).Value)
             .ToList() ?? new List<Role>();
 
         _cache.Set(CacheKey, roles, TimeSpan.FromHours(1));
         return roles;
     }
-}
+}*/

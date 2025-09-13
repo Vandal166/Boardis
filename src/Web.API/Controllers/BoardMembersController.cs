@@ -3,6 +3,7 @@ using Application.Contracts.User;
 using Application.DTOs.BoardMembers;
 using Application.Features.BoardMembers.Commands;
 using Application.Features.BoardMembers.Queries;
+using Domain.Constants;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,7 @@ public sealed class BoardMembersController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission(Permissions.Read)]
     public async Task<IActionResult> GetBoardMembers(Guid boardId, CancellationToken ct = default)
     {
         var query = new GetBoardMembersQuery
@@ -46,13 +48,13 @@ public sealed class BoardMembersController : ControllerBase
     }
 
     [HttpPost]
+    [HasPermission(Permissions.Create)]
     public async Task<IActionResult> AddBoardMember(Guid boardId, [FromBody] AddBoardMemberRequest request, CancellationToken ct = default)
     {
         var command = new AddBoardMemberCommand
         {
             BoardId = boardId,
             UserIdToAdd = request.UserId,
-            Role = request.Role,
             RequestingUserId = _currentUser.Id
         };
         
@@ -65,6 +67,7 @@ public sealed class BoardMembersController : ControllerBase
 
     
     [HttpDelete("{userId:guid}")]
+    [HasPermission(Permissions.Delete)]
     public async Task<IActionResult> RemoveBoardMember(Guid boardId, Guid userId, CancellationToken ct = default)
     {
         var command = new RemoveBoardMemberCommand

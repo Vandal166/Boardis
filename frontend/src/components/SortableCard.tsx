@@ -55,8 +55,8 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
         {
             const rect = menuButtonRef.current.getBoundingClientRect();
             setMenuPos({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom + window.scrollY + 6,
+                left: rect.left + window.scrollX - 8, // shift to left by 8px
             });
         }
     }, [showMenu]);
@@ -81,30 +81,42 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
         setError(null);
         try
         {
-            await api.put(`/api/boards/${card.boardId}/lists/${card.boardListId}/cards/${card.id}`, {
-                title: titleInput,
-                description: card.description ?? '',
-                position: card.position,
-                completedAt: card.completedAt ?? null,
-            });
+            const patchOps = [
+                { op: 'replace', path: '/title', value: titleInput }
+            ];
+            if (patchOps.length === 0)
+            {
+                setEditing(false);
+                setLoading(false);
+                return;
+            }
+            await api.patch(
+                `/api/boards/${card.boardId}/lists/${card.boardListId}/cards/${card.id}`,
+                patchOps,
+                { headers: { 'Content-Type': 'application/json-patch+json' } }
+            );
             setTitle(titleInput); // update local title state
             setEditing(false);
             setError(null);
-        } catch (err: any)
+        }
+        catch (err: any)
         {
             let message = 'Failed to update title.';
             if (err.response?.data?.errors?.Title && Array.isArray(err.response.data.errors.Title))
             {
                 message = err.response.data.errors.Title[0];
-            } else if (err.response?.data?.detail)
+            }
+            else if (err.response?.data?.detail)
             {
                 message = err.response.data.detail;
-            } else if (err.response?.data?.title)
+            }
+            else if (err.response?.data?.title)
             {
                 message = err.response.data.title;
             }
             setError(message);
-        } finally
+        }
+        finally
         {
             setLoading(false);
         }
@@ -132,19 +144,19 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
         setLoading(true);
         try
         {
-            //TODO: USE PATCH
-            await api.put(`/api/boards/${card.boardId}/lists/${card.boardListId}/cards/${card.id}`, {
-                title: card.title,
-                description: card.description ?? '',
-                position: card.position,
-                completedAt: newCompletedAt ?? null,
-            });
+            const patchOps = [
+                { op: 'replace', path: '/completedAt', value: newCompletedAt ?? null }
+            ];
+            await api.patch(
+                `/api/boards/${card.boardId}/lists/${card.boardListId}/cards/${card.id}`,
+                patchOps,
+                { headers: { 'Content-Type': 'application/json-patch+json' } }
+            );
             setCompletedAt(newCompletedAt);
             if (refetch) refetch();
-        } catch
-        {
-            // Optionally show error
-        } finally
+        }
+        catch { }
+        finally
         {
             setLoading(false);
         }
@@ -261,7 +273,7 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
                                 </button>
                                 <button
                                     className="flex items-center gap-2 w-full text-left px-5 py-2 text-gray-800 hover:bg-blue-50 transition"
-                                    onClick={() => { setShowMenu(false); /* TODO: Mark as completed logic */ }}
+                                    onClick={() => { setShowMenu(false); handleComplete(); }}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-green-400"></span>
                                     Mark as completed

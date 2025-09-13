@@ -1,10 +1,9 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
 using Application.Features.Boards.Commands;
-using Domain.Constants;
 using Domain.Contracts;
-using Domain.ValueObjects;
 using FluentResults;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Application.Features.Boards.CommandHandlers;
 
@@ -12,11 +11,12 @@ internal sealed class DeleteBoardCommandHandler : ICommandHandler<DeleteBoardCom
 {
     private readonly IBoardRepository _boardRepository;
     private readonly IUnitOfWork _unitOfWork;
-    
-    public DeleteBoardCommandHandler(IBoardRepository boardRepository, IUnitOfWork unitOfWork)
+    private readonly IDistributedCache _cache;
+    public DeleteBoardCommandHandler(IBoardRepository boardRepository, IUnitOfWork unitOfWork, IDistributedCache cache)
     {
         _boardRepository = boardRepository;
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
     
     
@@ -26,16 +26,12 @@ internal sealed class DeleteBoardCommandHandler : ICommandHandler<DeleteBoardCom
         if (board is null)
             return Result.Fail("Board not found");
         
-        //permission check
-        var boardMember = board.HasMember(command.RequestingUserId);
-        if (boardMember is null)
-            return Result.Fail("You are not a member of this board");
-        
-        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
-            return Result.Fail("You don't have permission to delete this board");
-        
         await _boardRepository.DeleteAsync(board, ct);
         await _unitOfWork.SaveChangesAsync(ct);
+        
+        // Invalidate cache
+        string cacheKey = $"boards_{command.RequestingUserId}";
+        await _cache.RemoveAsync(cacheKey, ct);
         
         return Result.Ok();
     }

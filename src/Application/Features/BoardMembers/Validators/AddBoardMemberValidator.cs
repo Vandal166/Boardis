@@ -6,7 +6,7 @@ namespace Application.Features.BoardMembers.Validators;
 
 public sealed class AddBoardMemberValidator : AbstractValidator<AddBoardMemberCommand>
 {
-    public AddBoardMemberValidator(IKeycloakRoleService keycloakRoleService, IKeycloakUserService keycloakUserService)
+    public AddBoardMemberValidator(IKeycloakUserService keycloakUserService)
     {
         RuleFor(x => x.BoardId)
             .NotEmpty().WithMessage("Board is required.")
@@ -31,14 +31,6 @@ public sealed class AddBoardMemberValidator : AbstractValidator<AddBoardMemberCo
                 return result.IsSuccess;
             })
             .WithMessage(x => $"Requesting user with ID '{x.RequestingUserId}' does not exist.");
-        
-        RuleFor(x => x.Role)
-            .NotEmpty().WithMessage("Role is required.")
-            .MustAsync(async (role, ct) => 
-            {
-                var result = await keycloakRoleService.RoleExistsAsync(role, ct);
-                return result.IsSuccess;
-            })
-            .WithMessage(x => $"Role '{x.Role}' does not exist.");
+       
     }
 }

@@ -65,17 +65,22 @@ export function useUserListCards(
         if (!keycloak.token || !listId)
             return;
 
+        // Find max position among current cards
+        const maxPosition = cards.length > 0
+            ? Math.max(...cards.map(c => c.position ?? 0))
+            : 0;
+
         try
         {
-            const response = await api.post(
+            await api.post(
                 `/api/boards/${boardId}/lists/${listId}/cards`,
                 {
                     title: data.title,
                     description: data.description,
-                    position: cards.length + 1,
+                    position: maxPosition + 1024.0,
                 }
             );
-            setCards((prevCards) => [...prevCards, response.data]);
+            await fetchData(); // Refetch cards after adding
             return true;
         }
         catch (error: any)

@@ -30,10 +30,8 @@ const DeleteCardButton: React.FC<DeleteCardButtonProps> = ({ cardId, listId, onD
             await api.delete(`/api/boards/${boardId}/lists/${listId}/cards/${cardId}`);
             toast.success('Card deleted');
             onDeleted();
-        } catch (err: any)
-        {
-            toast.error('Failed to delete card');
         }
+        catch { }
     };
 
     return (

@@ -77,14 +77,6 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
                 const apiErrors = error.response.data.errors;
                 setFieldErrors(apiErrors);
             }
-            else if (error.response?.data?.message)
-            {
-                setError(error.response.data.message);
-            }
-            else
-            {
-                setError('Failed to create list. Please try again.');
-            }
             return false;
         }
     };

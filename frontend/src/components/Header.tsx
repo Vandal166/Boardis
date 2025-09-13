@@ -1,8 +1,9 @@
 import { useKeycloak } from '@react-keycloak/web';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useMatch } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import logo from '../assets/logo.png';
+import api from '../api';
 
 function Header()
 {
@@ -11,6 +12,28 @@ function Header()
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const avatarRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Detect if we're on a board route and fetch the board title
+    const boardMatch = useMatch('/dashboard/board/:boardId/*');
+    const boardId = boardMatch?.params.boardId;
+    const [boardTitle, setBoardTitle] = useState<string | null>(null);
+
+    useEffect(() =>
+    {
+        let active = true;
+        if (!boardId)
+        {
+            setBoardTitle(null);
+            return;
+        }
+        if (!initialized || !keycloak.authenticated || !keycloak.token)
+            return;
+
+        api.get(`/api/boards/${boardId}`)
+            .then(res => { if (active) setBoardTitle(res.data?.title ?? null); })
+            .catch(() => { if (active) setBoardTitle(null); });
+        return () => { active = false; };
+    }, [boardId]);
 
     useEffect(() =>
     {
@@ -37,7 +60,7 @@ function Header()
     return (
         <header className="sticky top-0 z-50 w-full flex justify-between items-center p-4 bg-gray-800 shadow-2xl">
             <button
-                className="flex items-center focus:outline-none"
+                className="flex items-center focus:outline-none !shadow-none"
                 onClick={() => navigate('/')}
                 aria-label="Go to home"
                 type="button"
@@ -46,6 +69,11 @@ function Header()
                 <h1 className="text-2xl font-bold text-white transition-transform duration-200 hover:-translate-y-2">
                     Boardis
                 </h1>
+                {boardTitle && (
+                    <span className="ml-3 text-white/90 text-lg truncate max-w-[25vw]">
+                        | {boardTitle}
+                    </span>
+                )}
             </button>
             {initialized ? (
                 keycloak.authenticated ? (

@@ -1,4 +1,6 @@
 ﻿using System.Drawing;
+using System.Text.Json.Serialization;
+using Domain.Common;
 using FluentResults;
 
 namespace Domain.Entities;
@@ -9,11 +11,11 @@ public sealed class BoardList
     public Guid BoardId { get; private set; }
     public string Title { get; private set; }
     public int Position { get; private set; } // position/order of the list on the board
-    private int _listColorArgb = Color.LightBlue.ToArgb();
+    public int ListColorArgb { get; private set; } = Color.LightBlue.ToArgb();
     public Color ListColor
     {
-        get => Color.FromArgb(_listColorArgb);
-        private set => _listColorArgb = value.ToArgb();
+        get => Color.FromArgb(ListColorArgb);
+        private set => ListColorArgb = value.ToArgb();
     }
     
     public DateTime CreatedAt { get; private set; }
@@ -49,36 +51,127 @@ public sealed class BoardList
         });
     }
     
-    public Result Update(string Title, int Position, int ColorArgb)
+    public Result Update(string title, int position, int colorArgb)
     {
-        var errors = new List<Error>();
-        if (string.IsNullOrWhiteSpace(Title))
-            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
+        var errors = new List<IError>();
         
-        if (Title.Length > 100)
-            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
+        var titleResult = UpdateTitle(title);
+        if (titleResult.IsFailed)
+            errors.AddRange(titleResult.Errors);
         
-        if (Position < 0)
-            errors.Add(new Error("Position must be a non-negative integer.").WithMetadata("PropertyName", nameof(Position)));
+        var positionResult = UpdatePosition(position);
+        if (positionResult.IsFailed)
+            errors.AddRange(positionResult.Errors);
+        
+        var colorResult = UpdateColor(colorArgb);
+        if (colorResult.IsFailed)
+            errors.AddRange(colorResult.Errors);
         
         if (errors.Count != 0)
             return Result.Fail(errors);
         
-        this.Title = Title;
-        this.Position = Position;
-        this.ListColor = Color.FromArgb(ColorArgb);
         this.UpdatedAt = DateTime.UtcNow;
-        
         return Result.Ok();
     }
     
-    
-    public Result UpdateColor(Color newColor)
+    public Result Patch(PatchValue<string?> title, PatchValue<int?> position, PatchValue<int?> colorArgb)
     {
-        // todo role check etc
-        ListColor = newColor;
-        UpdatedAt = DateTime.UtcNow;
+        var errors = new List<IError>();
         
+        if (title.IsSet)
+        {
+            if(title.Value is null) //TODO is this check necessary? Since UpdateTitle checks anyway if null/empty
+            {
+                errors.Add(new Error("Title cannot be null.").WithMetadata("PropertyName", nameof(Title)));
+            }
+            else
+            {
+                var titleResult = UpdateTitle(title.Value!);
+                if (titleResult.IsFailed)
+                    errors.AddRange(titleResult.Errors);
+            }
+        }
+        
+        if (position.IsSet)
+        {
+            if(position.Value is null)
+            {
+                errors.Add(new Error("Position cannot be null").WithMetadata("PropertyName", nameof(Position)));
+            }
+            else
+            {
+                var positionResult = UpdatePosition(position.Value.Value);
+                if (positionResult.IsFailed)
+                    errors.AddRange(positionResult.Errors);
+            }
+        }
+        
+        if (colorArgb.IsSet)
+        {
+            if(colorArgb.Value is null)
+            {
+                //set default color if null
+                this.ListColor = Color.LightBlue;
+            }
+            else
+            {
+                var colorResult = UpdateColor(colorArgb.Value.Value);
+                if (colorResult.IsFailed)
+                    errors.AddRange(colorResult.Errors);
+            }
+        }
+        
+        if (errors.Count != 0)
+            return Result.Fail(errors);
+        
+        this.UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
+    }
+    
+    private Result UpdateTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return Result.Fail(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
+        
+        if (title.Length > 100)
+            return Result.Fail(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
+        
+        this.Title = title;
+        return Result.Ok();
+    }
+    
+    private Result UpdatePosition(int position)
+    {
+        if (position < 0)
+            return Result.Fail(new Error("Position must be a non-negative integer.").WithMetadata("PropertyName", nameof(Position)));
+        
+        this.Position = position;
+        return Result.Ok();
+    }
+    
+    private Result UpdateColor(int colorArgb)
+    {
+        try
+        {
+            this.ListColor = Color.FromArgb(colorArgb);
+            return Result.Ok();
+        }
+        catch (ArgumentException)
+        {
+            return Result.Fail(new Error("Invalid color ARGB value.").WithMetadata("PropertyName", nameof(ListColor)));
+        }
+    }
+    
+    
+    [JsonConstructor]
+    private BoardList(Guid id, Guid boardId, string title, int position, int listColorArgb, DateTime createdAt, DateTime? updatedAt)
+    {
+        Id = id;
+        BoardId = boardId;
+        Title = title;
+        Position = position;
+        ListColorArgb = listColorArgb;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
     }
 }

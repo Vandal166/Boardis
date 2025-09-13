@@ -43,4 +43,11 @@ internal sealed class BoardListRepository : IBoardListRepository
             .AsNoTracking()
             .Where(bl => bl.BoardId == boardId).ToListAsync(ct); //TODO pagination
     }
+    
+    public async Task<BoardList?> GetByBoardIdAndPositionAsync(Guid boardId, int position, CancellationToken ct = default)
+    {
+        return await _dbContext.BoardLists
+            .AsNoTracking()
+            .FirstOrDefaultAsync(bl => bl.BoardId == boardId && bl.Position == position, ct);
+    }
 }

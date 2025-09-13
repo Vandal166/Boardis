@@ -23,6 +23,8 @@ function BoardView()
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  // Board info for settings panel
+  const [boardInfo, setBoardInfo] = useState<{ id: string; title: string; description?: string } | null>(null);
 
   const {
     lists,
@@ -41,9 +43,7 @@ function BoardView()
     })
   );
 
-  const [roles, setRoles] = useState<{ key: string; displayName: string }[]>([]);
-
-  const [members, setMembers] = useState<{ userId: string; username: string; email: string; role: string; }[]>([]);
+  const [members, setMembers] = useState<{ userId: string; username: string; email: string; permissions?: string[] }[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
 
   // Build a fast lookup per render
@@ -71,24 +71,23 @@ function BoardView()
   );
 
 
-  useEffect(() =>
-  {
-    if (!keycloak.token) return;
-    api.get('/api/roles')
-      .then(res => setRoles(res.data))
-      .catch(() => setRoles([]));
-  }, [keycloak.token]);
-
   const fetchMembers = async () =>
   {
-    if (!boardId || !keycloak.token) return;
+    if (!boardId || !initialized || !keycloak.authenticated || !keycloak.token) return;
+
     try
     {
       setMembersLoading(true);
       const res = await api.get(`/api/boards/${boardId}/members`);
-      setMembers(res.data);
+      const normalized = (Array.isArray(res.data) ? res.data : []).map((m: any) => ({
+        userId: m.UserId || m.userId,
+        username: m.Username || m.username,
+        email: m.Email || m.email,
+        permissions: m.Permissions || m.permissions || []
+      }));
+      setMembers(normalized);
     }
-    catch (err: any)
+    catch
     {
       setMembers([]);
     }
@@ -108,7 +107,7 @@ function BoardView()
   }, [showAddMember]);
 
 
-  const handleAddMember = async (emailOrUsername: string, role: string) =>
+  const handleAddMember = async (emailOrUsername: string) =>
   {
     if (!boardId || !keycloak.token)
       return;
@@ -131,8 +130,7 @@ function BoardView()
       await api.post(
         `/api/boards/${boardId}/members`,
         {
-          userId: user.id,
-          role: role
+          userId: user.id
         }
       );
 
@@ -142,26 +140,14 @@ function BoardView()
     }
     catch (err: any)
     {
-      let message = '';
-      if (err.response?.data?.errors)
+      if (err?.response?.status !== 403)
       {
-        message = Object.values(err.response.data.errors)
-          .flat()
-          .join(' ');
+        const msg =
+          (err.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message)) ||
+          'You do not have permission to perform this action.';
+
+        toast.error(msg);
       }
-      if (!message && err.response?.data?.detail)
-      {
-        message = err.response.data.detail;
-      }
-      if (!message && err.response?.data?.title)
-      {
-        message = err.response.data.title;
-      }
-      if (!message)
-      {
-        message = 'Failed to add member. Please try again.';
-      }
-      toast.error(message);
     }
     finally
     {
@@ -183,26 +169,14 @@ function BoardView()
     }
     catch (err: any)
     {
-      let message = '';
-      if (err.response?.data?.errors)
+      if (err?.response?.status !== 403)
       {
-        message = Object.values(err.response.data.errors)
-          .flat()
-          .join(' ');
+        const msg =
+          (err.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message)) ||
+          'You do not have permission to perform this action.';
+
+        toast.error(msg);
       }
-      if (!message && err.response?.data?.detail)
-      {
-        message = err.response.data.detail;
-      }
-      if (!message && err.response?.data?.title)
-      {
-        message = err.response.data.title;
-      }
-      if (!message)
-      {
-        message = 'Failed to remove member. Please try again.';
-      }
-      toast.error(message);
     }
     finally
     {
@@ -231,9 +205,14 @@ function BoardView()
         const moved = sorted.find(l => l.id === active.id);
         if (moved)
         {
-          await api.put(`/api/boards/${boardId}/lists/${moved.id}`, {
-            title: moved.title, position: moved.position, colorArgb: moved.colorArgb
-          });
+          const patchOps = [
+            { op: 'replace', path: '/position', value: moved.position }
+          ];
+          await api.patch(
+            `/api/boards/${boardId}/lists/${moved.id}`,
+            patchOps,
+            { headers: { 'Content-Type': 'application/json-patch+json' } }
+          );
         }
       }
       catch
@@ -273,11 +252,13 @@ function BoardView()
     try
     {
       const toUpdate = changed.filter(l => l.position !== beforePos.get(l.id));
-      await Promise.all(
+      await Promise.all( // sends patch requests in parallel to update changed lists(positions)
         toUpdate.map(l =>
-          api.put(`/api/boards/${boardId}/lists/${l.id}`, {
-            title: l.title, position: l.position, colorArgb: l.colorArgb
-          })
+          api.patch(
+            `/api/boards/${boardId}/lists/${l.id}`,
+            [{ op: 'replace', path: '/position', value: l.position }],
+            { headers: { 'Content-Type': 'application/json-patch+json' } }
+          )
         )
       );
     }
@@ -286,6 +267,14 @@ function BoardView()
       setLists(prevLists); // revert snapshot
     }
   }, [lists, keycloak.token, boardId]);
+
+  useEffect(() =>
+  {
+    if (!boardId || !initialized || !keycloak.authenticated || !keycloak.token) return;
+    api.get(`/api/boards/${boardId}`)
+      .then(res => setBoardInfo(res.data))
+      .catch(() => setBoardInfo(null));
+  }, [boardId, initialized, keycloak.authenticated, keycloak.token]);
 
   if (isLoading)
   {
@@ -331,19 +320,24 @@ function BoardView()
           {showAddMember && (
             <>
               <ManageBoardMembersModal
+                boardId={boardId!}
                 onClose={() => setShowAddMember(false)}
                 members={members}
                 onAdd={handleAddMember}
                 onRemove={handleRemoveMember}
-                roles={roles}
                 isLoading={membersLoading}
               />
             </>
           )}
 
           {/* Board Settings Panel */}
-          {showSettings && (
-            <BoardSettingsPanel onClose={() => setShowSettings(false)} />
+          {showSettings && boardInfo && (
+            <BoardSettingsPanel
+              onClose={() => setShowSettings(false)}
+              boardId={boardInfo.id}
+              title={boardInfo.title}
+              description={boardInfo.description}
+            />
           )}
 
           <div className="max-w-[1664px] mx-auto">

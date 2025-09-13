@@ -1,4 +1,6 @@
-﻿namespace Application.DTOs.Boards;
+﻿using Domain.Constants;
+
+namespace Application.DTOs.Boards;
 
 public sealed class BoardResponse
 {
@@ -6,4 +8,5 @@ public sealed class BoardResponse
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public Guid? WallpaperImageId { get; set; }
+    public VisibilityLevel Visibility { get; set; }
 }

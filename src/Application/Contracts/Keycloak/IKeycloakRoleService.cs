@@ -1,4 +1,4 @@
-﻿using Domain.ValueObjects;
+﻿/*using Domain.ValueObjects;
 using FluentResults;
 
 namespace Application.Contracts.Keycloak;
@@ -9,4 +9,4 @@ public interface IKeycloakRoleService
     Task<Result<Role>> RoleExistsAsync(string roleName, CancellationToken ct = default);
 
     Task<Result<IReadOnlyList<Role>>> GetValidRolesAsync(CancellationToken ct = default);
-}
+}*/
