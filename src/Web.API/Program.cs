@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Web.API;
+using Web.API.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 IdentityModelEventSource.ShowPII = true;
@@ -13,8 +14,7 @@ builder.Services.AddControllers()
     {
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore; // Handle reference loops
         options.SerializerSettings.ContractResolver = new DefaultContractResolver(); // default property naming (PascalCase)
-    })
-    .AddJsonOptions(_ => {});
+    });
 
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
@@ -31,9 +31,12 @@ builder.Services
     .AddInfrastructure(builder.Configuration)
     .AddWebAPI(builder.Configuration);
 
-builder.Services.AddStackExchangeRedisCache(options =>
+builder.Services.AddAuthorization(options =>
 {
-    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+    foreach (var permission in Enum.GetNames<Domain.Constants.Permissions>())
+    {
+        options.AddPolicy(permission, policy => policy.Requirements.Add(new PermissionRequirement(permission)));
+    }
 });
 
 builder.Host.UseSerilog((context, configuration) =>
@@ -61,4 +64,4 @@ app.MapControllers();
 app.Run();
 
 
-public partial class Program { }
+public partial class Program;

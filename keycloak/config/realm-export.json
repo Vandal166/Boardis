@@ -7,7 +7,7 @@
   "defaultSignatureAlgorithm": "RS256",
   "revokeRefreshToken": false,
   "refreshTokenMaxReuse": 0,
-  "accessTokenLifespan": 300,
+  "accessTokenLifespan": 18000,
   "accessTokenLifespanForImplicitFlow": 900,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
@@ -31,7 +31,7 @@
   "sslRequired": "external",
   "registrationAllowed": true,
   "registrationEmailAsUsername": false,
-  "rememberMe": false,
+  "rememberMe": true,
   "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -90,26 +90,7 @@
       }
     ],
     "client": {
-      "boardis-api": [
-        {
-          "id": "7f99cb4d-00c9-4335-a756-72288d447030",
-          "name": "Member",
-          "description": "An member of the board",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "70e5317d-2984-410d-ad66-998e787446d2",
-          "attributes": {}
-        },
-        {
-          "id": "0257a16a-37fe-425d-a5c8-c352796094a8",
-          "name": "Owner",
-          "description": "An owner of the board",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "70e5317d-2984-410d-ad66-998e787446d2",
-          "attributes": {}
-        }
-      ],
+      "boardis-api": [],
       "realm-management": [
         {
           "id": "11279987-8e1c-4597-a4fe-b8f376c607b0",
@@ -861,8 +842,9 @@
         "standard.token.exchange.enabled": "false",
         "frontchannel.logout.session.required": "true",
         "post.logout.redirect.uris": "http://localhost/*",
-        "display.on.consent.screen": "false",
         "oauth2.device.authorization.grant.enabled": "false",
+        "display.on.consent.screen": "false",
+        "pkce.code.challenge.method": "S256",
         "backchannel.logout.revoke.offline.tokens": "false"
       },
       "authenticationFlowBindingOverrides": {},
@@ -2646,7 +2628,7 @@
       "alias": "TERMS_AND_CONDITIONS",
       "name": "Terms and Conditions",
       "providerId": "TERMS_AND_CONDITIONS",
-      "enabled": false,
+      "enabled": true,
       "defaultAction": false,
       "priority": 20,
       "config": {}
@@ -2764,7 +2746,10 @@
     "clientOfflineSessionMaxLifespan": "0",
     "oauth2DevicePollingInterval": "5",
     "clientSessionIdleTimeout": "0",
+    "actionTokenGeneratedByUserLifespan.verify-email": "",
+    "actionTokenGeneratedByUserLifespan.idp-verify-account-via-email": "",
     "clientOfflineSessionIdleTimeout": "0",
+    "actionTokenGeneratedByUserLifespan.execute-actions": "",
     "cibaInterval": "5",
     "realmReusableOtpCode": "false",
     "cibaExpiresIn": "120",
@@ -2774,6 +2759,8 @@
     "clientSessionMaxLifespan": "0",
     "frontendUrl": "",
     "acr.loa.map": "{}",
+    "shortVerificationUri": "",
+    "actionTokenGeneratedByUserLifespan.reset-credentials": "",
     "darkMode": "true"
   },
   "keycloakVersion": "26.3.3",

@@ -1,7 +1,6 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.DTOs.BoardLists;
 using Application.Features.BoardLists.Queries;
-using Domain.Constants;
 using Domain.Contracts;
 using FluentResults;
 
@@ -11,6 +10,7 @@ internal sealed class GetBoardListByIdQueryHandler : IQueryHandler<GetBoardListB
 {
     private readonly IBoardRepository _boardRepository;
     private readonly IBoardListRepository _boardListRepository;
+
     public GetBoardListByIdQueryHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository)
     {
         _boardRepository = boardRepository;
@@ -22,12 +22,6 @@ internal sealed class GetBoardListByIdQueryHandler : IQueryHandler<GetBoardListB
         var board = await _boardRepository.GetByIdAsync(query.BoardId, ct);
         if (board is null)
             return Result.Fail<BoardListResponse>("Board not found");
-        
-        if (board.HasVisibility(VisibilityLevel.Private))
-        {
-            if(board.HasMember(query.RequestingUserId) is null)
-                return Result.Fail("You are not a member of this board");
-        }
         
         var boardList = await _boardListRepository.GetByIdAsync(query.BoardListId, ct);
         if (boardList is null)

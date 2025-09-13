@@ -1,11 +1,11 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
 using Application.Features.BoardMembers.Commands;
+using Domain.Constants;
 using Domain.Contracts;
 using Domain.Entities;
-using Domain.ValueObjects;
 using FluentResults;
-using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.BoardMembers.CommandHandlers;
 
@@ -14,15 +14,13 @@ internal sealed class AddBoardMemberCommandHandler : ICommandHandler<AddBoardMem
     private readonly IBoardMemberRepository _boardMemberRepository;
     private readonly IBoardRepository _boardRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IDistributedCache _cache;
 
     public AddBoardMemberCommandHandler(IBoardMemberRepository boardMemberRepository, IBoardRepository boardRepository,
-        IUnitOfWork unitOfWork, IDistributedCache cache)
+        IUnitOfWork unitOfWork)
     {
         _boardMemberRepository = boardMemberRepository;
         _boardRepository = boardRepository;
         _unitOfWork = unitOfWork;
-        _cache = cache;
     }
     
     public async Task<Result<BoardMember>> Handle(AddBoardMemberCommand command, CancellationToken ct = default)
@@ -31,23 +29,20 @@ internal sealed class AddBoardMemberCommandHandler : ICommandHandler<AddBoardMem
         if (board is null)
             return Result.Fail<BoardMember>("Board not found");
         
-        // Since the validator already checked the role exists, we can safely create it here
-        var roleResult = Role.Create(command.Role, command.Role);
-        if (roleResult.IsFailed)
-            return Result.Fail<BoardMember>(roleResult.Errors);
-      
-        var newMemberResult = board.AddMember(command.UserIdToAdd, roleResult.Value, command.RequestingUserId);
-        if (newMemberResult.IsFailed)
-            return Result.Fail<BoardMember>(newMemberResult.Errors);
+        var memberToAdd = await _boardMemberRepository.GetByIdAsync(board.Id, command.UserIdToAdd, ct);
+        if (memberToAdd is not null)
+            return Result.Fail<BoardMember>(new Error("User is already a member of this board")
+                .WithMetadata("Status", StatusCodes.Status409Conflict));
         
-        var newMember = newMemberResult.Value;
+        var memberResult = BoardMember.Create(board.Id, command.UserIdToAdd, Roles.MemberId);
+        if (memberResult.IsFailed)
+            return Result.Fail(memberResult.Errors);
+        
+        var newMember = memberResult.Value;
+        newMember.AddPermission(Permissions.Read);
         
         await _boardMemberRepository.AddAsync(newMember, ct);
         await _unitOfWork.SaveChangesAsync(ct);
-        
-        // Invalidate cache
-        string cacheKey = $"board_members_{command.BoardId}";
-        await _cache.RemoveAsync(cacheKey, ct);
         
         return Result.Ok(newMember);
     }

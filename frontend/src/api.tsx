@@ -1,5 +1,6 @@
 import axios from 'axios';
 import camelcaseKeys from 'camelcase-keys';
+import toast from 'react-hot-toast';
 
 
 const api = axios.create();
@@ -33,11 +34,21 @@ api.interceptors.response.use(
         const { response } = error;
         if (!response) throw error;
 
-        // On persistent 401/403, redirect to login
-        if (response.status === 401 || response.status === 403)
+        if (response.status === 401)
         {
-            console.warn('Unauthorized, redirecting to login...');
+            const msg = 'Your session has expired. Please log in again.';
+            (error as any).userMessage = msg;
+            toast.error(msg);
             window.location.href = '/';
+        }
+        else if (response.status === 403)
+        {
+            const data = response.data;
+            const msg =
+                (data && (data.detail || data.title || data.message)) ||
+                'You do not have permission to perform this action.';
+            (error as any).userMessage = msg;
+            toast.error(msg);
         }
 
         return Promise.reject(error);

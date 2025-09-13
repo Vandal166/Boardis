@@ -19,20 +19,35 @@ public static class DependencyInjection
         {
             options.UseNpgsql(configuration.GetConnectionString("Boardis_DB"));
         });
+        
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis");
+        });
 
         services.AddHttpContextAccessor();
         services.AddHttpClient();
+        
         services.AddScoped<IKeycloakService, KeycloakService>();
         services.AddScoped<IKeycloakUserService, KeycloakUserService>();
-        services.AddScoped<IKeycloakRoleService, KeycloakRoleService>();
+        
         services.AddMemoryCache();
         
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         
         services.AddScoped<IBoardRepository, BoardRepository>();
+        
         services.AddScoped<IBoardMemberRepository, BoardMemberRepository>();
+        services.Decorate<IBoardMemberRepository, CachedBoardMemberRepository>();
+
+        services.AddScoped<IBoardMemberPermissionRepository, BoardMemberPermissionRepository>();
+        services.Decorate<IBoardMemberPermissionRepository, CachedBoardMemberPermissionRepository>();
+        
         services.AddScoped<IBoardListRepository, BoardListRepository>();
+        services.Decorate<IBoardListRepository, CachedBoardListRepository>();
+        
         services.AddScoped<IListCardRepository, ListCardRepository>();
+        services.Decorate<IListCardRepository, CachedListCardRepository>(); // this will now use the cached version
         
         return services;
     }

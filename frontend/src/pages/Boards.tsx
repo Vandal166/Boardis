@@ -222,7 +222,7 @@ function Boards()
                           </button>
                         </div>
                         {/* Description */}
-                        <div className="text-sm text-gray-500 line-clamp-2 truncate">
+                        <div className="text-sm text-gray-500 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                           {board.description || "No description"}
                         </div>
                       </div>
@@ -255,6 +255,16 @@ function Boards()
             boardId={board.id}
             title={board.title}
             description={board.description}
+            onUpdated={updated =>
+            {
+              setBoards(prev =>
+                prev.map(b =>
+                  b.id === updated.id
+                    ? { ...b, title: updated.title, description: updated.description }
+                    : b
+                )
+              );
+            }}
           />
         );
       })()}

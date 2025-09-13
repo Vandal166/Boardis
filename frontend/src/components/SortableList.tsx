@@ -117,10 +117,14 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
         setTitleError(null);
         try
         {
-            await api.put(`/api/boards/${list.boardId}/lists/${list.id}`, {
-                ...list,
-                title: titleInput,
-            });
+            const patchOps = [
+                { op: 'replace', path: '/title', value: titleInput }
+            ];
+            await api.patch(
+                `/api/boards/${list.boardId}/lists/${list.id}`,
+                patchOps,
+                { headers: { 'Content-Type': 'application/json-patch+json' } }
+            );
             setEditingTitle(false);
             setTitleError(null);
             onTitleUpdated(titleInput);
@@ -162,56 +166,80 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
         onColorUpdated(color);
     };
 
-    // Card drag end: swap-like reordering (range-shift) and update server
+    // Card drag end: compute midpoint for moved card and update server with batch (single item)
     const handleCardDragEnd = async (event: DragEndEvent) =>
     {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
-        const prev = localCards;
-        const source = prev.find(c => c.id === active.id);
-        const target = prev.find(c => c.id === over.id);
-        if (!source || !target) return;
+        setLocalCards((prev) =>
+        {
+            const newCards = [...prev];
+            const oldIndex = newCards.findIndex((c) => c.id === active.id);
+            const newIndex = newCards.findIndex((c) => c.id === over.id);
 
-        const beforePos = new Map(prev.map(c => [c.id, c.position] as const));
+            if (oldIndex === -1 || newIndex === -1) return prev;
 
-        const changed =
-            source.position < target.position
-                ? prev.map(c =>
-                    c.id === source.id
-                        ? { ...c, position: target.position }
-                        : c.position > source.position && c.position <= target.position
-                            ? { ...c, position: c.position - 1 }
-                            : c
-                )
-                : prev.map(c =>
-                    c.id === source.id
-                        ? { ...c, position: target.position }
-                        : c.position >= target.position && c.position < source.position
-                            ? { ...c, position: c.position + 1 }
-                            : c
-                );
+            // Reorder: Remove from old, insert at new (handles shift direction)
+            const [movedCard] = newCards.splice(oldIndex, 1);
+            newCards.splice(newIndex, 0, movedCard);
 
-        const sorted = [...changed].sort((a, b) => a.position - b.position);
-        setLocalCards(sorted);
+            // Compute midpoint position for the moved card based on new neighbors
+            const prevCard = newIndex > 0 ? newCards[newIndex - 1] : null;
+            const nextCard = newIndex < newCards.length - 1 ? newCards[newIndex + 1] : null;
+
+            let newPosition: number;
+            if (!prevCard && !nextCard)
+            {
+                // Empty list
+                newPosition = 1024.0;
+            } else if (!prevCard)
+            {
+                // Moved to start
+                newPosition = nextCard!.position / 2;
+            } else if (!nextCard)
+            {
+                // Moved to end
+                newPosition = prevCard.position + 1024.0;
+            } else
+            {
+                // Between two cards
+                newPosition = (prevCard.position + nextCard.position) / 2;
+            }
+
+            // Update moved card's position
+            movedCard.position = newPosition;
+
+            // Sort the array to reflect the new order (though midpoint should fit naturally)
+            return newCards.sort((a, b) => a.position - b.position);
+        });
 
         try
         {
-            const toUpdate = changed.filter(c => c.position !== beforePos.get(c.id));
-            if (toUpdate.length > 0)
-            {
-                // updating in bulk/batch
-                await api.patch(`/api/boards/${list.boardId}/lists/${list.id}/cards/order`, {
-                    Cards: toUpdate.map(c => ({ CardId: c.id, Position: c.position }))
-                });
-            }
-            refetch();
+            const movedCard = localCards.find((c) => c.id === active.id);
+            if (!movedCard)
+                return;
+
+            const patchOps = [
+                { op: 'replace', path: '/position', value: movedCard.position }
+            ];
+
+            if (patchOps.length === 0)
+                return;
+
+            await api.patch(
+                `/api/boards/${boardId}/lists/${list.id}/cards/${movedCard.id}`,
+                patchOps,
+                { headers: { 'Content-Type': 'application/json-patch+json' } }
+            );
+
+            await refetch();
         }
-        catch
+        catch (error)
         {
-            setLocalCards(prev);
+            await refetch();
         }
-    };
+    }
 
     return (
         <div ref={setNodeRef} style={style} {...attributes} className="bg-gray-100 rounded-lg p-4 flex flex-col w-[300px] min-w-[300px] max-w-[300px] min-h-[220px]">

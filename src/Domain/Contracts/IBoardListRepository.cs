@@ -10,4 +10,5 @@ public interface IBoardListRepository
     
     Task<BoardList?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<List<BoardList>?> GetByBoardIdAsync(Guid boardId, CancellationToken ct = default);
+    Task<BoardList?> GetByBoardIdAndPositionAsync(Guid boardId, int position, CancellationToken ct = default);
 }

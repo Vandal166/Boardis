@@ -39,6 +39,7 @@ public sealed class BoardsController : ControllerBase
     }
     
     [HttpGet("{boardId:guid}")]
+    [HasPermission(Permissions.Read)]
     public async Task<IActionResult> GetBoardById(Guid boardId, CancellationToken ct = default)
     {
         var query = new GetBoardByIdQuery
@@ -87,6 +88,7 @@ public sealed class BoardsController : ControllerBase
     }
 
     [HttpDelete("{boardId:guid}")]
+    [HasPermission(Permissions.Delete)]
     public async Task<IActionResult> DeleteBoard(Guid boardId, CancellationToken ct = default)
     {
         var command = new DeleteBoardCommand
@@ -104,6 +106,7 @@ public sealed class BoardsController : ControllerBase
     
     
     [HttpPatch("{boardId:guid}")]
+    [HasPermission(Permissions.Update)]
     [Consumes("application/json-patch+json")]
     public async Task<IActionResult> PatchBoard(Guid boardId, [FromBody] JsonPatchDocument<PatchBoardRequest> patchDoc, CancellationToken ct = default)
     {

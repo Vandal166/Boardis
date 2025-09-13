@@ -16,7 +16,7 @@
       - ASPNETCORE_URLS=http://+:5185 # Listen on port 5185
       - ASPNETCORE_ENVIRONMENT=Development # running in Development mode
       - ConnectionStrings__Boardis_DB=Host=web.database;Port=5432;Database=Boardis_DB;Username=postgres;Password=postgres
-      - Redis__ConnectionString=redis:6379
+      - ConnectionStrings__Redis=redis:6379
     networks:
       - boardis-network
             

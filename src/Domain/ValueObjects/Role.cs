@@ -1,37 +1,34 @@
-﻿using Domain.Constants;
+﻿using System.Text.Json.Serialization;
+using Domain.Constants;
+using Domain.Entities;
 using FluentResults;
 
 namespace Domain.ValueObjects;
 
-public sealed class Role
+/*public sealed class Role
 {
-    public static readonly Role Owner = new Role("Owner", "Owner");
-    public static readonly Role Member = new Role("Member", "Member");
+    /*public static readonly Role Owner = new Role("Owner", new List<Permissions>
+        { Constants.Permissions.Create, Constants.Permissions.Delete, Constants.Permissions.Read, Constants.Permissions.Update});
     
-    public string Key { get; } // Maps to Keycloak role name
-    public string DisplayName { get; }
+    public static readonly Role Member = new Role("Member", new List<Permissions> 
+        { Constants.Permissions.Read});#1#
+    
+    public string Key { get; private set; }
+    
+    public IReadOnlyCollection<BoardMemberPermissions> Permissions => _permissions.AsReadOnly();
+    private readonly List<BoardMemberPermissions> _permissions = new();
+    private Role() { }
+    
 
-    private Role() { } // For EF Core
-
-    private Role(string key, string displayName)
+    public static Result<Role> Create(string key)
     {
-        Key = key;
-        DisplayName = displayName;
-    }
-
-    public static Result<Role> Create(string key, string displayName)
-    {
-        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(displayName))
+        if (string.IsNullOrWhiteSpace(key))
             return Result.Fail<Role>("Role name cannot be empty");
 
-        return Result.Ok(new Role
-        (
-            char.ToUpper(key.Trim()[0]) + key.Trim().Substring(1).ToLower(),
-            char.ToUpper(displayName[0]) + displayName.Substring(1).ToLower()
-        ));
-    }
 
-    // For equality comparison (EF Core)
-    public override bool Equals(object? obj) => obj is Role role && Key.Equals(role.Key, StringComparison.OrdinalIgnoreCase);
-    public override int GetHashCode() => StringComparer.OrdinalIgnoreCase.GetHashCode(Key);
-}
+        return Result.Ok(new Role
+        {
+            Key = char.ToUpper(key.Trim()[0]) + key.Trim().Substring(1).ToLower()
+        });
+    }
+}*/

@@ -36,7 +36,9 @@ export const KeycloakProvider = ({ children }: KeycloakProviderProps) =>
     <ReactKeycloakProvider
       authClient={keycloak}
       initOptions={{
-        checkLoginIframe: false
+        checkLoginIframe: false,
+        onLoad: 'check-sso', // check-sso to not force login on page load
+        pkceMethod: 'S256', // PKCE(Proof Key for Code Exchange) for better security
       }}
       onEvent={handleOnEvent}
     >

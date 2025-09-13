@@ -3,45 +3,53 @@ import Spinner from './Spinner';
 import AddBoardMemberButton from './AddBoardMemberButton';
 import RemoveBoardMemberButton from './RemoveBoardMemberButton';
 import { useConfirmationDialogOpen } from './ConfirmationDialog';
+import api from '../api';
+import { toast } from 'react-hot-toast';
 
 interface Member
 {
     userId: string;
     username: string;
     email: string;
-    role: string;
-}
-
-interface Role
-{
-    key: string;
-    displayName: string;
+    permissions?: string[];
 }
 
 interface ManageBoardMembersModalProps
 {
     onClose: () => void;
+    boardId: string;
     members: Member[];
-    onAdd: (emailOrUsername: string, role: string) => void;
+    onAdd: (emailOrUsername: string) => void;
     onRemove: (memberId: string) => void;
-    roles: Role[];
     isLoading?: boolean;
 }
 
-
 const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
     onClose,
+    boardId,
     members,
     onAdd,
     onRemove,
-    roles,
     isLoading = false,
 }) =>
 {
     const [show, setShow] = useState(false);
     const [error] = useState('');
     const panelRef = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
     const confirmationDialogOpen = useConfirmationDialogOpen();
+
+    // permissions popover state
+    const [permState, setPermState] = useState<{
+        memberId: string;
+        loading: boolean;
+        permissions: string[];
+        all: string[];
+        adding?: string;
+        removing?: string;
+        error?: string;
+        pos?: { top: number; left: number }; // position inside modal
+    } | null>(null);
 
     useEffect(() => setShow(true), []);
 
@@ -59,6 +67,136 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, [onClose, confirmationDialogOpen]);
+
+    const fetchPermissions = async (memberId: string) =>
+    {
+        setPermState(s => s
+            ? { ...s, memberId, loading: true, permissions: [], all: [], error: undefined }
+            : { memberId, loading: true, permissions: [], all: [], pos: { top: 0, left: 0 } }
+        );
+        try
+        {
+            const [userRes, allRes] = await Promise.all([
+                api.get(`/api/boards/${boardId}/members/${memberId}/permissions`),
+                api.get('/api/permissions')
+            ]);
+            const userPerms = Array.isArray(userRes.data)
+                ? userRes.data
+                : (userRes.data.permissions ?? userRes.data.Permissions ?? []);
+            let allPerms = Array.isArray(allRes.data)
+                ? allRes.data
+                : (allRes.data.permissions ?? allRes.data.Permissions ?? []);
+            allPerms = allPerms.filter((perm: string) => perm !== 'None');
+            setPermState(s => s ? { ...s, loading: false, permissions: userPerms, all: allPerms } : s);
+        }
+        catch
+        {
+            setPermState(s => s ? { ...s, loading: false, permissions: [], all: [], error: 'Failed to load permissions.' } : s);
+        }
+    };
+
+    const addPermission = async (memberId: string, permission: string) =>
+    {
+        if (!permState || permState.adding || permState.removing) return;
+        setPermState(s => s && { ...s, adding: permission });
+        try
+        {
+            await api.put(`/api/boards/${boardId}/members/${memberId}/permissions`, { permission });
+            setPermState(s =>
+                s
+                    ? {
+                        ...s,
+                        adding: undefined,
+                        permissions: s.permissions.includes(permission)
+                            ? s.permissions
+                            : [...s.permissions, permission]
+                    }
+                    : s
+            );
+        }
+        catch (err: any)
+        {
+            if (err?.response?.status !== 403)
+            {
+                const msg =
+                    (err.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message)) ||
+                    'You do not have permission to perform this action.';
+
+                toast.error(msg);
+            }
+            setPermState(s => s && { ...s, adding: undefined });
+        }
+    }
+
+    const removePermission = async (memberId: string, permission: string) =>
+    {
+        if (!permState || permState.adding || permState.removing) return;
+        setPermState(s => s && { ...s, removing: permission });
+        try
+        {
+            await api.delete(`/api/boards/${boardId}/members/${memberId}/permissions`, { data: { permission } });
+            setPermState(s =>
+                s
+                    ? {
+                        ...s,
+                        removing: undefined,
+                        permissions: s.permissions.filter(p => p !== permission)
+                    }
+                    : s
+            );
+        }
+        catch (err: any)
+        {
+            if (err?.response?.status !== 403)
+            {
+                const msg =
+                    (err.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message)) ||
+                    'You do not have permission to perform this action.';
+
+                toast.error(msg);
+            }
+            setPermState(s => s && { ...s, removing: undefined });
+        }
+    };
+
+    const togglePermissions = (memberId: string, anchorEl?: HTMLElement) =>
+    {
+        if (permState?.memberId === memberId)
+        {
+            setPermState(null);
+            return;
+        }
+        if (!anchorEl || !panelRef.current)
+        {
+            setPermState(null);
+            return;
+        }
+        const aRect = anchorEl.getBoundingClientRect();
+        const rootRect = panelRef.current.getBoundingClientRect();
+        const width = 288; // w-72
+        let left = aRect.left - rootRect.left;
+        if (left + width > rootRect.width) left = Math.max(8, rootRect.width - width - 8);
+        const top = aRect.bottom - rootRect.top + 4;
+        setPermState({
+            memberId,
+            loading: true,
+            permissions: [],
+            all: [],
+            pos: { top, left }
+        });
+        void fetchPermissions(memberId);
+    };
+
+    const handleAddWrapper = (emailOrUsername: string) =>
+    {
+        onAdd(emailOrUsername);
+    };
+
+    // Close permission panel if list scrolls (simpler than re-positioning)
+    const handleMembersScroll = () =>
+    {
+        if (permState) setPermState(null);
+    };
 
     return (
         <div className="fixed inset-0 z-50">
@@ -86,8 +224,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                     </button>
                 </div>
                 <AddBoardMemberButton
-                    onAdd={onAdd}
-                    roles={roles}
+                    onAdd={handleAddWrapper}
                     isLoading={isLoading}
                 />
                 {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
@@ -98,10 +235,16 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                             <Spinner />
                         </div>
                     ) : (
-                        <ul className="space-y-2 max-h-90 overflow-y-auto">
+                        <ul
+                            ref={listRef}
+                            onScroll={handleMembersScroll}
+                            className="space-y-2 max-h-90 overflow-y-auto"
+                        >
                             {members.map(member => (
-                                console.log(member),
-                                <li key={member.userId} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
+                                <li
+                                    key={member.userId}
+                                    className="relative flex items-center gap-3 p-2 rounded hover:bg-gray-50"
+                                >
                                     {/* Avatar icon (simple circle with initials) */}
                                     <div className="w-9 h-9 rounded-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-lg">
                                         {member.username.slice(0, 2).toUpperCase()}
@@ -109,7 +252,13 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
                                             <span className="font-medium">{member.username}</span>
-                                            <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">{member.role}</span>
+                                            <button
+                                                onClick={(e) => togglePermissions(member.userId, e.currentTarget)}
+                                                className="text-xs bg-gray-200 px-2 py-0.5 rounded hover:bg-gray-300 transition"
+                                                aria-label="View permissions"
+                                            >
+                                                Permissions
+                                            </button>
                                         </div>
                                         <div className="text-xs text-gray-500">{member.email}</div>
                                     </div>
@@ -127,6 +276,69 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                         </ul>
                     )}
                 </div>
+
+                {permState && permState.pos && (
+                    <div
+                        className="absolute z-50 w-72 bg-white border border-gray-200 rounded shadow-lg p-3"
+                        style={{ top: permState.pos.top, left: permState.pos.left }}
+                    >
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                                Permissions
+                            </span>
+                            <button
+                                className="text-xs text-gray-400 hover:text-gray-600"
+                                onClick={() => setPermState(null)}
+                                aria-label="Close permissions panel"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        {permState.loading && (
+                            <div className="flex justify-center py-2">
+                                <Spinner />
+                            </div>
+                        )}
+                        {!permState.loading && permState.error && (
+                            <div className="text-xs text-red-600">{permState.error}</div>
+                        )}
+                        {!permState.loading && !permState.error && (
+                            <div className="flex flex-wrap gap-1">
+                                {permState.all.length === 0 && (
+                                    <span className="text-xs text-gray-400">No permissions defined.</span>
+                                )}
+                                {permState.all
+                                    .slice()
+                                    .sort((a, b) => a.localeCompare(b))
+                                    .map(p =>
+                                    {
+                                        const granted = permState.permissions.includes(p);
+                                        const busy = permState.adding === p || permState.removing === p;
+                                        return (
+                                            <button
+                                                key={p}
+                                                disabled={busy}
+                                                onClick={() =>
+                                                    granted
+                                                        ? removePermission(permState.memberId, p)
+                                                        : addPermission(permState.memberId, p)
+                                                }
+                                                className={
+                                                    'text-[10px] px-2 py-0.5 rounded border transition ' +
+                                                    (granted
+                                                        ? 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-red-100 hover:text-red-600 hover:border-red-300'
+                                                        : 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200 hover:text-gray-600')
+                                                }
+                                                title={granted ? 'Click to revoke' : 'Click to grant'}
+                                            >
+                                                {busy ? '...' : p}
+                                            </button>
+                                        );
+                                    })}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

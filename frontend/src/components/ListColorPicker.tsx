@@ -36,8 +36,6 @@ export default function ListColorPicker({
     boardId,
     listId,
     currentColor,
-    title,
-    position,
     onColorChanged,
     onClose
 }: {
@@ -68,11 +66,14 @@ export default function ListColorPicker({
         const argb = hexToArgbInt(color);
         try
         {
-            await api.put(`/api/boards/${boardId}/lists/${listId}`, {
-                title,
-                position,
-                colorArgb: argb
-            });
+            const patchOps = [
+                { op: 'replace', path: '/colorArgb', value: argb }
+            ];
+            await api.patch(
+                `/api/boards/${boardId}/lists/${listId}`,
+                patchOps,
+                { headers: { 'Content-Type': 'application/json-patch+json' } }
+            );
 
             onColorChanged(argb);
             onClose();

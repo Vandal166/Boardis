@@ -8,5 +8,5 @@ public sealed record ListCardResponse
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public DateTime? CompletedAt { get; set; }
-    public int Position { get; set; }
+    public double Position { get; set; }
 }

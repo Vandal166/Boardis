@@ -19,15 +19,22 @@ internal sealed class BoardMemberRepository : IBoardMemberRepository
         await _dbContext.BoardMembers.AddAsync(member, ct);
     }
 
-    public async Task DeleteAsync(BoardMember member, CancellationToken ct = default)
+    public Task DeleteAsync(BoardMember member, CancellationToken ct = default)
     {
         _dbContext.BoardMembers.Remove(member);
-        await Task.CompletedTask;
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(BoardMember member, CancellationToken ct = default)
+    {
+        _dbContext.BoardMembers.Update(member);
+        return Task.CompletedTask;
     }
 
     public async Task<BoardMember?> GetByIdAsync(Guid boardId, Guid userId, CancellationToken ct = default)
     {
         return await _dbContext.BoardMembers
+            .Include(m => m.Permissions) //TODO use Dapper
             .FirstOrDefaultAsync(m => m.BoardId == boardId && m.UserId == userId, ct);
     }
 

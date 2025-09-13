@@ -31,12 +31,6 @@ internal sealed class ListCardRepository : IListCardRepository
         return Task.CompletedTask;
     }
 
-    public Task UpdateRangeAsync(IEnumerable<ListCard> listCards, CancellationToken ct = default)
-    {
-        _dbContext.ListCards.UpdateRange(listCards);
-        return Task.CompletedTask;
-    }
-
     public async Task<ListCard?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _dbContext.ListCards
@@ -48,5 +42,15 @@ internal sealed class ListCardRepository : IListCardRepository
         return await _dbContext.ListCards
             .AsNoTracking()
             .Where(lc => lc.BoardListId == boardListId).ToListAsync(ct);
+    }
+
+    public async Task<List<double>> GetPositionsByListIdAsync(Guid listId, CancellationToken ct)
+    {
+        return await _dbContext.ListCards
+            .AsNoTracking()
+            .Where(c => c.BoardListId == listId)
+            .OrderBy(c => c.Position)
+            .Select(c => c.Position)
+            .ToListAsync(ct);
     }
 }

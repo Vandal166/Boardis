@@ -1,5 +1,5 @@
+using System.Text.Json.Serialization;
 using Domain.Constants;
-using Domain.ValueObjects;
 using FluentResults;
 
 namespace Domain.Entities;
@@ -8,39 +8,96 @@ public sealed class BoardMember
 {
     public Guid BoardId { get; private set; }
     public Guid UserId { get; private set; }
-    public Role Role { get; private set; } 
+    public Guid RoleId { get; private set; } // fk to Role(just for name)
     
     public DateTime JoinedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
    
+    public IReadOnlyCollection<MemberPermission> Permissions => _permissions.AsReadOnly();
+    private readonly List<MemberPermission> _permissions = new();
+    
     private BoardMember() { }
     
-    public static Result<BoardMember> Create(Guid BoardId, Guid UserId, Role userBoardRole)
+    public static Result<BoardMember> Create(Guid boardId, Guid userId, Guid roleId)
     {
         var errors = new List<Error>();
-        if (BoardId == Guid.Empty)
+        if (boardId == Guid.Empty)
             errors.Add(new Error("Board ID cannot be empty.").WithMetadata("PropertyName", nameof(BoardId)));
         
-        if (UserId == Guid.Empty)
+        if (userId == Guid.Empty)
             errors.Add(new Error("User ID cannot be empty.").WithMetadata("PropertyName", nameof(UserId)));
+        
+        if (roleId == Guid.Empty)
+            errors.Add(new Error("Assign an role to the member.").WithMetadata("PropertyName", nameof(RoleId)));
         
         if(errors.Count != 0)
             return Result.Fail<BoardMember>(errors);
         
         return Result.Ok(new BoardMember
         {
-            BoardId = BoardId,
-            UserId = UserId,
-            Role = userBoardRole,
+            BoardId = boardId,
+            UserId = userId,
+            RoleId = roleId,
             JoinedAt = DateTime.UtcNow
         });
     }
     
-    public Result UpdateRole(Role newRole, Guid requestingUserId)
+    public Result AddPermission(Permissions permissions)
     {
-        //TODO Validate if requestingUserId has permission (e.g., is Owner)
-        Role = newRole;
+        var addedAny = false;
+        var errors = new List<IError>();
+
+        foreach (var perm in Enum.GetValues<Permissions>())
+        {
+            if (perm == Constants.Permissions.None)
+                continue;
+            if (permissions.HasFlag(perm) && _permissions.All(p => p.Permission != perm))
+            {
+                var permResult = MemberPermission.Create(BoardId, UserId, perm);
+                if (permResult.IsFailed)
+                {
+                    errors.AddRange(permResult.Errors);
+                    continue;
+                }
+                _permissions.Add(permResult.Value);
+                addedAny = true;
+            }
+        }
+
+        if (errors.Count > 0)
+            return Result.Fail(errors);
+
+        if (addedAny)
+        {
+            UpdatedAt = DateTime.UtcNow;
+            return Result.Ok();
+        }
+
+        return Result.Fail("No new permissions were added.");
+    }
+    
+    public Result RemovePermission(Permissions permission)
+    {
+        //if the permission does not exist
+        if (_permissions.All(p => p.Permission != permission))
+            return Result.Fail(new Error("The member does not have the specified permission.").WithMetadata("Status", 404));
+        
+        //if it's the last permission
+        if (_permissions.Count == 1)
+            return Result.Fail(new Error("Cannot remove the last permission from a member.").WithMetadata("Status", 409));
+        
+        _permissions.RemoveAll(p => p.Permission == permission);
         UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
+    }
+    
+    [JsonConstructor]
+    private BoardMember(Guid boardId, Guid userId, Guid roleId, DateTime joinedAt, DateTime? updatedAt)
+    {
+        BoardId = boardId;
+        UserId = userId;
+        RoleId = roleId;
+        JoinedAt = joinedAt;
+        UpdatedAt = updatedAt;
     }
 }

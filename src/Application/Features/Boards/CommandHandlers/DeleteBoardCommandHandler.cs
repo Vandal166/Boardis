@@ -1,9 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
 using Application.Features.Boards.Commands;
-using Domain.Constants;
 using Domain.Contracts;
-using Domain.ValueObjects;
 using FluentResults;
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -27,14 +25,6 @@ internal sealed class DeleteBoardCommandHandler : ICommandHandler<DeleteBoardCom
         var board = await _boardRepository.GetByIdAsync(command.BoardId, ct);
         if (board is null)
             return Result.Fail("Board not found");
-        
-        //permission check
-        var boardMember = board.HasMember(command.RequestingUserId);
-        if (boardMember is null)
-            return Result.Fail("You are not a member of this board");
-        
-        if(!board.MemberHasRole(boardMember.UserId, Role.Owner))
-            return Result.Fail("You don't have permission to delete this board");
         
         await _boardRepository.DeleteAsync(board, ct);
         await _unitOfWork.SaveChangesAsync(ct);

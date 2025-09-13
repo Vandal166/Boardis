@@ -19,9 +19,9 @@ public sealed class CreateListCardCommandValidator : AbstractValidator<CreateLis
         RuleFor(c => c.Title)
             .NotEmpty().WithMessage("Title is required.")
             .MaximumLength(100).WithMessage("Title cannot exceed 100 characters.");
-        
+
         RuleFor(c => c.Position)
-            .GreaterThanOrEqualTo(0).WithMessage("Position must be zero or a positive integer.");
+            .GreaterThan(0).WithMessage("Position must be a positive integer.");
         
         RuleFor(c => c.Description)
             .MaximumLength(200).WithMessage("Description cannot exceed 500 characters.")

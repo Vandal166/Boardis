@@ -3,8 +3,11 @@ using Application.Contracts.User;
 using Application.DTOs.BoardLists;
 using Application.Features.BoardLists.Commands;
 using Application.Features.BoardLists.Queries;
+using Domain.Common;
+using Domain.Constants;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Web.API.Common;
 
@@ -19,22 +22,23 @@ public sealed class BoardListController : ControllerBase
     private readonly ICommandHandler<DeleteBoardListCommand> _deleteBoardListHandler;
     private readonly IQueryHandler<GetBoardListByIdQuery, BoardListResponse> _getBoardListByIdHandler;
     private readonly IQueryHandler<GetBoardListsQuery, List<BoardListResponse>> _getBoardListsHandler;
-    private readonly ICommandHandler<UpdateBoardListCommand> _updateBoardListHandler;
+    private readonly ICommandHandler<PatchBoardListCommand> _patchListHandler;
     private readonly ICurrentUser _currentUser;
     
     public BoardListController(ICommandHandler<CreateBoardListCommand, BoardList> createBoardListHandler,
         ICommandHandler<DeleteBoardListCommand> deleteBoardListHandler, IQueryHandler<GetBoardListByIdQuery, BoardListResponse> getBoardListByIdHandler,
-        IQueryHandler<GetBoardListsQuery, List<BoardListResponse>> getBoardListsHandler, ICurrentUser currentUser, ICommandHandler<UpdateBoardListCommand> updateBoardListHandler)
+        IQueryHandler<GetBoardListsQuery, List<BoardListResponse>> getBoardListsHandler, ICurrentUser currentUser, ICommandHandler<PatchBoardListCommand> patchListHandler)
     {
         _createBoardListHandler = createBoardListHandler;
         _deleteBoardListHandler = deleteBoardListHandler;
         _getBoardListByIdHandler = getBoardListByIdHandler;
         _getBoardListsHandler = getBoardListsHandler;
         _currentUser = currentUser;
-        _updateBoardListHandler = updateBoardListHandler;
+        _patchListHandler = patchListHandler;
     }
 
     [HttpGet("{listId:guid}")]
+    [HasPermission(Permissions.Read)]
     public async Task<IActionResult> GetBoardListById(Guid boardId, Guid listId, CancellationToken ct = default)
     {
         var query = new GetBoardListByIdQuery
@@ -51,6 +55,7 @@ public sealed class BoardListController : ControllerBase
     }
     
     [HttpGet]
+    [HasPermission(Permissions.Read)]
     public async Task<IActionResult> GetBoardLists(Guid boardId, CancellationToken ct = default)
     {
         var query = new GetBoardListsQuery
@@ -66,6 +71,7 @@ public sealed class BoardListController : ControllerBase
     }
     
     [HttpPost]
+    [HasPermission(Permissions.Create)]
     public async Task<IActionResult> CreateBoardList(Guid boardId, [FromBody] CreateBoardListRequest request, CancellationToken ct = default)
     {
         var command = new CreateBoardListCommand
@@ -85,6 +91,7 @@ public sealed class BoardListController : ControllerBase
 
 
     [HttpDelete("{listId:guid}")]
+    [HasPermission(Permissions.Delete)]
     public async Task<IActionResult> DeleteBoardList(Guid boardId, Guid listId, CancellationToken ct = default)
     {
         var command = new DeleteBoardListCommand
@@ -99,24 +106,56 @@ public sealed class BoardListController : ControllerBase
         
         return NoContent();
     }
-
-
-    [HttpPut("{listId:guid}")]
-    public async Task<IActionResult> UpdateBoardList(Guid boardId, Guid listId, [FromBody] UpdateBoardListRequest request, CancellationToken ct = default)
+    
+    [HttpPatch("{listId:guid}")]
+    [HasPermission(Permissions.Update)]
+    [Consumes("application/json-patch+json")]
+    public async Task<IActionResult> PatchList(Guid boardId, Guid listId, [FromBody] JsonPatchDocument<PatchBoardListRequest> patchDoc, CancellationToken ct = default)
     {
-        var command = new UpdateBoardListCommand
+        if (patchDoc is null || patchDoc.Operations.Count == 0)
+            return BadRequest("Invalid patch document.");
+        
+        var query = new GetBoardListByIdQuery
         {
             BoardId = boardId,
             BoardListId = listId,
-            Title = request.Title,
-            Position = request.Position,
-            ColorArgb = request.ColorArgb,
             RequestingUserId = _currentUser.Id
         };
+        var currentList = await _getBoardListByIdHandler.Handle(query, ct);
+        if (currentList.IsFailed)
+            return currentList.ToProblemResponse(this, StatusCodes.Status404NotFound);
+
+        var listToPatch = new PatchBoardListRequest();
         
-        var result = await _updateBoardListHandler.Handle(command, ct);
-        if (result.IsFailed)
-            return result.ToProblemResponse(this);
+        // here the patch is applied, so listToPatch now has the values from the patchDoc
+        patchDoc.ApplyTo(listToPatch, error =>
+        {
+            ModelState.AddModelError(error.AffectedObject?.ToString() ?? string.Empty, error.ErrorMessage);
+        });
+        if(!ModelState.IsValid)
+            return ValidationProblem(ModelState);
+
+        var command = new PatchBoardListCommand
+        {
+            BoardId = boardId,
+            BoardListId = listId,
+            RequestingUserId = _currentUser.Id,
+            
+            Title = listToPatch.HasProperty(nameof(listToPatch.Title)) 
+                ? PatchValue<string?>.Set(listToPatch.Title) 
+                : PatchValue<string?>.Unset(),
+            Position = listToPatch.HasProperty(nameof(listToPatch.Position)) 
+                ? PatchValue<int?>.Set(listToPatch.Position) 
+                : PatchValue<int?>.Unset(),
+            ColorArgb = listToPatch.HasProperty(nameof(listToPatch.ColorArgb)) 
+                ? PatchValue<int?>.Set(listToPatch.ColorArgb) 
+                : PatchValue<int?>.Unset()
+        };
+        
+        var updateResult = await _patchListHandler.Handle(command, ct);
+        if (updateResult.IsFailed)
+            return updateResult.ToProblemResponse(this);
+        
         
         return NoContent();
     }

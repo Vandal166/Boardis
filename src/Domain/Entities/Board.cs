@@ -1,6 +1,5 @@
 ﻿using Domain.Common;
 using Domain.Constants;
-using Domain.ValueObjects;
 using FluentResults;
 
 namespace Domain.Entities;
@@ -27,7 +26,7 @@ public sealed class Board
     
     public static Result<Board> Create(string Title, string? Description, Guid? wallpaperImageId, VisibilityLevel visibility = VisibilityLevel.Private)
     {
-        var errors = new List<Error>();
+        var errors = new List<IError>();
         if (string.IsNullOrWhiteSpace(Title))
             errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
         
@@ -51,35 +50,35 @@ public sealed class Board
         });
     }
     
-    public Result Update(string Title, string? Description, Guid? wallpaperImageId, VisibilityLevel visibility)
+    public Result Update(string title, string? description, Guid? wallpaperImageId, VisibilityLevel visibility)
     {
-        var errors = new List<Error>();
-        if (string.IsNullOrWhiteSpace(Title))
-            errors.Add(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
-        
-        if (Title.Length > 100)
-            errors.Add(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
-        
-        if (Description is { Length: > 500 })
-            errors.Add(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
-        
+        var errors = new List<IError>();
+
+        var titleResult = UpdateTitle(title);
+        if (titleResult.IsFailed)
+            errors.AddRange(titleResult.Errors);
+
+        var descriptionResult = UpdateDescription(description);
+        if (descriptionResult.IsFailed)
+            errors.AddRange(descriptionResult.Errors);
+
+        var wallpaperResult = UpdateWallpaperImageId(wallpaperImageId);
+        if (wallpaperResult.IsFailed)
+            errors.AddRange(wallpaperResult.Errors);
+
+        var visibilityResult = UpdateVisibility(visibility);
+        if (visibilityResult.IsFailed)
+            errors.AddRange(visibilityResult.Errors);
+
         if (errors.Count != 0)
             return Result.Fail(errors);
-        
-        this.Title = Title;
-        this.Description = Description;
-        this.WallpaperImageId = wallpaperImageId;
-        this.Visibility = visibility;
-        this.UpdatedAt = DateTime.UtcNow;
-        
+
+        UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
     }
+
     
-    public Result Patch(
-        PatchValue<string?> title,
-        PatchValue<string?> description,
-        PatchValue<Guid?> wallpaperImageId,
-        PatchValue<VisibilityLevel?> visibility)
+    public Result Patch(PatchValue<string?> title, PatchValue<string?> description, PatchValue<Guid?> wallpaperImageId, PatchValue<VisibilityLevel?> visibility)
     {
         var errors = new List<IError>();
 
@@ -100,13 +99,15 @@ public sealed class Board
         if (description.IsSet)
         {
             var descriptionResult = UpdateDescription(description.Value);
-            if (descriptionResult.IsFailed) errors.AddRange(descriptionResult.Errors);
+            if (descriptionResult.IsFailed) 
+                errors.AddRange(descriptionResult.Errors);
         }
 
         if (wallpaperImageId.IsSet)
         {
             var wallpaperResult = UpdateWallpaperImageId(wallpaperImageId.Value);
-            if (wallpaperResult.IsFailed) errors.AddRange(wallpaperResult.Errors);
+            if (wallpaperResult.IsFailed) 
+                errors.AddRange(wallpaperResult.Errors);
         }
 
         if (visibility.IsSet)
@@ -130,70 +131,14 @@ public sealed class Board
         return Result.Ok();
     }
     
-    public Result<BoardMember> AddMember(Guid userIdToAdd, Role role, Guid requestingUserId)
-    {
-        //permission check
-        var requestingMember = HasMember(requestingUserId);
-        if (requestingMember is null)
-            return Result.Fail<BoardMember>(new Error("You are not a member of this board")
-                .WithMetadata("Status", 403));
-        
-        if(!MemberHasRole(requestingUserId, Role.Owner))
-            return Result.Fail<BoardMember>(new Error("You don't have permission to add members to this board")
-                .WithMetadata("Status", 403));
-        
-        if (HasMember(userIdToAdd) is not null)
-            return Result.Fail<BoardMember>(new Error("User is already a member of this board")
-                .WithMetadata("Status", 409));
-        
-        if(Equals(role, Role.Owner))
-            return Result.Fail<BoardMember>(new Error("An owner is already assigned when the board is created. Cannot add another owner.")
-                .WithMetadata("Status", 400));
-        
-        var memberResult = BoardMember.Create(Id, userIdToAdd, role);
-        if (memberResult.IsFailed)
-            return Result.Fail(memberResult.Errors);
-        
-        _members.Add(memberResult.Value);
-        UpdatedAt = DateTime.UtcNow;
-        
-        return Result.Ok(memberResult.Value);
-    }
-    
-    public Result RemoveMember(Guid userIdToRemove, Guid requestingUserId)
-    {
-        var requestingMember = HasMember(requestingUserId);
-        if (requestingMember is null)
-            return Result.Fail(new Error("You are not a member of this board")
-                .WithMetadata("Status", 403));
-        
-        if(!MemberHasRole(requestingUserId, Role.Owner))
-            return Result.Fail(new Error("You don't have permission to remove members from this board")
-                .WithMetadata("Status", 403));
-        
-        var memberToRemove = HasMember(userIdToRemove);
-        if (memberToRemove is null)
-            return Result.Fail(new Error("User is not a member of this board")
-                .WithMetadata("Status", 409));
-        
-        if (Equals(memberToRemove.Role, Role.Owner))
-            return Result.Fail(new Error("Cannot remove the owner of the board")
-                .WithMetadata("Status", 400));
-        
-        _members.Remove(memberToRemove);
-        UpdatedAt = DateTime.UtcNow;
-        
-        return Result.Ok();
-    }
-    
     private Result UpdateTitle(string title)
     {
         if (string.IsNullOrWhiteSpace(title))
             return Result.Fail(new Error("Title is required.").WithMetadata("PropertyName", nameof(Title)));
         if (title.Length > 100)
             return Result.Fail(new Error("Title cannot exceed 100 characters.").WithMetadata("PropertyName", nameof(Title)));
+        
         Title = title;
-        UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
     }
 
@@ -201,31 +146,25 @@ public sealed class Board
     {
         if (description is { Length: > 500 })
             return Result.Fail(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
+        
         Description = description;
-        UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
     }
 
     private Result UpdateWallpaperImageId(Guid? wallpaperImageId)
     {
         WallpaperImageId = wallpaperImageId;
-        UpdatedAt = DateTime.UtcNow;
+        
         return Result.Ok();
     }
 
     private Result UpdateVisibility(VisibilityLevel visibility)
     {
         Visibility = visibility;
-        UpdatedAt = DateTime.UtcNow;
+        
         return Result.Ok();
     }
     
     public bool HasVisibility(VisibilityLevel requiredVisibility) 
         => Visibility == requiredVisibility;
-    
-    public BoardMember? HasMember(Guid requestingUserId) 
-        => _members.FirstOrDefault(m => m.UserId == requestingUserId);
-    
-    public bool MemberHasRole(Guid userId, Role role) 
-        => _members.Any(m => m.UserId == userId && Equals(m.Role, role));
 }

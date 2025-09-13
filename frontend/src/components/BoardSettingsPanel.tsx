@@ -8,9 +8,10 @@ interface BoardSettingsPanelProps
     boardId: string;
     title: string;
     description?: string;
+    onUpdated?: (updated: { id: string; title: string; description?: string }) => void; // <-- added
 }
 
-const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, position, boardId, title, description }) =>
+const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, position, boardId, title, description, onUpdated }) =>
 {
     const [show, setShow] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
@@ -65,10 +66,11 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         setError(null);
         try
         {
-            const patchOps: any[] = [];
-            if (editingField === 'title') patchOps.push({ op: 'replace', path: '/title', value: editTitle });
-            if (editingField === 'description') patchOps.push({ op: 'replace', path: '/description', value: editDescription });
-            if (patchOps.length === 0)
+            const patchOps = [
+                ...(editTitle !== title ? [{ op: 'replace', path: '/title', value: editTitle }] : []),
+                ...(editDescription !== (description || '') ? [{ op: 'replace', path: '/description', value: editDescription }] : []),
+            ]
+            if (patchOps.length === 0) // if patchOps is empty, nothing to save
             {
                 setEditingField(null);
                 setSaving(false);
@@ -76,10 +78,36 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
             }
             await api.patch(`/api/boards/${boardId}`, patchOps, { headers: { 'Content-Type': 'application/json-patch+json' } });
             setEditingField(null);
+            // Notify parent of update
+            if (onUpdated)
+            {
+                onUpdated({ id: boardId, title: editTitle, description: editDescription });
+            }
         }
         catch (err: any)
         {
-            setError('Failed to update.');
+            if (err?.response?.status !== 403)
+            {
+                const errorsObj = err.response?.data?.errors;
+                let msg: string | undefined;
+
+                if (errorsObj && typeof errorsObj === 'object')
+                {
+                    msg = Object.values(errorsObj)
+                        .flat()
+                        .join(' ');
+                }
+
+                if (!msg)
+                {
+                    msg =
+                        err.response?.data?.detail ||
+                        err.response?.data?.title ||
+                        'Failed to update';
+                }
+
+                setError(msg ?? null);
+            }
         }
         finally
         {
