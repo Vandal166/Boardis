@@ -1,6 +1,6 @@
-﻿using Application.Contracts.User;
+﻿using Application.Contracts.Board;
+using Application.Contracts.User;
 using Domain.Constants;
-using Domain.Contracts;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Web.API.Common;

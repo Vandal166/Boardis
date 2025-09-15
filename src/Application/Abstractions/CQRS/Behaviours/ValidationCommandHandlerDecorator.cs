@@ -1,7 +1,7 @@
 ﻿using FluentResults;
 using FluentValidation;
 
-namespace Application.Abstractions.CQRS;
+namespace Application.Abstractions.CQRS.Behaviours;
 
 /// <summary>
 /// A decorator for command handlers that handles registered validators for request validation.

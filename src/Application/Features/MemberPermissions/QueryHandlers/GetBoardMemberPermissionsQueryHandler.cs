@@ -1,7 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
+using Application.Contracts.Board;
 using Application.DTOs.MemberPermissions;
 using Application.Features.MemberPermissions.Queries;
-using Domain.Contracts;
 using FluentResults;
 using Microsoft.AspNetCore.Http;
 

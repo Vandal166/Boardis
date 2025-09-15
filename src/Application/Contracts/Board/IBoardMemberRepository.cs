@@ -1,6 +1,6 @@
 ﻿using Domain.Entities;
 
-namespace Domain.Contracts;
+namespace Application.Contracts.Board;
 
 public interface IBoardMemberRepository
 {

@@ -1,7 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
+using Application.Contracts.Board;
 using Application.Features.BoardMembers.Commands;
-using Domain.Contracts;
 using FluentResults;
 
 namespace Application.Features.BoardMembers.CommandHandlers;

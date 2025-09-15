@@ -1,8 +1,8 @@
 ﻿using Application.Abstractions.CQRS;
+using Application.Contracts.Board;
 using Application.Contracts.Keycloak;
 using Application.DTOs.BoardMembers;
 using Application.Features.BoardMembers.Queries;
-using Domain.Contracts;
 using FluentResults;
 
 namespace Application.Features.BoardMembers.QueryHandlers;
