@@ -57,7 +57,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Boards");
+                    b.ToTable("Boards", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.BoardList", b =>
@@ -95,7 +95,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasIndex("BoardId", "Position");
 
-                    b.ToTable("BoardLists");
+                    b.ToTable("BoardLists", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.BoardMember", b =>
@@ -124,7 +124,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("BoardMembers");
+                    b.ToTable("BoardMembers", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.ListCard", b =>
@@ -166,7 +166,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasIndex("BoardListId", "Position");
 
-                    b.ToTable("ListCards");
+                    b.ToTable("ListCards", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.MemberPermission", b =>
@@ -192,7 +192,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasIndex("BoardId", "BoardMemberId");
 
-                    b.ToTable("MemberPermissions");
+                    b.ToTable("MemberPermissions", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Role", b =>
@@ -208,7 +208,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
 
                     b.HasData(
                         new

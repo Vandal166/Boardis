@@ -1,7 +1,9 @@
 ﻿using Application.Abstractions.CQRS;
+using Application.Contracts.Board;
+using Application.Contracts.Persistence;
 using Application.DTOs.ListCards;
 using Application.Features.ListCards.Queries;
-using Domain.Contracts;
+using Dapper;
 using FluentResults;
 
 namespace Application.Features.ListCards.QueryHandlers;
@@ -10,13 +12,12 @@ internal sealed class GetListCardQueryHandler : IQueryHandler<GetListCardsQuery,
 {
     private readonly IBoardRepository _boardRepository;
     private readonly IBoardListRepository _boardListRepository;
-    private readonly IListCardRepository _listCardRepository;
-
-    public GetListCardQueryHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IListCardRepository listCardRepository)
+    private readonly IDbConnectionFactory _dbConnectionFactory;
+    public GetListCardQueryHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IDbConnectionFactory dbConnectionFactory)
     {
         _boardRepository = boardRepository;
         _boardListRepository = boardListRepository;
-        _listCardRepository = listCardRepository;
+        _dbConnectionFactory = dbConnectionFactory;
     }
     
     public async Task<Result<List<ListCardResponse>>> Handle(GetListCardsQuery query, CancellationToken ct = default)
@@ -28,22 +29,18 @@ internal sealed class GetListCardQueryHandler : IQueryHandler<GetListCardsQuery,
         var boardList = await _boardListRepository.GetByBoardIdAsync(query.BoardId, ct);
         if (boardList is null)
             return Result.Fail("Board list not found");
+
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
         
-        var listCard = await _listCardRepository.GetByBoardListIdAsync(query.BoardListId, ct);
-        if (listCard is null)
-            return Result.Ok(new List<ListCardResponse>());
+        const string sql = """
+                           SELECT "Id", @BoardId AS "BoardId", "BoardListId", "Title", "Description", "CompletedAt", "Position"
+                           FROM "ListCards"
+                           WHERE "BoardListId" = @BoardListId
+                           ORDER BY "Position" ASC
+                           """;
         
-        var listCardResponses = listCard.Select(card => new ListCardResponse
-        {
-            Id = card.Id,
-            BoardId = query.BoardId,
-            BoardListId = card.BoardListId,
-            Title = card.Title,
-            Description = card.Description,
-            CompletedAt = card.CompletedAt,
-            Position = card.Position,
-        }).ToList();
-        
-        return Result.Ok(listCardResponses);
+        var listCard = await connection.QueryAsync<ListCardResponse>(sql, new {BoardId = query.BoardId, BoardListId = query.BoardListId });
+
+        return Result.Ok(listCard.AsList());
     }
 }

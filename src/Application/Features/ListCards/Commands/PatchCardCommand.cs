@@ -3,7 +3,7 @@ using Domain.Common;
 
 namespace Application.Features.ListCards.Commands;
 
-public sealed record PatchCardCommand : ICommand
+public sealed record PatchCardCommand : ICommand, ICacheInvalidatingCommand
 {
     public Guid BoardId { get; init; }
     public Guid BoardListId { get; init; }
@@ -13,4 +13,6 @@ public sealed record PatchCardCommand : ICommand
     public PatchValue<string?> Description { get; init; }
     public PatchValue<double?> Position { get; init; }
     public PatchValue<DateTime?> CompletedAt { get; init; }
+    
+    public IEnumerable<string> CacheKeysToInvalidate => new[] { $"cards_{BoardListId}" };
 }

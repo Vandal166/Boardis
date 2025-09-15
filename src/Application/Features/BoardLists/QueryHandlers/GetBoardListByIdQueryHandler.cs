@@ -1,7 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
+using Application.Contracts.Board;
 using Application.DTOs.BoardLists;
 using Application.Features.BoardLists.Queries;
-using Domain.Contracts;
 using FluentResults;
 
 namespace Application.Features.BoardLists.QueryHandlers;

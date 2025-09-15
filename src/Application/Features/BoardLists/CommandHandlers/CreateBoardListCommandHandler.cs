@@ -1,7 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
+using Application.Contracts.Board;
 using Application.Features.BoardLists.Commands;
-using Domain.Contracts;
 using Domain.Entities;
 using FluentResults;
 using Microsoft.AspNetCore.Http;

@@ -123,17 +123,6 @@ public sealed class ListCardController : ControllerBase
         if (patchDoc is null || patchDoc.Operations.Count == 0)
             return BadRequest("Invalid patch document.");
         
-        var query = new GetListCardByIdQuery
-        {
-            BoardId = boardId,
-            BoardListId = listId,
-            CardId = cardId,
-            RequestingUserId = _currentUser.Id
-        };
-        var currentCard = await _getListCardByIdHandler.Handle(query, ct);
-        if (currentCard.IsFailed)
-            return currentCard.ToProblemResponse(this, StatusCodes.Status404NotFound);
-
         var cardToPatch = new PatchCardRequest();
         
         // here the patch is applied, so cardToPatch now has the values from the patchDoc

@@ -1,6 +1,7 @@
 ﻿using Application.Contracts;
+using Application.Contracts.Board;
 using Application.Contracts.Keycloak;
-using Domain.Contracts;
+using Application.Contracts.Persistence;
 using Infrastructure.Data;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Board;
@@ -19,12 +20,14 @@ public static class DependencyInjection
         {
             options.UseNpgsql(configuration.GetConnectionString("Boardis_DB"));
         });
-        
+       
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = configuration.GetConnectionString("Redis");
         });
-
+    
+        services.AddSingleton<IDbConnectionFactory>(_ => new DbConnectionFactory(configuration));
+        
         services.AddHttpContextAccessor();
         services.AddHttpClient();
         
@@ -47,7 +50,7 @@ public static class DependencyInjection
         services.Decorate<IBoardListRepository, CachedBoardListRepository>();
         
         services.AddScoped<IListCardRepository, ListCardRepository>();
-        services.Decorate<IListCardRepository, CachedListCardRepository>(); // this will now use the cached version
+        //services.Decorate<IListCardRepository, CachedListCardRepository>(); // this will now use the cached version
         
         return services;
     }

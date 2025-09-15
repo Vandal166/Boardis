@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using Domain.Contracts;
+using Application.Contracts.Board;
 using Domain.Entities;
 using Microsoft.Extensions.Caching.Distributed;
 

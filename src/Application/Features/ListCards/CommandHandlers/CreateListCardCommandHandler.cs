@@ -1,7 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
+using Application.Contracts.Board;
 using Application.Features.ListCards.Commands;
-using Domain.Contracts;
 using Domain.Entities;
 using FluentResults;
 
@@ -29,15 +29,10 @@ internal sealed class CreateListCardCommandHandler : ICommandHandler<CreateListC
         var board = await _boardRepository.GetByIdAsync(command.BoardId, ct);
         if (board is null)
             return Result.Fail<ListCard>("Board not found");
-
-
+        
         var boardList = await _boardListRepository.GetByIdAsync(command.BoardListId, ct);
         if (boardList is null || boardList.BoardId != command.BoardId)
             return Result.Fail<ListCard>("List not found in this board");
-        
-        var listCards = await _listCardRepository.GetByBoardListIdAsync(command.BoardListId, ct);
-        if (listCards is null)
-            return Result.Fail<ListCard>("Error retrieving cards for this list");
         
         var listCardResult = ListCard.Create(command.BoardListId, command.Title, command.Position, command.Description);
         if (listCardResult.IsFailed)

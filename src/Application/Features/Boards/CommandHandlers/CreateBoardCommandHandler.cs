@@ -1,8 +1,8 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts;
+using Application.Contracts.Board;
 using Application.Features.Boards.Commands;
 using Domain.Constants;
-using Domain.Contracts;
 using Domain.Entities;
 using FluentResults;
 using Microsoft.Extensions.Caching.Distributed;

@@ -1,4 +1,4 @@
-﻿using Domain.Contracts;
+﻿using Application.Contracts.Board;
 using Domain.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -42,15 +42,5 @@ internal sealed class ListCardRepository : IListCardRepository
         return await _dbContext.ListCards
             .AsNoTracking()
             .Where(lc => lc.BoardListId == boardListId).ToListAsync(ct);
-    }
-
-    public async Task<List<double>> GetPositionsByListIdAsync(Guid listId, CancellationToken ct)
-    {
-        return await _dbContext.ListCards
-            .AsNoTracking()
-            .Where(c => c.BoardListId == listId)
-            .OrderBy(c => c.Position)
-            .Select(c => c.Position)
-            .ToListAsync(ct);
     }
 }

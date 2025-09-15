@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using Application.Abstractions.CQRS;
+using Application.Contracts.Board;
 using Application.DTOs.Boards;
 using Application.Features.Boards.Queries;
-using Domain.Contracts;
 using FluentResults;
 using Microsoft.Extensions.Caching.Distributed;
 
