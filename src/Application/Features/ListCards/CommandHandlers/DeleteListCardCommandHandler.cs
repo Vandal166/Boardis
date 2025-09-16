@@ -9,33 +9,28 @@ namespace Application.Features.ListCards.CommandHandlers;
 internal sealed class DeleteListCardCommandHandler : ICommandHandler<DeleteListCardCommand>
 {  
     private readonly IBoardRepository _boardRepository;
-    private readonly IBoardListRepository _boardListRepository;
-    private readonly IListCardRepository _listCardRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public DeleteListCardCommandHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IListCardRepository listCardRepository, IUnitOfWork unitOfWork)
+    public DeleteListCardCommandHandler(IBoardRepository boardRepository, IUnitOfWork unitOfWork)
     {
         _boardRepository = boardRepository;
-        _boardListRepository = boardListRepository;
-        _listCardRepository = listCardRepository;
         _unitOfWork = unitOfWork;
     }
     
     public async Task<Result> Handle(DeleteListCardCommand command, CancellationToken ct = default)
     {
-        var board = await _boardRepository.GetByIdAsync(command.BoardId, ct);
+        var board = await _boardRepository.GetWithCards(command.BoardId, ct);
         if (board is null)
             return Result.Fail("Board not found");
         
-        var boardList = await _boardListRepository.GetByIdAsync(command.BoardListId, ct);
-        if (boardList is null || boardList.BoardId != command.BoardId) // if the list does not belong to the board
+        var boardList = board.GetListById(command.BoardListId);
+        if (boardList is null)
             return Result.Fail("List not found in this board");
         
-        var listCard = await _listCardRepository.GetByIdAsync(command.CardId, ct);
-        if (listCard is null || listCard.BoardListId != command.BoardListId) // if the card does not belong to the list
-            return Result.Fail("Card not found in this list");
+        var removeResult = boardList.RemoveCard(command.CardId);
+        if (removeResult.IsFailed)
+            return Result.Fail(removeResult.Errors);
         
-        await _listCardRepository.DeleteAsync(listCard, ct);
         await _unitOfWork.SaveChangesAsync(ct);
         
         return Result.Ok();

@@ -11,24 +11,22 @@ namespace Application.Features.ListCards.QueryHandlers;
 internal sealed class GetListCardQueryHandler : IQueryHandler<GetListCardsQuery, List<ListCardResponse>>
 {
     private readonly IBoardRepository _boardRepository;
-    private readonly IBoardListRepository _boardListRepository;
     private readonly IDbConnectionFactory _dbConnectionFactory;
-    public GetListCardQueryHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IDbConnectionFactory dbConnectionFactory)
+    public GetListCardQueryHandler(IBoardRepository boardRepository, IDbConnectionFactory dbConnectionFactory)
     {
         _boardRepository = boardRepository;
-        _boardListRepository = boardListRepository;
         _dbConnectionFactory = dbConnectionFactory;
     }
     
     public async Task<Result<List<ListCardResponse>>> Handle(GetListCardsQuery query, CancellationToken ct = default)
     {
-        var board = await _boardRepository.GetByIdAsync(query.BoardId, ct);
+        var board = await _boardRepository.GetWithLists(query.BoardId, ct);
         if (board is null)
             return Result.Fail<List<ListCardResponse>>("Board not found");
         
-        var boardList = await _boardListRepository.GetByBoardIdAsync(query.BoardId, ct);
+        var boardList = board.GetListById(query.BoardListId);
         if (boardList is null)
-            return Result.Fail("Board list not found");
+            return Result.Fail<List<ListCardResponse>>("Board list not found in this board");
 
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
         

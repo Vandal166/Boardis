@@ -2,6 +2,7 @@
 using Application.Abstractions.CQRS.Behaviours;
 using Application.Contracts.User;
 using Application.Services;
+using Domain.Entities;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,6 +30,12 @@ public static class DependencyInjection
             .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<,>)), publicOnly: false)
             .AsImplementedInterfaces()
             .WithScopedLifetime());
+
+        services.Scan(scan => scan
+            .FromAssembliesOf(typeof(DependencyInjection))
+            .AddClasses(classes => classes.AssignableTo(typeof(IEventHandler<>)), publicOnly: false)
+            .AsImplementedInterfaces()
+            .WithScopedLifetime());
         
         services.Decorate(typeof(ICommandHandler<,>), typeof(ValidationCommandHandlerDecorator<,>));
         services.Decorate(typeof(ICommandHandler<>), typeof(ValidationCommandHandlerDecorator<>));
@@ -36,6 +43,9 @@ public static class DependencyInjection
         services.Decorate(typeof(IQueryHandler<,>), typeof(CachingDecorator<,>)); // Caching decorator for query handlers that have an Query implementing ICacheableQuery
         services.Decorate(typeof(ICommandHandler<,>), typeof(CacheInvalidatingDecorator<,>));
         services.Decorate(typeof(ICommandHandler<>), typeof(CacheInvalidatingDecorator<>));
+        
+        services.AddScoped<DomainEventDispatcher>();
+        
         return services;
     }
 }

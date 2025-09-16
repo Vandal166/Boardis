@@ -24,25 +24,33 @@ internal sealed class BoardRepository : IBoardRepository
         _dbContext.Boards.Remove(board);
         return Task.CompletedTask;
     }
-
-    public Task UpdateAsync(Board board, CancellationToken ct = default)
+    
+    public async Task<Board?> GetWithLists(Guid boardId, CancellationToken cancellationToken = default)
     {
-        _dbContext.Boards.Update(board);
-        return Task.CompletedTask;
+        return await _dbContext.Boards
+            .Include(b => b.BoardLists)
+            .FirstOrDefaultAsync(b => b.Id == boardId, cancellationToken);
     }
-
+    
+    public async Task<Board?> GetWithCards(Guid boardId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Boards
+            .Include(b => b.BoardLists)
+            .ThenInclude(l => l.Cards)
+            .FirstOrDefaultAsync(b => b.Id == boardId, cancellationToken);
+    }
+    
+    public async Task<Board?> GetWithMembers(Guid boardId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Boards
+            .Include(b => b.Members)
+            .ThenInclude(m => m.Permissions)
+            .FirstOrDefaultAsync(b => b.Id == boardId, cancellationToken);
+    }
+    
     public async Task<Board?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _dbContext.Boards
             .FirstOrDefaultAsync(b => b.Id == id, ct);
-    }
-
-    public async Task<List<Board>?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
-    {
-        return await _dbContext.Boards
-            .AsNoTracking()
-            .Include(b => b.Members)
-            .Where(b => b.Members.Any(m => m.UserId == userId))
-            .ToListAsync(ct);
     }
 }

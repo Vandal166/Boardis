@@ -9,30 +9,32 @@ namespace Application.Features.MemberPermissions.CommandHandlers;
 
 internal sealed class RemoveBoardMemberPermissionCommandHandler : ICommandHandler<RemoveBoardMemberPermissionCommand>
 {
-    private readonly IBoardMemberRepository _boardMemberRepository;
+    private readonly IBoardRepository _boardMemberRepository;
     private readonly IUnitOfWork _unitOfWork;
-    public RemoveBoardMemberPermissionCommandHandler(IBoardMemberRepository boardMemberRepository, IUnitOfWork unitOfWork)
+    public RemoveBoardMemberPermissionCommandHandler(IUnitOfWork unitOfWork, IBoardRepository boardMemberRepository)
     {
-        _boardMemberRepository = boardMemberRepository;
         _unitOfWork = unitOfWork;
+        _boardMemberRepository = boardMemberRepository;
     }
     
     public async Task<Result> Handle(RemoveBoardMemberPermissionCommand command, CancellationToken ct = default)
     {
-        var member = await _boardMemberRepository.GetByIdAsync(command.BoardId, command.MemberId, ct);
+        var board = await _boardMemberRepository.GetWithMembers(command.BoardId, ct);
+        if (board is null)
+            return Result.Fail(new Error("Board not found."));
+        
+        var member = board.GetMemberByUserId(command.MemberId);
         if (member is null)
             return Result.Fail(new Error("The specified member does not belong to the board."));
         
         if(command.RequestingUserId == command.MemberId)
             return Result.Fail(new Error("You cannot remove permissions from yourself.")
                 .WithMetadata("Status", StatusCodes.Status400BadRequest));
- 
+        
         var permissionResult = member.RemovePermission(command.Permission);
         if (permissionResult.IsFailed)
             return Result.Fail(permissionResult.Errors);
         
-        
-        await _boardMemberRepository.UpdateAsync(member, ct);
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Ok();
     }

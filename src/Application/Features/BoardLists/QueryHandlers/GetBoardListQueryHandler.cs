@@ -9,29 +9,23 @@ namespace Application.Features.BoardLists.QueryHandlers;
 internal sealed class GetBoardListQueryHandler : IQueryHandler<GetBoardListsQuery, List<BoardListResponse>>
 {
     private readonly IBoardRepository _boardRepository;
-    private readonly IBoardListRepository _boardListRepository;
 
-    public GetBoardListQueryHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository)
+    public GetBoardListQueryHandler(IBoardRepository boardRepository)
     {
         _boardRepository = boardRepository;
-        _boardListRepository = boardListRepository;
     }
     
     public async Task<Result<List<BoardListResponse>>> Handle(GetBoardListsQuery query, CancellationToken ct = default)
     {
-        var board = await _boardRepository.GetByIdAsync(query.BoardId, ct);
+        var board = await _boardRepository.GetWithLists(query.BoardId, ct);
         if (board is null)
             return Result.Fail<List<BoardListResponse>>("Board not found");
-        
-        var boardList = await _boardListRepository.GetByBoardIdAsync(query.BoardId, ct);
-        if (boardList is null)
-            return Result.Ok(new List<BoardListResponse>());
-        
-        var boardListResponses = boardList.Select(bl => new BoardListResponse
+      
+        var boardListResponses = board.BoardLists.Select(bl => new BoardListResponse
         {
             Id = bl.Id,
             BoardId = bl.BoardId,
-            Title = bl.Title,
+            Title = bl.Title.Value,
             Position = bl.Position,
             ColorArgb = bl.ListColor.ToArgb()
         }).ToList();

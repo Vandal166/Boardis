@@ -6,6 +6,7 @@ using Application.Features.BoardLists.Queries;
 using Domain.Common;
 using Domain.Constants;
 using Domain.Entities;
+using Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;

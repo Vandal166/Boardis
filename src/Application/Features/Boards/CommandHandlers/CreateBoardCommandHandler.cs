@@ -2,51 +2,37 @@
 using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Features.Boards.Commands;
-using Domain.Constants;
 using Domain.Entities;
+using Domain.ValueObjects;
 using FluentResults;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace Application.Features.Boards.CommandHandlers;
 
 internal sealed class CreateBoardCommandHandler : ICommandHandler<CreateBoardCommand, Board>
 {
     private readonly IBoardRepository _boardRepo;
-    private readonly IBoardMemberRepository _boardMemberRepo;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IDistributedCache _cache;
-    public CreateBoardCommandHandler(IBoardRepository boardRepo, IBoardMemberRepository boardMemberRepo, IUnitOfWork unitOfWork, IDistributedCache cache)
+    public CreateBoardCommandHandler(IBoardRepository boardRepo, IUnitOfWork unitOfWork)
     {
         _boardRepo = boardRepo;
-        _boardMemberRepo = boardMemberRepo;
         _unitOfWork = unitOfWork;
-        _cache = cache;
     }
     
     
     public async Task<Result<Board>> Handle(CreateBoardCommand command, CancellationToken ct = default)
     {
-        var boardResult = Board.Create(command.Title, command.Description, command.WallpaperImageId);
+        var titleResult = Title.TryFrom(command.Title);
+        if (!titleResult.IsSuccess)
+            return Result.Fail<Board>(titleResult.Error.ErrorMessage);
+        
+        var boardResult = Board.Create(titleResult.ValueObject, command.Description, command.WallpaperImageId, command.OwnerId);
         if (boardResult.IsFailed)
             return Result.Fail<Board>(boardResult.Errors);
 
         var board = boardResult.Value;
-
-        var memberResult = BoardMember.Create(board.Id, command.OwnerId, Roles.OwnerId); // self-adding as owner
-        if (memberResult.IsFailed)
-            return Result.Fail<Board>(memberResult.Errors);
-
-        var member = memberResult.Value;
-        member.AddPermission(Permissions.Create | Permissions.Read | Permissions.Update | Permissions.Delete);
         
         await _boardRepo.AddAsync(board, ct);
-        await _boardMemberRepo.AddAsync(member, ct);
-        
         await _unitOfWork.SaveChangesAsync(ct);
-        
-        // Invalidate cache
-        string cacheKey = $"boards_{command.OwnerId}";
-        await _cache.RemoveAsync(cacheKey, ct);
         
         return Result.Ok(board);
     }
