@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.CQRS;
 using Domain.Common;
+using Domain.ValueObjects;
 
 namespace Application.Features.ListCards.Commands;
 

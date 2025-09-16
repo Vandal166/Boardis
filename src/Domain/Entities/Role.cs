@@ -3,7 +3,7 @@
 namespace Domain.Entities;
 
 // Just an entity for stroing Named Roles like "Owner", "Member", etc.
-public sealed class Role
+public sealed class Role //TODO make this an Value Object
 {
     public Guid Id { get; private set; }
     public string Key { get; private set; }

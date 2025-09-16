@@ -25,7 +25,6 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.Board", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -43,7 +42,6 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Visibility")
@@ -63,7 +61,6 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.BoardList", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("BoardId")
@@ -88,7 +85,6 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -115,7 +111,6 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("BoardId", "UserId");
@@ -130,7 +125,6 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.ListCard", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("BoardListId")
@@ -159,7 +153,6 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -169,36 +162,9 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("ListCards", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Entities.MemberPermission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BoardId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BoardMemberId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("GrantedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Permission")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BoardId", "BoardMemberId");
-
-                    b.ToTable("MemberPermissions", (string)null);
-                });
-
             modelBuilder.Entity("Domain.Entities.Role", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("Key")
@@ -245,6 +211,32 @@ namespace Infrastructure.Data.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.OwnsMany("Domain.Entities.MemberPermission", "Permissions", b1 =>
+                        {
+                            b1.Property<Guid>("BoardId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("UserId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Permission")
+                                .HasColumnType("text");
+
+                            b1.Property<DateTime>("GrantedAt")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("timestamp with time zone")
+                                .HasDefaultValueSql("now()");
+
+                            b1.HasKey("BoardId", "UserId", "Permission");
+
+                            b1.ToTable("MemberPermissions", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("BoardId", "UserId");
+                        });
+
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("Domain.Entities.ListCard", b =>
@@ -252,15 +244,6 @@ namespace Infrastructure.Data.Migrations
                     b.HasOne("Domain.Entities.BoardList", null)
                         .WithMany("Cards")
                         .HasForeignKey("BoardListId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Entities.MemberPermission", b =>
-                {
-                    b.HasOne("Domain.Entities.BoardMember", null)
-                        .WithMany("Permissions")
-                        .HasForeignKey("BoardId", "BoardMemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -275,11 +258,6 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.BoardList", b =>
                 {
                     b.Navigation("Cards");
-                });
-
-            modelBuilder.Entity("Domain.Entities.BoardMember", b =>
-                {
-                    b.Navigation("Permissions");
                 });
 #pragma warning restore 612, 618
         }

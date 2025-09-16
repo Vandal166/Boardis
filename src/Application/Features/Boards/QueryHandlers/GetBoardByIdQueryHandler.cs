@@ -1,34 +1,34 @@
 ﻿using Application.Abstractions.CQRS;
-using Application.Contracts.Board;
+using Application.Contracts.Persistence;
 using Application.DTOs.Boards;
 using Application.Features.Boards.Queries;
+using Dapper;
 using FluentResults;
 
 namespace Application.Features.Boards.QueryHandlers;
 
 internal sealed class GetBoardByIdQueryHandler : IQueryHandler<GetBoardByIdQuery, BoardResponse>
 {
-    private readonly IBoardRepository _boardRepository;
-
-    public GetBoardByIdQueryHandler(IBoardRepository boardRepository)
+    private readonly IDbConnectionFactory _dbConnectionFactory;
+    public GetBoardByIdQueryHandler(IDbConnectionFactory dbConnectionFactory)
     {
-        _boardRepository = boardRepository;
+        _dbConnectionFactory = dbConnectionFactory;
     }
 
     public async Task<Result<BoardResponse>> Handle(GetBoardByIdQuery query, CancellationToken ct = default)
     {
-        var board = await _boardRepository.GetByIdAsync(query.BoardId, ct);
-        if (board is null)
-            return Result.Fail("Board not found");
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
         
-        var boardResponse = new BoardResponse
-        {
-            Id = board.Id,
-            Title = board.Title,
-            Description = board.Description,
-            WallpaperImageId = board.WallpaperImageId,
-            Visibility = board.Visibility,
-        };
+        const string sql = """
+                           SELECT "Id", "Title", "Description", "WallpaperImageId", "Visibility"
+                           FROM "Boards"
+                           WHERE "Id" = @BoardId
+                           ORDER BY "CreatedAt" DESC
+                           """;
+        
+        var boardResponse = await connection.QuerySingleOrDefaultAsync<BoardResponse>(sql, new { BoardId = query.BoardId });
+        if (boardResponse is null)
+            return Result.Fail("Board not found");
         
         return Result.Ok(boardResponse);
     }

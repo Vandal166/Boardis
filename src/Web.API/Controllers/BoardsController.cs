@@ -112,16 +112,7 @@ public sealed class BoardsController : ControllerBase
     {
         if (patchDoc is null || patchDoc.Operations.Count == 0)
             return BadRequest("Invalid patch document.");
-        
-        var query = new GetBoardByIdQuery
-        {
-            BoardId = boardId,
-            RequestingUserId = _currentUser.Id
-        };
-        var currentBoard = await _getBoardByIdHandler.Handle(query, ct);
-        if (currentBoard.IsFailed)
-            return currentBoard.ToProblemResponse(this, StatusCodes.Status404NotFound);
-
+       
         var boardToPatch = new PatchBoardRequest();
         
         // here the patch is applied, so boardToPatch now has the values from the patchDoc

@@ -1,10 +1,9 @@
-using System.Text.Json.Serialization;
 using Domain.Constants;
 using FluentResults;
 
 namespace Domain.Entities;
 
-public sealed class BoardMember
+public sealed class BoardMember : Entity
 {
     public Guid BoardId { get; private set; }
     public Guid UserId { get; private set; }
@@ -18,7 +17,7 @@ public sealed class BoardMember
     
     private BoardMember() { }
     
-    public static Result<BoardMember> Create(Guid boardId, Guid userId, Guid roleId)
+    internal static Result<BoardMember> Create(Guid boardId, Guid userId, Guid roleId)
     {
         var errors = new List<Error>();
         if (boardId == Guid.Empty)
@@ -53,7 +52,7 @@ public sealed class BoardMember
                 continue;
             if (permissions.HasFlag(perm) && _permissions.All(p => p.Permission != perm))
             {
-                var permResult = MemberPermission.Create(BoardId, UserId, perm);
+                var permResult = MemberPermission.Create(perm);
                 if (permResult.IsFailed)
                 {
                     errors.AddRange(permResult.Errors);
@@ -89,15 +88,5 @@ public sealed class BoardMember
         _permissions.RemoveAll(p => p.Permission == permission);
         UpdatedAt = DateTime.UtcNow;
         return Result.Ok();
-    }
-    
-    [JsonConstructor]
-    private BoardMember(Guid boardId, Guid userId, Guid roleId, DateTime joinedAt, DateTime? updatedAt)
-    {
-        BoardId = boardId;
-        UserId = userId;
-        RoleId = roleId;
-        JoinedAt = joinedAt;
-        UpdatedAt = updatedAt;
     }
 }

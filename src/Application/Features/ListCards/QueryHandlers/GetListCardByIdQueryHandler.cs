@@ -11,23 +11,21 @@ namespace Application.Features.ListCards.QueryHandlers;
 internal sealed class GetListCardByIdQueryHandler : IQueryHandler<GetListCardByIdQuery, ListCardResponse>
 {
     private readonly IBoardRepository _boardRepository;
-    private readonly IBoardListRepository _boardListRepository;
     private readonly IDbConnectionFactory _dbConnectionFactory;
-    public GetListCardByIdQueryHandler(IBoardRepository boardRepository, IBoardListRepository boardListRepository, IDbConnectionFactory dbConnectionFactory)
+    public GetListCardByIdQueryHandler(IBoardRepository boardRepository,IDbConnectionFactory dbConnectionFactory)
     {
         _boardRepository = boardRepository;
-        _boardListRepository = boardListRepository;
         _dbConnectionFactory = dbConnectionFactory;
     }
     
     public async Task<Result<ListCardResponse>> Handle(GetListCardByIdQuery query, CancellationToken ct = default)
     {
-        var board = await _boardRepository.GetByIdAsync(query.BoardId, ct);
+        var board = await _boardRepository.GetWithLists(query.BoardId, ct);
         if (board is null)
             return Result.Fail<ListCardResponse>("Board not found");
-        
-        var boardList = await _boardListRepository.GetByIdAsync(query.BoardListId, ct);
-        if (boardList is null || boardList.BoardId != query.BoardId)
+     
+        var boardList = board.GetListById(query.BoardListId);
+        if (boardList is null)
             return Result.Fail("Board list not found in this board");
         
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
@@ -38,7 +36,7 @@ internal sealed class GetListCardByIdQueryHandler : IQueryHandler<GetListCardByI
                            WHERE "Id" = @CardId AND "BoardListId" = @BoardListId
                            """;
         
-        var listCard = await connection.QuerySingleOrDefaultAsync<ListCardResponse>(sql, new {BoardId = query.BoardId ,BoardListId = query.BoardListId, CardId = query.CardId });
+        var listCard = await connection.QuerySingleOrDefaultAsync<ListCardResponse>(sql, new {BoardId = query.BoardId, BoardListId = query.BoardListId, CardId = query.CardId });
         if (listCard is null)
             return Result.Fail("Card not found in this list");
         

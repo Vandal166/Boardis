@@ -8,7 +8,7 @@ public sealed record CreateListCardCommand : ICommand<ListCard>, ICacheInvalidat
     public required Guid BoardId { get; init; }
     public required Guid BoardListId { get; init; }
     public required string Title { get; init; }
-    public string Description { get; init; } = string.Empty;
+    public string? Description { get; init; }
     public required int Position { get; init; }
     public required Guid RequestingUserId { get; init; }
     

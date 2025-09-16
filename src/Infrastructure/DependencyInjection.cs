@@ -5,6 +5,7 @@ using Application.Contracts.Persistence;
 using Infrastructure.Data;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Board;
+using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Services.Keycloak;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,8 +27,10 @@ public static class DependencyInjection
             options.Configuration = configuration.GetConnectionString("Redis");
         });
     
-        services.AddSingleton<IDbConnectionFactory>(_ => new DbConnectionFactory(configuration));
+        services.AddScoped<DomainEventInterceptor>();
         
+        services.AddSingleton<IDbConnectionFactory>(_ => new DbConnectionFactory(configuration));
+
         services.AddHttpContextAccessor();
         services.AddHttpClient();
         
@@ -39,18 +42,6 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         
         services.AddScoped<IBoardRepository, BoardRepository>();
-        
-        services.AddScoped<IBoardMemberRepository, BoardMemberRepository>();
-        services.Decorate<IBoardMemberRepository, CachedBoardMemberRepository>();
-
-        services.AddScoped<IBoardMemberPermissionRepository, BoardMemberPermissionRepository>();
-        services.Decorate<IBoardMemberPermissionRepository, CachedBoardMemberPermissionRepository>();
-        
-        services.AddScoped<IBoardListRepository, BoardListRepository>();
-        services.Decorate<IBoardListRepository, CachedBoardListRepository>();
-        
-        services.AddScoped<IListCardRepository, ListCardRepository>();
-        //services.Decorate<IListCardRepository, CachedListCardRepository>(); // this will now use the cached version
         
         return services;
     }

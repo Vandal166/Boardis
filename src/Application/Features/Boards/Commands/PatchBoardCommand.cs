@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
 using Domain.Common;
 using Domain.Constants;
+using Domain.ValueObjects;
 
 namespace Application.Features.Boards.Commands;
 
