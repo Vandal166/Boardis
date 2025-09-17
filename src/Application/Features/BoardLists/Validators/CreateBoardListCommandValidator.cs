@@ -17,8 +17,7 @@ public sealed class CreateBoardListCommandValidator : AbstractValidator<CreateBo
             .MaximumLength(100).WithMessage("Title cannot exceed 100 characters.");
         
         RuleFor(c => c.Position)
-            .GreaterThan(0).WithMessage("Position must be a positive integer.")
-            .LessThanOrEqualTo(1000).WithMessage("Position must be less than or equal to 1000.");
+            .GreaterThan(0).WithMessage("Position must be a positive integer.");
         
         RuleFor(x => x.RequestingUserId)
             .NotEmpty().WithMessage("Requesting user is required.")

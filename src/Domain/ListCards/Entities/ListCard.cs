@@ -2,7 +2,7 @@
 using Domain.ValueObjects;
 using FluentResults;
 
-namespace Domain.Entities;
+namespace Domain.ListCards.Entities;
 
 public sealed class ListCard : Entity
 {
@@ -18,16 +18,20 @@ public sealed class ListCard : Entity
 
     private ListCard() { }
 
-    internal static Result<ListCard> Create(Guid ListId, Title Title, string? Description, double Position)
+    internal static Result<ListCard> Create(Guid ListId, string Title, string? Description, double Position)
     {
         if (ListId == Guid.Empty)
             return Result.Fail<ListCard>(new Error("List ID cannot be empty.").WithMetadata("PropertyName", nameof(ListId)));
+        
+        var titleResult = ValueObjects.Title.TryFrom(Title);
+        if (!titleResult.IsSuccess)
+            return Result.Fail<ListCard>(titleResult.Error.ErrorMessage);
         
         var card = new ListCard
         {
             Id = Guid.NewGuid(),
             BoardListId = ListId,
-            Title = Title,
+            Title = titleResult.ValueObject,
             Description = Description,
             Position = Position,
             CreatedAt = DateTime.UtcNow
@@ -36,7 +40,7 @@ public sealed class ListCard : Entity
         return Result.Ok(card);
     }
     
-    public Result Patch(PatchValue<string?> title, PatchValue<double?> position, PatchValue<string?> description, PatchValue<DateTime?> completedAt)
+    internal Result Patch(PatchValue<string?> title, PatchValue<double?> position, PatchValue<string?> description, PatchValue<DateTime?> completedAt)
     {
         var errors = new List<IError>();
 

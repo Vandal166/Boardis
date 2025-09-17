@@ -1,14 +1,14 @@
-﻿using Application.Abstractions.CQRS.Behaviours;
-using Domain.Entities;
+﻿using Application.Abstractions.CQRS;
+using Domain.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Infrastructure.Persistence.Interceptors;
 
-public class DomainEventInterceptor : SaveChangesInterceptor
+public sealed class DomainEventInterceptor : SaveChangesInterceptor
 {
-    private readonly DomainEventDispatcher _eventDispatcher;
+    private readonly IEventPublisher _eventDispatcher;
 
-    public DomainEventInterceptor(DomainEventDispatcher eventDispatcher)
+    public DomainEventInterceptor(IEventPublisher eventDispatcher)
     {
         _eventDispatcher = eventDispatcher;
     }
@@ -36,9 +36,10 @@ public class DomainEventInterceptor : SaveChangesInterceptor
         //publish
         foreach (var domainEvent in domainEvents)
         {
-            await _eventDispatcher.Handle(domainEvent, cancellationToken);
+            await _eventDispatcher.Publish(domainEvent, cancellationToken);
         }
         
+        // this Save could still fail, the changes would not be committed but the events would be published already(bad btw) - Outbox pattern could solve this
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 }

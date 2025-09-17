@@ -4,7 +4,7 @@ using Application.DTOs.MemberPermissions;
 using Application.Features.MemberPermissions.Commands;
 using Application.Features.MemberPermissions.Queries;
 using Domain.Constants;
-using Domain.Entities;
+using Domain.MemberPermissions.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Web.API.Common;

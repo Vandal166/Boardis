@@ -27,7 +27,7 @@ internal sealed class DeleteListCardCommandHandler : ICommandHandler<DeleteListC
         if (boardList is null)
             return Result.Fail("List not found in this board");
         
-        var removeResult = boardList.RemoveCard(command.CardId);
+        var removeResult = boardList.RemoveCard(command.CardId, command.RequestingUserId);
         if (removeResult.IsFailed)
             return Result.Fail(removeResult.Errors);
         

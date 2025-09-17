@@ -55,19 +55,17 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
 
     const handleCreateList = async (data: { title: string }) =>
     {
-        if (!keycloak.token || !boardId) return false;
+        if (!keycloak.token || !boardId)
+            return false;
 
         const maxPosition = lists.length > 0 ? Math.max(...lists.map(l => l.position)) : 0;
 
         try
         {
-            var response = await api.post(`/api/boards/${boardId}/lists`, { ...data, position: maxPosition + 1 });
+            await api.post(`/api/boards/${boardId}/lists`,
+                { ...data, position: maxPosition + 1024.0 });
 
-            // Refetch to get authoritative positions/colors
-            const listsResponse = await api.get(`/api/boards/${boardId}/lists/${response.data.id}`);
-            const newList: BoardList = listsResponse.data;
-            setLists(prev => [...prev, newList].sort((a, b) => a.position - b.position));
-            setError(null);
+            await loadLists();
             return true;
         }
         catch (error: any)

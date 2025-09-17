@@ -1,7 +1,6 @@
-﻿using Application.Abstractions.CQRS;
-using Domain.Entities;
+﻿using Domain.Common;
 
-namespace Application.Features.BoardLists.EventHandlers;
+namespace Application.Abstractions.CQRS;
 
 public abstract class EventHandlerBase<TEvent> : IEventHandler<TEvent> where TEvent : IDomainEvent
 {

@@ -5,7 +5,7 @@ using Application.Features.ListCards.Commands;
 using Application.Features.ListCards.Queries;
 using Domain.Common;
 using Domain.Constants;
-using Domain.Entities;
+using Domain.ListCards.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;

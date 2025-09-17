@@ -2,7 +2,7 @@
 using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Features.BoardLists.Commands;
-using Domain.Entities;
+using Domain.BoardLists.Entities;
 using Domain.ValueObjects;
 using FluentResults;
 
@@ -25,11 +25,7 @@ internal sealed class CreateBoardListCommandHandler : ICommandHandler<CreateBoar
         if (board is null)
             return Result.Fail<BoardList>("Board not found");
         
-        var titleResult = Title.TryFrom(command.Title);
-        if (!titleResult.IsSuccess)
-            return Result.Fail<BoardList>(titleResult.Error.ErrorMessage);
-        
-        var addListResult = board.AddList(titleResult.ValueObject, command.Position);
+        var addListResult = board.AddList(command.Title, command.Position);
         if (addListResult.IsFailed)
             return Result.Fail<BoardList>(addListResult.Errors);
         

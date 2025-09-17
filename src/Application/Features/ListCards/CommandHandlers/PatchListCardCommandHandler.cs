@@ -27,11 +27,7 @@ internal sealed class PatchListCardCommandHandler : ICommandHandler<PatchCardCom
         if(boardList is null)
             return Result.Fail("List not found in this board");
         
-        var listCard = boardList.GetCardById(command.CardId);
-        if(listCard is null)
-            return Result.Fail("Card not found in the specified list");
-        
-        var updateResult = listCard.Patch(command.Title, command.Position, command.Description, command.CompletedAt);
+        var updateResult = boardList.PatchCard(command.CardId, command.RequestingUserId, command.Title, command.Position, command.Description, command.CompletedAt);
         if (updateResult.IsFailed)
             return Result.Fail(updateResult.Errors);
         

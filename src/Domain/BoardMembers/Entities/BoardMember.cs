@@ -1,7 +1,10 @@
+using Domain.Common;
 using Domain.Constants;
+using Domain.MemberPermissions.Entities;
+using Domain.MemberPermissions.Events;
 using FluentResults;
 
-namespace Domain.Entities;
+namespace Domain.BoardMembers.Entities;
 
 public sealed class BoardMember : Entity
 {
@@ -41,7 +44,7 @@ public sealed class BoardMember : Entity
         });
     }
     
-    public Result AddPermission(Permissions permissions)
+    public Result AddPermission(Permissions permission, Guid addedById)
     {
         var addedAny = false;
         var errors = new List<IError>();
@@ -50,7 +53,7 @@ public sealed class BoardMember : Entity
         {
             if (perm == Constants.Permissions.None)
                 continue;
-            if (permissions.HasFlag(perm) && _permissions.All(p => p.Permission != perm))
+            if (permission.HasFlag(perm) && _permissions.All(p => p.Permission != perm))
             {
                 var permResult = MemberPermission.Create(perm);
                 if (permResult.IsFailed)
@@ -69,13 +72,14 @@ public sealed class BoardMember : Entity
         if (addedAny)
         {
             UpdatedAt = DateTime.UtcNow;
+            AddDomainEvent(new MemberPermissionAddedEvent(BoardId, UserId, permission.ToString(), addedById));
             return Result.Ok();
         }
 
         return Result.Fail("No new permissions were added.");
     }
     
-    public Result RemovePermission(Permissions permission)
+    public Result RemovePermission(Permissions permission, Guid removedById)
     {
         //if the permission does not exist
         if (_permissions.All(p => p.Permission != permission))
@@ -87,6 +91,7 @@ public sealed class BoardMember : Entity
         
         _permissions.RemoveAll(p => p.Permission == permission);
         UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new MemberPermissionRemovedEvent(BoardId, UserId, permission.ToString(), removedById));
         return Result.Ok();
     }
 }

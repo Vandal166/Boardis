@@ -1,4 +1,4 @@
-﻿namespace Domain.Entities;
+﻿namespace Domain.Common;
 
 public abstract class Entity
 {
@@ -19,13 +19,3 @@ public abstract class Entity
         this._domainEvents.Add(domainEvent);
     }
 }
-
-
-public interface IDomainEvent
-{
-    Guid Id { get; } // Unique identifier for the event instance, useful for tracking and logging
-
-    DateTime OccurredOn { get; }
-}
-
-public interface IAggregateRoot;    

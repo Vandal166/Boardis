@@ -1,16 +1,18 @@
 ﻿using System.Drawing;
 using Domain.Common;
+using Domain.ListCards.Entities;
+using Domain.ListCards.Events;
 using Domain.ValueObjects;
 using FluentResults;
 
-namespace Domain.Entities;
+namespace Domain.BoardLists.Entities;
 
 public sealed class BoardList : Entity
 {
     public Guid Id { get; private set; }
     public Guid BoardId { get; private set; }
     public Title Title { get; private set; }
-    public int Position { get; private set; } // position/order of the list on the board
+    public double Position { get; private set; } // position/order of the list on the board
     public int ListColorArgb { get; private set; } = Color.LightBlue.ToArgb();
     public Color ListColor
     {
@@ -26,21 +28,25 @@ public sealed class BoardList : Entity
     
     private BoardList() { }
     
-    internal static Result<BoardList> Create(Guid BoardId, Title Title, int Position)
+    internal static Result<BoardList> Create(Guid BoardId, string Title, double Position)
     {
         if (BoardId == Guid.Empty)
             return Result.Fail<BoardList>(new Error("BoardId is required.").WithMetadata("PropertyName", nameof(BoardId)));
+        
+        var titleResult = ValueObjects.Title.TryFrom(Title);
+        if (!titleResult.IsSuccess)
+            return Result.Fail<BoardList>(titleResult.Error.ErrorMessage);
         
         return Result.Ok(new BoardList
         {
             Id = Guid.NewGuid(),
             BoardId = BoardId,
-            Title = Title,
+            Title = titleResult.ValueObject,
             Position = Position,
             CreatedAt = DateTime.UtcNow
         });
     }
-    public Result Patch(PatchValue<string?> title, PatchValue<int?> position, PatchValue<int?> colorArgb)
+    internal Result Patch(PatchValue<string?> title, PatchValue<double?> position, PatchValue<int?> colorArgb)
     {
         var errors = new List<IError>();
         
@@ -94,7 +100,7 @@ public sealed class BoardList : Entity
         return Result.Ok();
     }
     
-    public Result<ListCard> AddCard(Title title, string? description, double position)
+    public Result<ListCard> AddCard(Guid requestingUserId, string title, string? description, double position)
     {
         var cardResult = ListCard.Create(Id, title, description, position);
         if (cardResult.IsFailed)
@@ -102,17 +108,36 @@ public sealed class BoardList : Entity
         
         _cards.Add(cardResult.Value);
         UpdatedAt = DateTime.UtcNow;
+
+        AddDomainEvent(new ListCardCreatedEvent(BoardId, Id, cardResult.Value.Id, requestingUserId));
         return cardResult;
     }
 
-    public Result RemoveCard(Guid cardId)
+    public Result RemoveCard(Guid cardId, Guid deletedById)
     {
         var card = _cards.FirstOrDefault(c => c.Id == cardId);
         if (card is null)
-            return Result.Fail(new Error("Card not found."));
+            return Result.Fail(new Error("Card not found.").WithMetadata("Status", 404));
 
         _cards.Remove(card);
         UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new ListCardDeletedEvent(BoardId, Id, card.Id, deletedById));
+        return Result.Ok();
+    }
+
+    public Result PatchCard(Guid cardId, Guid updatedById, PatchValue<string?> title, PatchValue<double?> position, PatchValue<string?> description,
+        PatchValue<DateTime?> completedAt)
+    {
+        var card = _cards.FirstOrDefault(c => c.Id == cardId);
+        if (card is null)
+            return Result.Fail(new Error("Card not found.").WithMetadata("Status", 404));
+        
+        var updateResult = card.Patch(title, position, description, completedAt);
+        if (updateResult.IsFailed)
+            return Result.Fail(updateResult.Errors);
+        
+        UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new ListCardUpdatedEvent(BoardId, Id, card.Id, updatedById));
         return Result.Ok();
     }
 
@@ -128,10 +153,10 @@ public sealed class BoardList : Entity
         return Result.Ok();
     }
 
-    private Result UpdatePosition(int position)
+    private Result UpdatePosition(double position)
     {
         if (position < 0)
-            return Result.Fail(new Error("Position must be a non-negative integer.").WithMetadata("PropertyName", nameof(Position)));
+            return Result.Fail(new Error("Position must be a non-negative.").WithMetadata("PropertyName", nameof(Position)));
         
         this.Position = position;
         UpdatedAt = DateTime.UtcNow;

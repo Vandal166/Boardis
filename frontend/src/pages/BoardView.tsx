@@ -13,7 +13,6 @@ import ManageBoardMembersModal from '../components/ManageBoardMembersModal';
 import toast from 'react-hot-toast';
 import SortableList from '../components/SortableList';
 import api from '../api';
-import EmptySlot from '../components/EmptySlot';
 
 
 function BoardView()
@@ -46,30 +45,11 @@ function BoardView()
   const [members, setMembers] = useState<{ userId: string; username: string; email: string; permissions?: string[] }[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
 
-  // Build a fast lookup per render
-  const listByPos = useMemo(() =>
-  {
-    const m = new Map<number, typeof lists[number]>();
-    for (const l of lists) m.set(l.position, l);
-    return m;
-  }, [lists]);
-
-  const maxPosition = useMemo(
-    () => (lists.length ? Math.max(...lists.map(l => l.position)) : 0),
+  // Instead, just use list ids for sortableItems
+  const sortableItems = useMemo(
+    () => lists.map(l => l.id),
     [lists]
   );
-
-  const positions = useMemo(
-    () => Array.from({ length: maxPosition }, (_, i) => i + 1),
-    [maxPosition]
-  );
-
-  // Include empty slots to preserve gaps during drag
-  const sortableItems = useMemo(
-    () => positions.map(pos => listByPos.get(pos)?.id ?? `empty-${pos}`),
-    [positions, listByPos]
-  );
-
 
   const fetchMembers = async () =>
   {
@@ -191,75 +171,55 @@ function BoardView()
     if (!over || active.id === over.id || !keycloak.token || !boardId) return;
 
     const prevLists = lists;
+    // Dropped over another list: compute midpoint position for moved list
+    const sourceIdx = prevLists.findIndex(l => l.id === active.id);
+    const targetIdx = prevLists.findIndex(l => l.id === over.id);
+    if (sourceIdx === -1 || targetIdx === -1 || sourceIdx === targetIdx) return;
 
-    // Dropped on an empty slot: move exactly there (keep gaps)
-    if (typeof over.id === 'string' && over.id.startsWith('empty-'))
+    // Remove source, insert at target
+    const newLists = [...prevLists];
+    const [movedList] = newLists.splice(sourceIdx, 1);
+    newLists.splice(targetIdx, 0, movedList);
+
+    // Compute midpoint position for moved list
+    const prevList = targetIdx > 0 ? newLists[targetIdx - 1] : null;
+    const nextList = targetIdx < newLists.length - 1 ? newLists[targetIdx + 1] : null;
+
+    let newPosition: number;
+    if (!prevList && !nextList)
     {
-      const emptyPos = parseInt(over.id.replace('empty-', ''), 10);
-      const updated = prevLists.map(l => (l.id === active.id ? { ...l, position: emptyPos } : l));
-      const sorted = [...updated].sort((a, b) => a.position - b.position);
-      setLists(sorted);
-
-      try
-      {
-        const moved = sorted.find(l => l.id === active.id);
-        if (moved)
-        {
-          const patchOps = [
-            { op: 'replace', path: '/position', value: moved.position }
-          ];
-          await api.patch(
-            `/api/boards/${boardId}/lists/${moved.id}`,
-            patchOps,
-            { headers: { 'Content-Type': 'application/json-patch+json' } }
-          );
-        }
-      }
-      catch
-      {
-        setLists(prevLists); // revert snapshot
-      }
-      return;
+      newPosition = 1024.0;
+    }
+    else if (!prevList)
+    {
+      newPosition = nextList!.position / 2;
+    }
+    else if (!nextList)
+    {
+      newPosition = prevList.position + 1024.0;
+    }
+    else
+    {
+      newPosition = (prevList.position + nextList.position) / 2;
     }
 
-    // Dropped over another list: shift only the range (preserve gaps)
-    const source = prevLists.find(l => l.id === active.id);
-    const target = prevLists.find(l => l.id === over.id);
-    if (!source || !target || source.position === target.position) return;
-
-    const beforePos = new Map(prevLists.map(l => [l.id, l.position]));
-
-    const changed =
-      source.position < target.position
-        ? prevLists.map(l =>
-          l.id === source.id
-            ? { ...l, position: target.position }
-            : l.position > source.position && l.position <= target.position
-              ? { ...l, position: l.position - 1 }
-              : l
-        )
-        : prevLists.map(l =>
-          l.id === source.id
-            ? { ...l, position: target.position }
-            : l.position >= target.position && l.position < source.position
-              ? { ...l, position: l.position + 1 }
-              : l
-        );
-
-    const sorted = [...changed].sort((a, b) => a.position - b.position);
+    movedList.position = newPosition;
+    const sorted = [...newLists].sort((a, b) => a.position - b.position);
     setLists(sorted);
 
     try
     {
-      const toUpdate = changed.filter(l => l.position !== beforePos.get(l.id));
-      await Promise.all( // sends patch requests in parallel to update changed lists(positions)
-        toUpdate.map(l =>
-          api.patch(
-            `/api/boards/${boardId}/lists/${l.id}`,
-            [{ op: 'replace', path: '/position', value: l.position }],
-            { headers: { 'Content-Type': 'application/json-patch+json' } }
-          )
-        )
+      const patchOps = [
+        { op: 'replace', path: '/position', value: movedList.position }
+      ];
+
+      if (patchOps.length === 0)
+        return;
+
+      await api.patch(
+        `/api/boards/${boardId}/lists/${movedList.id}`,
+        patchOps,
+        { headers: { 'Content-Type': 'application/json-patch+json' } }
       );
     }
     catch
@@ -337,6 +297,11 @@ function BoardView()
               boardId={boardInfo.id}
               title={boardInfo.title}
               description={boardInfo.description}
+              onDeleted={() =>
+              {
+                toast.success('Board deleted successfully.');
+                navigate('/dashboard');
+              }}
             />
           )}
 
@@ -346,25 +311,20 @@ function BoardView()
               strategy={rectSortingStrategy}
             >
               <div className="grid grid-cols-5 gap-4 auto-rows-fr">
-                {positions.map((pos) =>
-                {
-                  const list = listByPos.get(pos);
-                  return list ? (
-                    <SortableList
-                      key={list.id}
-                      list={list}
-                      onDeleted={() => setLists(prev => prev.filter(l => l.id !== list.id))}
-                      onTitleUpdated={(newTitle) =>
-                        setLists(prev => prev.map(l => l.id === list.id ? { ...l, title: newTitle } : l))
-                      }
-                      onColorUpdated={(newColor) =>
-                        setLists(prev => prev.map(l => l.id === list.id ? { ...l, colorArgb: newColor } : l))
-                      }
-                    />
-                  ) : (
-                    <EmptySlot key={`empty-${pos}`} id={`empty-${pos}`} />
-                  );
-                })}
+                {/* Only render actual lists, no empty slots */}
+                {lists.map((list) => (
+                  <SortableList
+                    key={list.id}
+                    list={list}
+                    onDeleted={() => setLists(prev => prev.filter(l => l.id !== list.id))}
+                    onTitleUpdated={(newTitle) =>
+                      setLists(prev => prev.map(l => l.id === list.id ? { ...l, title: newTitle } : l))
+                    }
+                    onColorUpdated={(newColor) =>
+                      setLists(prev => prev.map(l => l.id === list.id ? { ...l, colorArgb: newColor } : l))
+                    }
+                  />
+                ))}
                 <AddListButton
                   onCreate={handleCreateList}
                   error={error}

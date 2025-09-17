@@ -2,8 +2,7 @@
 using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Features.ListCards.Commands;
-using Domain.Entities;
-using Domain.ValueObjects;
+using Domain.ListCards.Entities;
 using FluentResults;
 
 namespace Application.Features.ListCards.CommandHandlers;
@@ -30,11 +29,7 @@ internal sealed class CreateListCardCommandHandler : ICommandHandler<CreateListC
         if (boardList is null)
             return Result.Fail<ListCard>("List not found in this board");
         
-        var titleResult = Title.TryFrom(command.Title);
-        if (!titleResult.IsSuccess)
-            return Result.Fail<ListCard>(titleResult.Error.ErrorMessage);
-        
-        var listCardResult = boardList.AddCard(titleResult.ValueObject, command.Description, command.Position);
+        var listCardResult = boardList.AddCard(command.RequestingUserId, command.Title, command.Description, command.Position);
         if (listCardResult.IsFailed)
             return Result.Fail<ListCard>(listCardResult.Errors);
         

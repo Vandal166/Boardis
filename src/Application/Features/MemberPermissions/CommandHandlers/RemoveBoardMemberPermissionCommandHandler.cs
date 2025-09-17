@@ -31,7 +31,7 @@ internal sealed class RemoveBoardMemberPermissionCommandHandler : ICommandHandle
             return Result.Fail(new Error("You cannot remove permissions from yourself.")
                 .WithMetadata("Status", StatusCodes.Status400BadRequest));
         
-        var permissionResult = member.RemovePermission(command.Permission);
+        var permissionResult = member.RemovePermission(command.Permission, command.RequestingUserId);
         if (permissionResult.IsFailed)
             return Result.Fail(permissionResult.Errors);
         

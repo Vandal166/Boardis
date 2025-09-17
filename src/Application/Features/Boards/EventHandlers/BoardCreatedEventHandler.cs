@@ -1,4 +1,5 @@
-﻿using Application.Features.BoardLists.EventHandlers;
+﻿using Application.Abstractions.CQRS;
+using Application.Features.BoardLists.EventHandlers;
 using Domain.Board.Events;
 using Microsoft.Extensions.Caching.Distributed;
 

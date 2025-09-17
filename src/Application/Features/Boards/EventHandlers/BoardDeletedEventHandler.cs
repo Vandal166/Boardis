@@ -1,4 +1,4 @@
-﻿using Application.Features.BoardLists.EventHandlers;
+﻿using Application.Abstractions.CQRS;
 using Domain.Board.Events;
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -18,6 +18,6 @@ internal sealed class BoardDeletedEventHandler : EventHandlerBase<BoardDeletedEv
         
         await _cache.RemoveAsync($"boards_{@event.ByUserId}", ct);
         
-        await Task.CompletedTask;
+        //TODO clean cache of all members of the board just like in update
     }
 }
