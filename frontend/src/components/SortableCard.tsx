@@ -6,6 +6,7 @@ import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import { createPortal } from 'react-dom';
 import DeleteCardButton from './DeleteCardButton';
 import { useConfirmationDialogOpen } from './ConfirmationDialog';
+import CardDetailsModal from './CardDetailsModal';
 
 type BoardCard = {
     id: string;
@@ -30,6 +31,7 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
     const [showMenu, setShowMenu] = useState(false);
     const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
     const [completedAt, setCompletedAt] = useState(card.completedAt);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const checkmarkClicked = useRef(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -172,12 +174,25 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
                 className="flex items-center gap-2 mb-1 cursor-grab relative"
                 {...attributes}
                 {...listeners}
+                onClick={e =>
+                {
+                    // Only open modal if not editing and not clicking the menu/settings button
+                    if (!editing && !showMenu)
+                    {
+                        e.stopPropagation();
+                        setShowDetailsModal(true);
+                    }
+                }}
             >
                 {/* Checkbox */}
                 <button
                     className={`flex items-center justify-center border-2 transition-colors mr-2 focus:outline-none rounded-full ${completedAt ? 'bg-green-400 border-green-500' : 'bg-gray-300 border-gray-400'}`}
                     aria-label={completedAt ? 'Mark as not completed' : 'Mark as completed'}
-                    onClick={handleComplete}
+                    onClick={e =>
+                    {
+                        e.stopPropagation();
+                        handleComplete();
+                    }}
                     disabled={loading}
                     tabIndex={0}
                     style={{ width: 22, height: 22, minWidth: 22, minHeight: 22, aspectRatio: '1 / 1' }}
@@ -266,7 +281,7 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
                                 </div>
                                 <button
                                     className="flex items-center gap-2 w-full text-left px-5 py-2 text-gray-800 hover:bg-blue-50 transition"
-                                    onClick={() => { setShowMenu(false); /* TODO: Show details modal */ }}
+                                    onClick={() => { setShowMenu(false); setShowDetailsModal(true); }}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-blue-400"></span>
                                     Details
@@ -286,12 +301,26 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
                 )}
             </div>
             {card.description && (
-                <p className="text-sm text-gray-600 mt-1">{card.description}</p>
+                <p className="text-sm text-gray-600 mt-1 truncate select-none">{card.description}</p>
             )}
             {completedAt && (
-                <p className="text-xs text-green-600 mt-1">
+                <p className="text-xs text-green-600 mt-1 select-none">
                     Completed: {new Date(completedAt).toLocaleString()}
                 </p>
+            )}
+            {/* Add the details modal */}
+            {showDetailsModal && (
+                <CardDetailsModal
+                    card={{ ...card, title, description: card.description, completedAt }}
+                    onClose={() => setShowDetailsModal(false)}
+                    onUpdated={updated =>
+                    {
+                        setTitle(updated.title);
+                        setTitleInput(updated.title);
+                        setCompletedAt(updated.completedAt);
+                        if (refetch) refetch();
+                    }}
+                />
             )}
         </li>
     );

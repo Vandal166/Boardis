@@ -34,6 +34,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
 }) =>
 {
     const [show, setShow] = useState(false);
+    const [visible, setVisible] = useState(true); // controls exit animation
     const [error] = useState('');
     const panelRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
@@ -61,12 +62,25 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
             if (confirmationDialogOpen) return; // Prevent closing if dialog is open
             if (panelRef.current && !panelRef.current.contains(event.target as Node))
             {
-                onClose();
+                setVisible(false);
             }
         }
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
-    }, [onClose, confirmationDialogOpen]);
+    }, [confirmationDialogOpen]);
+
+    // Handle transition end for exit
+    useEffect(() =>
+    {
+        if (!visible)
+        {
+            const timeout = setTimeout(() =>
+            {
+                onClose();
+            }, 50);
+            return () => clearTimeout(timeout);
+        }
+    }, [visible, onClose]);
 
     const fetchPermissions = async (memberId: string) =>
     {
@@ -198,6 +212,12 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
         if (permState) setPermState(null);
     };
 
+    // When close button is clicked
+    const handleRequestClose = () =>
+    {
+        setVisible(false);
+    };
+
     return (
         <div className="fixed inset-0 z-50">
             {/* Overlay */}
@@ -209,7 +229,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                     absolute top-40 left-1/2 -translate-x-1/2 w-full max-w-2xl
                     bg-white rounded-xl shadow-2xl border border-gray-200 p-6
                     transition-all duration-300 ease-out
-                    ${show ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'}
+                    ${show && visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'}
                 `}
                 style={{ willChange: 'opacity, transform' }}
             >
@@ -217,7 +237,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                     <h2 className="text-xl font-bold">Manage Members</h2>
                     <button
                         className="text-gray-400 hover:text-gray-700 text-2xl font-bold"
-                        onClick={onClose}
+                        onClick={handleRequestClose}
                         aria-label="Close"
                     >
                         ×

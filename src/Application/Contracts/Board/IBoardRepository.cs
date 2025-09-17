@@ -1,6 +1,6 @@
 ﻿namespace Application.Contracts.Board;
 
-using Board = Domain.Entities.Board;
+using Board = Domain.Board.Entities.Board;
 
 public interface IBoardRepository
 {

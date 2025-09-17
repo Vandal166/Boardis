@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../api';
+import { useConfirmation } from './ConfirmationDialog';
 
 interface BoardSettingsPanelProps
 {
@@ -8,12 +9,14 @@ interface BoardSettingsPanelProps
     boardId: string;
     title: string;
     description?: string;
-    onUpdated?: (updated: { id: string; title: string; description?: string }) => void; // <-- added
+    onUpdated?: (updated: { id: string; title: string; description?: string }) => void;
+    onDeleted?: () => void;
 }
 
-const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, position, boardId, title, description, onUpdated }) =>
+const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, position, boardId, title, description, onUpdated, onDeleted }) =>
 {
     const [show, setShow] = useState(false);
+    const [visible, setVisible] = useState(true); // controls exit animation
     const panelRef = useRef<HTMLDivElement>(null);
 
     // Editing state
@@ -22,6 +25,8 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
     const [editDescription, setEditDescription] = useState(description || '');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const confirm = useConfirmation();
 
     useEffect(() =>
     {
@@ -42,12 +47,31 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         {
             if (panelRef.current && !panelRef.current.contains(event.target as Node))
             {
-                onClose();
+                setVisible(false);
             }
         }
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
-    }, [onClose]);
+    }, []);
+
+    // Handle transition end for exit
+    useEffect(() =>
+    {
+        if (!visible)
+        {
+            const timeout = setTimeout(() =>
+            {
+                onClose();
+            }, 50); // match requested timeout
+            return () => clearTimeout(timeout);
+        }
+    }, [visible, onClose]);
+
+    // When close button is clicked
+    const handleRequestClose = () =>
+    {
+        setVisible(false);
+    };
 
     // Compute style for positioning
     const panelStyle: React.CSSProperties = position
@@ -115,12 +139,48 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         }
     };
 
+    // Delete handler
+    const handleDeleteBoard = async () =>
+    {
+        const confirmed = await confirm.confirm({
+            title: 'Delete Board',
+            message: 'Are you sure you want to delete this board? This action cannot be undone.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
+        });
+        if (!confirmed)
+            return;
+        setDeleting(true);
+        setError(null);
+        try
+        {
+            const response = await api.delete(`/api/boards/${boardId}`);
+
+            if (response.status === 204)
+            {
+                if (onDeleted)
+                {
+                    onDeleted();
+                }
+                onClose();
+            }
+        }
+        catch (err: any)
+        {
+            setError('Failed to delete board');
+        }
+        finally
+        {
+            setDeleting(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50">
             {/* Overlay */}
             <div
                 className="absolute inset-0 bg-opacity-0"
-                onClick={onClose}
+                onClick={handleRequestClose}
             />
             {/* Modal */}
             <div
@@ -129,7 +189,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                     absolute top-40 right-2 w-80
                     bg-white rounded-xl shadow-2xl border border-gray-200 p-6
                     transition-all duration-300 ease-out
-                    ${show ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'}
+                    ${show && visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'}
                 `}
                 style={panelStyle}
                 onClick={e => e.stopPropagation()}
@@ -142,7 +202,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                     <h2 className="text-xl font-bold">Board Settings</h2>
                     <button
                         className="text-gray-400 hover:text-gray-700 text-2xl font-bold"
-                        onClick={onClose}
+                        onClick={handleRequestClose}
                         aria-label="Close settings"
                     >
                         ×
@@ -229,8 +289,12 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                         </button>
                     </div>
                     <div>
-                        <button className="w-full px-3 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition font-semibold">
-                            Delete board
+                        <button
+                            className="w-full px-3 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition font-semibold"
+                            onClick={handleDeleteBoard}
+                            disabled={deleting}
+                        >
+                            {deleting ? 'Deleting...' : 'Delete board'}
                         </button>
                     </div>
                 </div>

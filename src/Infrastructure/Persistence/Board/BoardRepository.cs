@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Board;
 
-using Board = Domain.Entities.Board;
+using Board = Domain.Board.Entities.Board;
 
 internal sealed class BoardRepository : IBoardRepository
 {
@@ -28,14 +28,14 @@ internal sealed class BoardRepository : IBoardRepository
     public async Task<Board?> GetWithLists(Guid boardId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Boards
-            .Include(b => b.BoardLists)
+            .Include(b => b.Lists)
             .FirstOrDefaultAsync(b => b.Id == boardId, cancellationToken);
     }
     
     public async Task<Board?> GetWithCards(Guid boardId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Boards
-            .Include(b => b.BoardLists)
+            .Include(b => b.Lists)
             .ThenInclude(l => l.Cards)
             .FirstOrDefaultAsync(b => b.Id == boardId, cancellationToken);
     }

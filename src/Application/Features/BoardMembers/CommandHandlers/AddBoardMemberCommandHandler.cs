@@ -2,8 +2,8 @@
 using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Features.BoardMembers.Commands;
+using Domain.BoardMembers.Entities;
 using Domain.Constants;
-using Domain.Entities;
 using FluentResults;
 
 namespace Application.Features.BoardMembers.CommandHandlers;

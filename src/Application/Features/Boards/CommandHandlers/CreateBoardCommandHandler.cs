@@ -2,7 +2,7 @@
 using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Features.Boards.Commands;
-using Domain.Entities;
+using Domain.Board.Entities;
 using Domain.ValueObjects;
 using FluentResults;
 

@@ -1,10 +1,9 @@
 ﻿using Application.Abstractions.CQRS;
 using Domain.Common;
-using Domain.ValueObjects;
 
 namespace Application.Features.ListCards.Commands;
 
-public sealed record PatchCardCommand : ICommand, ICacheInvalidatingCommand
+public sealed record PatchCardCommand : ICommand
 {
     public Guid BoardId { get; init; }
     public Guid BoardListId { get; init; }
@@ -14,6 +13,4 @@ public sealed record PatchCardCommand : ICommand, ICacheInvalidatingCommand
     public PatchValue<string?> Description { get; init; }
     public PatchValue<double?> Position { get; init; }
     public PatchValue<DateTime?> CompletedAt { get; init; }
-    
-    public IEnumerable<string> CacheKeysToInvalidate => new[] { $"cards_{BoardListId}" };
 }

@@ -5,6 +5,7 @@ import CreateBoardDropdown from '../components/CreateBoardDropdown';
 import Spinner from '../components/Spinner';
 import api from '../api';
 import BoardSettingsPanel from '../components/BoardSettingsPanel';
+import toast from 'react-hot-toast';
 
 interface Board
 {
@@ -264,6 +265,13 @@ function Boards()
                     : b
                 )
               );
+            }}
+            onDeleted={() =>
+            {
+              setBoards(prev => prev.filter(b => b.id !== board.id));
+              setOpenSettingsBoardId(null);
+              setSettingsPanelPosition(null);
+              toast.success('Board deleted successfully.');
             }}
           />
         );

@@ -2,7 +2,7 @@
 using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Features.MemberPermissions.Commands;
-using Domain.Entities;
+using Domain.MemberPermissions.Entities;
 using FluentResults;
 
 namespace Application.Features.MemberPermissions.CommandHandlers;
@@ -27,8 +27,8 @@ internal sealed class AddBoardMemberPermissionCommandHandler : ICommandHandler<A
          var member = board.GetMemberByUserId(command.MemberId);
          if (member is null)
              return Result.Fail(new Error("The specified member does not belong to the board."));
-        
-         var permissionResult = member.AddPermission(command.Permission);
+
+         var permissionResult = member.AddPermission(command.Permission, command.RequestingUserId);
          if (permissionResult.IsFailed)
              return Result.Fail(permissionResult.Errors);
             

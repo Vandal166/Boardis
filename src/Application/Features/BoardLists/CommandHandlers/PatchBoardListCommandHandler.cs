@@ -2,9 +2,7 @@
 using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Features.BoardLists.Commands;
-using Domain.Common;
 using FluentResults;
-using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.BoardLists.CommandHandlers;
 
@@ -26,12 +24,7 @@ internal sealed class PatchBoardListCommandHandler : ICommandHandler<PatchBoardL
         if (board is null)
             return Result.Fail("Board not found");
         
-        var list = board.GetListById(command.BoardListId);
-        if (list is null)
-            return Result.Fail(new Error("List not found")
-                .WithMetadata("Status", StatusCodes.Status404NotFound));
-        
-        var patchResult = list.Patch(command.Title, command.Position, command.ColorArgb);
+        var patchResult = board.UpdateList(command.BoardListId, command.Title, command.Position, command.ColorArgb);
         if (patchResult.IsFailed)
             return Result.Fail(patchResult.Errors);
         

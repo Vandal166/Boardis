@@ -3,10 +3,9 @@ using Application.Contracts.User;
 using Application.DTOs.BoardLists;
 using Application.Features.BoardLists.Commands;
 using Application.Features.BoardLists.Queries;
+using Domain.BoardLists.Entities;
 using Domain.Common;
 using Domain.Constants;
-using Domain.Entities;
-using Domain.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -146,8 +145,8 @@ public sealed class BoardListController : ControllerBase
                 ? PatchValue<string?>.Set(listToPatch.Title) 
                 : PatchValue<string?>.Unset(),
             Position = listToPatch.HasProperty(nameof(listToPatch.Position)) 
-                ? PatchValue<int?>.Set(listToPatch.Position) 
-                : PatchValue<int?>.Unset(),
+                ? PatchValue<double?>.Set(listToPatch.Position) 
+                : PatchValue<double?>.Unset(),
             ColorArgb = listToPatch.HasProperty(nameof(listToPatch.ColorArgb)) 
                 ? PatchValue<int?>.Set(listToPatch.ColorArgb) 
                 : PatchValue<int?>.Unset()

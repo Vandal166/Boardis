@@ -1,7 +1,7 @@
 ﻿using Domain.Constants;
 using FluentResults;
 
-namespace Domain.Entities;
+namespace Domain.MemberPermissions.Entities;
 
 public sealed class MemberPermission
 {

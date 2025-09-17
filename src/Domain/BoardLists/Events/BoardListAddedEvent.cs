@@ -1,6 +1,6 @@
-﻿using Domain.Entities;
+﻿using Domain.Common;
 
-namespace Domain.BoardList.Events;
+namespace Domain.BoardLists.Events;
 
 public sealed record BoardListAddedEvent(Guid BoardId, Guid BoardListId) : IDomainEvent
 {

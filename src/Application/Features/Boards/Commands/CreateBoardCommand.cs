@@ -1,5 +1,5 @@
 ﻿using Application.Abstractions.CQRS;
-using Domain.Entities;
+using Domain.Board.Entities;
 
 namespace Application.Features.Boards.Commands;
 

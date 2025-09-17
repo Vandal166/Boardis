@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 
-namespace Domain.Entities;
+namespace Domain.Common;
 
 // Just an entity for stroing Named Roles like "Owner", "Member", etc.
 public sealed class Role //TODO make this an Value Object

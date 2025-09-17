@@ -37,8 +37,7 @@ public sealed class PatchBoardListCommandValidator : AbstractValidator<PatchBoar
         When(c => c.Position.IsSet, () =>
         {
             RuleFor(c => c.Position.Value)
-                .GreaterThan(0).WithMessage("Position must be greater than zero.")
-                .LessThanOrEqualTo(1000).WithMessage("Position must be less than or equal to 1000.");
+                .GreaterThan(0).WithMessage("Position must be greater than zero.");
         });
     }
 }

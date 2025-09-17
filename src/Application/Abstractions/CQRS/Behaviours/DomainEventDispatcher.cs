@@ -1,8 +1,8 @@
-﻿using Domain.Entities;
+﻿using Domain.Common;
 
 namespace Application.Abstractions.CQRS.Behaviours;
 
-public sealed class DomainEventDispatcher
+internal sealed class DomainEventDispatcher : IEventPublisher
 {
     private readonly IEnumerable<IEventHandler> _handlers;
 
@@ -11,7 +11,7 @@ public sealed class DomainEventDispatcher
         _handlers = handlers;
     }
 
-    public async Task Handle(IDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async Task Publish(IDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         foreach (var handler in _handlers)
         {

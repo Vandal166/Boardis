@@ -11,12 +11,12 @@ public sealed class PatchBoardListRequest : PatchRequest
     }
     private string? _title;
     
-    public int? Position
+    public double? Position
     {
         get => _position;
         set { _position = value; SetHasProperty(nameof(Position)); }
     }
-    private int? _position;
+    private double? _position;
     
     public int? ColorArgb
     {

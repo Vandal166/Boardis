@@ -21,7 +21,7 @@ internal sealed class GetBoardListQueryHandler : IQueryHandler<GetBoardListsQuer
         if (board is null)
             return Result.Fail<List<BoardListResponse>>("Board not found");
       
-        var boardListResponses = board.BoardLists.Select(bl => new BoardListResponse
+        var boardListResponses = board.Lists.Select(bl => new BoardListResponse
         {
             Id = bl.Id,
             BoardId = bl.BoardId,

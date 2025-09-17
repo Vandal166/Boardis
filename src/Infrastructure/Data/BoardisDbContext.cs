@@ -1,5 +1,10 @@
 ﻿using System.Drawing;
-using Domain.Entities;
+using Domain.Board.Entities;
+using Domain.BoardLists.Entities;
+using Domain.BoardMembers.Entities;
+using Domain.Common;
+using Domain.ListCards.Entities;
+using Domain.MemberPermissions.Entities;
 using Domain.ValueObjects;
 using Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
@@ -70,17 +75,19 @@ public sealed class BoardisDbContext : DbContext
                 .HasForeignKey(member => member.BoardId)
                 .OnDelete(DeleteBehavior.Cascade); // deleting a board deletes its members
             
-            b.HasMany(board => board.BoardLists)
+            b.HasMany(board => board.Lists)
                 .WithOne()
                 .HasForeignKey(list => list.BoardId)
                 .OnDelete(DeleteBehavior.Cascade); // deleting a board deletes its lists
             
-            b.Navigation(board => board.BoardLists)
+            b.Navigation(board => board.Lists)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
             
             b.Navigation(board => board.Members)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
             
+            // Index for faster lookups by title
+            b.HasIndex(board => board.Title);
         });
         
         // ------ BoardMember -------
@@ -145,7 +152,7 @@ public sealed class BoardisDbContext : DbContext
                 .IsRequired();
             
             bl.Property(list => list.Position)
-                .IsRequired().HasDefaultValue(0);
+                .IsRequired().HasDefaultValue(1024.0);
             
             bl.Ignore(list => list.ListColorArgb); // Ignore backing field
             bl.Property(list => list.ListColor)
