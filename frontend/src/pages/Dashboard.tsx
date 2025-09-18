@@ -31,10 +31,10 @@ function Dashboard()
                         </li>
                         <li>
                             <button
-                                onClick={() => navigate('/boards')}
+                                onClick={() => navigate('/notifications')}
                                 className="group w-full flex justify-between items-center text-left px-4 py-2 text-sm bg-transparent hover:bg-gray-700 rounded-md transition"
                             >
-                                Boards
+                                Notifications
                                 <span
                                     className="inline-block ml-2 text-3xl leading-none opacity-0 transform translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"
                                 >

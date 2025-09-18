@@ -1,0 +1,31 @@
+services:
+  web.api:
+    image: mcr.microsoft.com/dotnet/sdk:9.0  # SDK image for dev tools like dotnet watch
+    container_name: web.api.dev  # Differentiate from prod container
+    build: null  # Disable image build for dev
+    working_dir: /Boardis
+    command: ["dotnet", "watch", "run", "--no-hot-reload=false", "--project", "src/Web.API/Web.API.csproj", "--urls", "http://+:5185"]  # Watch and run the main project
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=1  # Enables file watching in Docker volumes (polling mode)
+      - ConnectionStrings__Boardis_DB=Host=web.database;Port=5432;Database=Boardis_DB;Username=postgres;Password=postgres
+      - ConnectionStrings__Redis=redis:6379
+    volumes:
+      - .:/Boardis  # Mount host root to /Boardis in container (matches your structure)
+      - /Boardis/src/Web.API/bin/  # Exclude bin/obj to avoid conflicts (container writes here)
+      - /Boardis/src/Web.API/obj/
+      - /Boardis/src/Infrastructure/bin/
+      - /Boardis/src/Infrastructure/obj/
+      - /Boardis/src/Application/bin/
+      - /Boardis/src/Application/obj/
+      - /Boardis/tests/Web.API.FunctionalTests/bin/
+      - /Boardis/tests/Web.API.FunctionalTests/obj/
+    ports:
+      - "5185:5185"
+    depends_on:
+      web.database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - boardis-network

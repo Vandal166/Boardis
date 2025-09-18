@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions.CQRS;
+using Application.Contracts.Communication;
 using Domain.Board.Events;
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -7,10 +8,11 @@ namespace Application.Features.Boards.EventHandlers;
 internal sealed class BoardUpdatedEventHandler : EventHandlerBase<BoardUpdatedEvent>
 {
     private readonly IDistributedCache _cache;
-    
-    public BoardUpdatedEventHandler(IDistributedCache cache)
+    private readonly IBoardHubNotifier _boardHubNotifier;
+    public BoardUpdatedEventHandler(IDistributedCache cache, IBoardHubNotifier boardHubNotifier)
     {
         _cache = cache;
+        _boardHubNotifier = boardHubNotifier;
     }
     public override async Task Handle(BoardUpdatedEvent @event, CancellationToken ct = default)
     {
@@ -24,5 +26,7 @@ internal sealed class BoardUpdatedEventHandler : EventHandlerBase<BoardUpdatedEv
         {
             await _cache.RemoveAsync($"boards_{memberId}", ct);
         }
+        
+        await _boardHubNotifier.NotifyBoardUpdatedAsync(@event.BoardId, ct);
     }
 }

@@ -19,7 +19,7 @@ internal sealed class DeleteBoardCommandHandler : ICommandHandler<DeleteBoardCom
     
     public async Task<Result> Handle(DeleteBoardCommand command, CancellationToken ct = default)
     {
-        var board = await _boardRepository.GetByIdAsync(command.BoardId, ct);
+        var board = await _boardRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
             return Result.Fail("Board not found");
         

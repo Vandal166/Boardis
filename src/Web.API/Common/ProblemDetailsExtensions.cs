@@ -69,7 +69,7 @@ public static class ProblemDetailsExtensions
             Instance = controller.HttpContext.Request.Path,
             Detail = string.Join("; ", errors.Select(e => e.Message))
         };
-
+//TODO returns BadRequest for all status codes except 404(not good)
         return status == 404 ? controller.NotFound(problemDetails) : controller.BadRequest(problemDetails);
     }
 

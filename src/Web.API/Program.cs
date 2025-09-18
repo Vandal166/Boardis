@@ -5,6 +5,7 @@ using Newtonsoft.Json.Serialization;
 using Serilog;
 using Web.API;
 using Web.API.Common;
+using Web.API.Communication.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 IdentityModelEventSource.ShowPII = true;
@@ -16,11 +17,14 @@ builder.Services.AddControllers()
         options.SerializerSettings.ContractResolver = new DefaultContractResolver(); // default property naming (PascalCase)
     });
 
+builder.Services.AddSignalR();
+
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
-        policy => policy.WithOrigins("http://localhost:3000")
+policy => policy.WithOrigins("http://localhost")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()); // cookies/session
@@ -60,6 +64,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<BoardNotificationHub>("/boardHub");
+app.MapHub<GeneralNotificationHub>("/generalNotificationHub");
+
 
 app.Run();
 

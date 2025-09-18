@@ -92,3 +92,35 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+@keyframes custom-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes custom-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+}
+
+.animate-custom-enter {
+  animation: custom-enter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-custom-leave {
+  animation: custom-leave 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}

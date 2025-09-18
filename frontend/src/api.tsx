@@ -7,7 +7,7 @@ const api = axios.create();
 
 
 let getToken: (() => string | undefined) | null = null;
-
+export { getToken };
 export function setTokenGetter(fn: () => string | undefined)
 {
     getToken = fn;

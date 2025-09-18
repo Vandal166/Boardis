@@ -1,9 +1,11 @@
 ﻿using System.Security.Claims;
+using Application.Contracts.Communication;
 using Application.Contracts.Keycloak;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Web.API.Common;
+using Web.API.Communication.Services;
 
 namespace Web.API;
 
@@ -13,7 +15,11 @@ public static class DependencyInjection
     {
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
-
+        
+        services.AddScoped<IBoardHubNotifier, BoardHubNotifier>();
+        services.AddScoped<INotificationNotifier, NotificationNotifier>();
+        
+        
         IConfigurationSection keycloakSettings = configuration.GetSection("Keycloak");
         
         services.AddAuthentication(options =>
@@ -66,6 +72,19 @@ public static class DependencyInjection
                         context.Fail("User no longer valid in identity provider.");
                         await keycloakUserService.RevokeUserSessionAsync(id);
                     }
+                },
+                // Crucial: Handle access_token from query for WebSockets/SSE
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+
+                    // Apply only to hub paths
+                    if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/boardHub") || path.StartsWithSegments("/generalNotificationHub")))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
                 }
             };
         });
