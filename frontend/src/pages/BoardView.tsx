@@ -13,6 +13,8 @@ import ManageBoardMembersModal from '../components/ManageBoardMembersModal';
 import toast from 'react-hot-toast';
 import SortableList from '../components/SortableList';
 import api from '../api';
+import { HubConnectionState } from '@microsoft/signalr';
+import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 
 
 function BoardView()
@@ -34,6 +36,73 @@ function BoardView()
     setFieldErrors,
     handleCreateList,
   } = useBoardLists(boardId, keycloak, navigate, initialized);
+
+  const boardHubConnection = useBoardSignalR();
+  useEffect(() =>
+  {
+    const connectAndJoin = async () =>
+    {
+      try
+      {
+        // Only start if disconnected
+        if (boardHubConnection.state === HubConnectionState.Disconnected)
+        {
+          await boardHubConnection.start();
+          console.log('Connection started');
+        }
+
+        if (boardId)
+        {
+          await boardHubConnection.invoke('JoinGroup', boardId);
+          console.log('Joined board group: ' + boardId);
+        }
+      }
+      catch (err)
+      {
+        console.error('Error during connection or join:', err);
+      }
+    };
+
+    connectAndJoin();
+
+    // event listeners
+    const handleBoardUpdated = async (updatedBoardId: string) =>
+    {
+      if (updatedBoardId === boardId)
+      {
+        // Refetch board info and update state
+        await api.get(`/api/boards/${boardId}`)
+          .then(res => setBoardInfo(res.data))
+          .catch(() => setBoardInfo(null));
+        toast.success('Board updated!');
+      }
+    };
+
+    const handleBoardDeleted = (deletedBoardId: string) =>
+    {
+      if (deletedBoardId === boardId)
+      {
+        toast.success('This board has just been deleted by the owner.');
+        navigate('/dashboard');
+      }
+    };
+
+    boardHubConnection.on('BoardUpdated', handleBoardUpdated);
+    boardHubConnection.on('BoardDeleted', handleBoardDeleted);
+
+    // Cleanup: Leave group and remove listeners on unmount
+    return () =>
+    {
+      if (boardId && boardHubConnection.state === HubConnectionState.Connected)
+      {
+        boardHubConnection.invoke('LeaveGroup', boardId)
+          .then(() => console.log('Left board group: ' + boardId))
+          .catch((err: any) => console.error('Error leaving group:', err));
+      }
+      boardHubConnection.off('BoardUpdated', handleBoardUpdated);
+      boardHubConnection.off('BoardDeleted', handleBoardDeleted);
+    };
+  }, [boardId, boardHubConnection, navigate]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -76,6 +145,7 @@ function BoardView()
       setMembersLoading(false);
     }
   };
+
 
   // Fetch members only when modal opens
   useEffect(() =>
@@ -235,6 +305,21 @@ function BoardView()
       .then(res => setBoardInfo(res.data))
       .catch(() => setBoardInfo(null));
   }, [boardId, initialized, keycloak.authenticated, keycloak.token]);
+
+  useEffect(() =>
+  {
+    const handleRemoved = (e: any) =>
+    {
+      const notification = e.detail;
+      if (notification?.boardId === boardId)
+      {
+        toast.error(notification.title + ` by ${notification.byUser}`, { duration: 8000 });
+        navigate('/dashboard');
+      }
+    };
+    window.addEventListener("boardis:removed", handleRemoved);
+    return () => window.removeEventListener("boardis:removed", handleRemoved);
+  }, [boardId, navigate]);
 
   if (isLoading)
   {

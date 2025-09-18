@@ -167,6 +167,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         }
         catch (err: any)
         {
+            //toast.error(err?.response?.data?.detail || 'Failed to delete board');
             setError('Failed to delete board');
         }
         finally

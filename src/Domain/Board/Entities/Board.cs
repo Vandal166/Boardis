@@ -151,8 +151,10 @@ public sealed class Board : Entity, IAggregateRoot
 
     public Result Delete(Guid requestedByUserId)
     {
-        //TODO check if deletable etc
-        AddDomainEvent(new BoardDeletedEvent(Id, requestedByUserId));
+        if(_members.Any(m => m.RoleId == Roles.OwnerId && m.UserId != requestedByUserId))
+            return Result.Fail(new Error("Only the owner can delete the board.").WithMetadata("Status", 403));
+        
+        AddDomainEvent(new BoardDeletedEvent(Id, requestedByUserId, Members.Select(g => g.UserId).ToList()));
 
         return Result.Ok();
     }

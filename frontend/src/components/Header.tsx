@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import logo from '../assets/logo.png';
 import api from '../api';
+import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 
 function Header()
 {
@@ -18,6 +19,7 @@ function Header()
     const boardId = boardMatch?.params.boardId;
     const [boardTitle, setBoardTitle] = useState<string | null>(null);
 
+    const boardHubConnection = useBoardSignalR();
     useEffect(() =>
     {
         let active = true;
@@ -26,14 +28,35 @@ function Header()
             setBoardTitle(null);
             return;
         }
-        if (!initialized || !keycloak.authenticated || !keycloak.token)
-            return;
+        const fetchBoardTitle = async () =>
+        {
+            if (!initialized || !keycloak.authenticated || !keycloak.token)
+                return;
 
-        api.get(`/api/boards/${boardId}`)
-            .then(res => { if (active) setBoardTitle(res.data?.title ?? null); })
-            .catch(() => { if (active) setBoardTitle(null); });
-        return () => { active = false; };
-    }, [boardId]);
+            await api.get(`/api/boards/${boardId}`)
+                .then(res => { if (active) setBoardTitle(res.data?.title ?? null); })
+                .catch(() => { if (active) setBoardTitle(null); });
+        };
+
+        fetchBoardTitle();
+
+        // SignalR listener
+        const handleBoardUpdated = (updatedBoardId: string) =>
+        {
+            if (updatedBoardId === boardId)
+            {
+                fetchBoardTitle();
+            }
+        };
+
+        boardHubConnection.on('BoardUpdated', handleBoardUpdated);
+
+        return () =>
+        {
+            active = false;
+            boardHubConnection.off('BoardUpdated', handleBoardUpdated);
+        };
+    }, [boardId, initialized, keycloak.authenticated, keycloak.token, boardHubConnection]);
 
     useEffect(() =>
     {

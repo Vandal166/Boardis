@@ -6,6 +6,8 @@ import Spinner from '../components/Spinner';
 import api from '../api';
 import BoardSettingsPanel from '../components/BoardSettingsPanel';
 import toast from 'react-hot-toast';
+import { HubConnectionState } from '@microsoft/signalr';
+import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 
 interface Board
 {
@@ -64,6 +66,125 @@ function Boards()
     }
   }, [initialized, keycloak, navigate]);
 
+  const boardHubConnection = useBoardSignalR();
+  useEffect(() =>
+  {
+    const connect = async () =>
+    {
+      try
+      {
+        if (initialized && keycloak.authenticated && keycloak.token && boardHubConnection)
+        {
+          if (boardHubConnection.state === HubConnectionState.Disconnected)
+          {
+            await boardHubConnection.start();
+            console.log('Connection started');
+          }
+        }
+      }
+      catch (err)
+      {
+        console.error('Error during connection:', err);
+      }
+    };
+    connect();
+  }, [initialized, keycloak.authenticated, keycloak.token, boardHubConnection]);
+
+  // Track joined boards
+  const joinedBoardsRef = useRef<Set<string>>(new Set());
+
+  // Join/leave groups when boards change
+  useEffect(() =>
+  {
+    if (
+      boardHubConnection.state !== HubConnectionState.Connected ||
+      !initialized ||
+      !keycloak.authenticated ||
+      !keycloak.token
+    ) return;
+
+    const currentBoardIds = new Set(boards.map(b => b.id));
+    const prevBoardIds = joinedBoardsRef.current;
+
+    // Join new boards
+    for (const id of currentBoardIds)
+    {
+      if (!prevBoardIds.has(id))
+      {
+        boardHubConnection.invoke('JoinGroup', id)
+          .then(() => console.log('Joined board group: ' + id))
+          .catch(err => console.error('Error joining group:', err));
+        prevBoardIds.add(id);
+      }
+    }
+    // Leave removed boards
+    for (const id of Array.from(prevBoardIds))
+    {
+      if (!currentBoardIds.has(id))
+      {
+        boardHubConnection.invoke('LeaveGroup', id)
+          .then(() => console.log('Left board group: ' + id))
+          .catch(err => console.error('Error leaving group:', err));
+        prevBoardIds.delete(id);
+      }
+    }
+
+    // Cleanup: leave all joined boards on unmount
+    return () =>
+    {
+      for (const id of Array.from(joinedBoardsRef.current))
+      {
+        boardHubConnection.invoke('LeaveGroup', id)
+          .then(() => console.log('Left board group: ' + id))
+          .catch(err => console.error('Error leaving group:', err));
+      }
+      joinedBoardsRef.current.clear();
+    };
+  }, [boards, initialized, keycloak.authenticated, keycloak.token]);
+
+  // Effect: Listen for BoardUpdated and BoardDeleted events and update board data
+  useEffect(() =>
+  {
+    const handleBoardUpdated = async (updatedBoardId: string) =>
+    {
+      if (boards.some(b => b.id === updatedBoardId))
+      {
+        try
+        {
+          const res = await api.get(`/api/boards/${updatedBoardId}`);
+          setBoards(prev =>
+            prev.map(b =>
+              b.id === updatedBoardId
+                ? { ...b, ...res.data }
+                : b
+            )
+          );
+        }
+        catch
+        {
+        }
+      }
+    };
+
+    const handleBoardDeleted = (deletedBoardId: string) =>
+    {
+      if (boards.some(b => b.id === deletedBoardId))
+      {
+        setBoards(prev => prev.filter(b => b.id !== deletedBoardId));
+      }
+    };
+
+    boardHubConnection.on('BoardUpdated', handleBoardUpdated);
+    boardHubConnection.on('BoardDeleted', handleBoardDeleted);
+
+    // Cleanup: Remove listeners on unmount
+    return () =>
+    {
+      boardHubConnection.off('BoardUpdated', handleBoardUpdated);
+      boardHubConnection.off('BoardDeleted', handleBoardDeleted);
+    };
+  }, [boards]);
+
   // filtering boards by title and then description(if not null)
   const filteredBoards = boards.filter(board =>
     board.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -117,6 +238,64 @@ function Boards()
       setCreating(false);
     }
   };
+
+  useEffect(() =>
+  {
+    // Listen for board invite event and refetch boards
+    const handleInvited = async () =>
+    {
+      // Refetch boards
+      if (initialized && keycloak.authenticated && keycloak.token)
+      {
+        setIsLoading(true);
+        await api.get('/api/boards')
+          .then(response =>
+          {
+            setBoards(response.data);
+            setError(null);
+          })
+          .catch(error =>
+          {
+            console.error('Failed to fetch boards:', error);
+            setError('Failed to load boards. Please try again later.');
+          })
+          .finally(() =>
+          {
+            setIsLoading(false);
+          });
+      }
+    };
+    // Listen for board removed event and refetch boards
+    const handleRemoved = async () =>
+    {
+      if (initialized && keycloak.authenticated && keycloak.token)
+      {
+        setIsLoading(true);
+        await api.get('/api/boards')
+          .then(response =>
+          {
+            setBoards(response.data);
+            setError(null);
+          })
+          .catch(error =>
+          {
+            console.error('Failed to fetch boards:', error);
+            setError('Failed to load boards. Please try again later.');
+          })
+          .finally(() =>
+          {
+            setIsLoading(false);
+          });
+      }
+    };
+    window.addEventListener("boardis:invited", handleInvited);
+    window.addEventListener("boardis:removed", handleRemoved);
+    return () =>
+    {
+      window.removeEventListener("boardis:invited", handleInvited);
+      window.removeEventListener("boardis:removed", handleRemoved);
+    };
+  }, [initialized, keycloak.authenticated, keycloak.token]);
 
   return (
 
