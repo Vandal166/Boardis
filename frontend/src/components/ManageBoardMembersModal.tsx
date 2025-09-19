@@ -5,6 +5,7 @@ import RemoveBoardMemberButton from './RemoveBoardMemberButton';
 import { useConfirmationDialogOpen } from './ConfirmationDialog';
 import api from '../api';
 import { toast } from 'react-hot-toast';
+import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 
 interface Member
 {
@@ -22,6 +23,7 @@ interface ManageBoardMembersModalProps
     onAdd: (emailOrUsername: string) => void;
     onRemove: (memberId: string) => void;
     isLoading?: boolean;
+    fetchMembers?: () => void;
 }
 
 const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
@@ -31,6 +33,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
     onAdd,
     onRemove,
     isLoading = false,
+    fetchMembers,
 }) =>
 {
     const [show, setShow] = useState(false);
@@ -39,6 +42,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
     const panelRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLUListElement>(null);
     const confirmationDialogOpen = useConfirmationDialogOpen();
+    const boardHubConnection = useBoardSignalR();
 
     // permissions popover state
     const [permState, setPermState] = useState<{
@@ -81,6 +85,32 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
             return () => clearTimeout(timeout);
         }
     }, [visible, onClose]);
+
+    useEffect(() =>
+    {
+        function handleMemberAdded(updatedBoardId: string)
+        {
+            if (updatedBoardId === boardId && fetchMembers)
+            {
+                fetchMembers();
+            }
+        }
+        function handleMemberRemoved(updatedBoardId: string)
+        {
+            if (updatedBoardId === boardId && fetchMembers)
+            {
+                fetchMembers();
+            }
+        }
+        boardHubConnection.on('BoardMemberAdded', handleMemberAdded);
+        boardHubConnection.on('BoardMemberRemoved', handleMemberRemoved);
+
+        return () =>
+        {
+            boardHubConnection.off('BoardMemberAdded', handleMemberAdded);
+            boardHubConnection.off('BoardMemberRemoved', handleMemberRemoved);
+        };
+    }, [boardHubConnection, boardId, fetchMembers]);
 
     const fetchPermissions = async (memberId: string) =>
     {

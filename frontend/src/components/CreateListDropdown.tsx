@@ -53,7 +53,7 @@ const CreateListDropdown: React.FC<Props> = ({
         <div
             ref={panelRef}
             className={`
-                absolute left-1/2 -translate-x-1/2 top-8/12 mt-3 w-80 z-10
+                absolute left-1/2 -translate-x-1/2 top-8/12 mt-3 w-80 z-50
                 bg-white rounded-lg shadow-lg p-6
                 transition-all duration-200
                 ${open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}

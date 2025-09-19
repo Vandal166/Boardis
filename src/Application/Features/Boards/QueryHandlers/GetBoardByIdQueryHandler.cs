@@ -20,7 +20,7 @@ internal sealed class GetBoardByIdQueryHandler : IQueryHandler<GetBoardByIdQuery
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
         
         const string sql = """
-                           SELECT "Id", "Title", "Description", "WallpaperImageId", "Visibility"
+                           SELECT "Id", "Title", "Description", "Visibility"
                            FROM "Boards"
                            WHERE "Id" = @BoardId
                            ORDER BY "CreatedAt" DESC

@@ -11,11 +11,13 @@ internal sealed class BoardMemberAddedEventHandler : EventHandlerBase<BoardMembe
     private readonly IDistributedCache _cache;
     private readonly INotificationNotifier _notificationNotifier;
     private readonly IKeycloakUserService _keycloakUserService;
-    public BoardMemberAddedEventHandler(IDistributedCache cache, INotificationNotifier notificationNotifier, IKeycloakUserService keycloakUserService)
+    private readonly IBoardMemberNotifier _boardMemberNotifier;
+    public BoardMemberAddedEventHandler(IDistributedCache cache, INotificationNotifier notificationNotifier, IKeycloakUserService keycloakUserService, IBoardMemberNotifier boardMemberNotifier)
     {
         _cache = cache;
         _notificationNotifier = notificationNotifier;
         _keycloakUserService = keycloakUserService;
+        _boardMemberNotifier = boardMemberNotifier;
     }
 
     public override async Task Handle(BoardMemberAddedEvent @event, CancellationToken ct = default)
@@ -31,6 +33,8 @@ internal sealed class BoardMemberAddedEventHandler : EventHandlerBase<BoardMembe
                 await _notificationNotifier.NotifyBoardInviteAsync(@event.BoardId, @event.AddedUserId, byUser.Value.Username, ct);
             }
         }
+        
+        await _boardMemberNotifier.NotifyBoardMemberAddedAsync(@event.BoardId, @event.AddedUserId, ct);
         
         
         await _cache.RemoveAsync($"board_members_{@event.BoardId}", ct); // invalidating board's members cache

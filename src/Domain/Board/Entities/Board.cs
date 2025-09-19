@@ -15,7 +15,6 @@ public sealed class Board : Entity, IAggregateRoot
     public Guid Id { get; private set; }
     public Title Title { get; private set; }
     public string? Description { get; private set; }
-    public Guid? WallpaperImageId { get; private set; } // optional image id in blob storage for the board
     
     public VisibilityLevel Visibility { get; private set; } // e.g. public, private
     
@@ -30,14 +29,13 @@ public sealed class Board : Entity, IAggregateRoot
     
     private Board() { }
     
-    public static Result<Board> Create(Title Title, string? Description, Guid? wallpaperImageId, Guid ownerId, VisibilityLevel visibility = VisibilityLevel.Private)
+    public static Result<Board> Create(Title Title, string? Description, Guid ownerId, VisibilityLevel visibility = VisibilityLevel.Private)
     {
         var board = new Board
         {
             Id = Guid.NewGuid(),
             Title = Title,
             Description = Description,
-            WallpaperImageId = wallpaperImageId,
             Visibility = visibility,
             CreatedAt = DateTime.UtcNow
         };
@@ -53,7 +51,7 @@ public sealed class Board : Entity, IAggregateRoot
     }
     
     
-    public Result Patch(PatchValue<string?> title, PatchValue<string?> description, PatchValue<Guid?> wallpaperImageId, PatchValue<VisibilityLevel?> visibility, Guid requestedByUserId)
+    public Result Patch(PatchValue<string?> title, PatchValue<string?> description, PatchValue<VisibilityLevel?> visibility, Guid requestedByUserId)
     {
         var errors = new List<IError>();
 
@@ -76,11 +74,6 @@ public sealed class Board : Entity, IAggregateRoot
             var descriptionResult = UpdateDescription(description.Value);
             if (descriptionResult.IsFailed) 
                 errors.AddRange(descriptionResult.Errors);
-        }
-
-        if (wallpaperImageId.IsSet)
-        {
-            WallpaperImageId = wallpaperImageId.Value;
         }
 
         if (visibility.IsSet)

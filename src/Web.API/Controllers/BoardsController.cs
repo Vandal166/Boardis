@@ -76,7 +76,6 @@ public sealed class BoardsController : ControllerBase
         {
             Title = request.Title,
             Description = request.Description,
-            WallpaperImageId = request.WallpaperImageId,
             OwnerId = _currentUser.Id
         };
         
@@ -133,9 +132,6 @@ public sealed class BoardsController : ControllerBase
             Description = boardToPatch.HasProperty(nameof(boardToPatch.Description)) 
                 ? PatchValue<string?>.Set(boardToPatch.Description) 
                 : PatchValue<string?>.Unset(),
-            WallpaperImageId = boardToPatch.HasProperty(nameof(boardToPatch.WallpaperImageId)) 
-                ? PatchValue<Guid?>.Set(boardToPatch.WallpaperImageId) 
-                : PatchValue<Guid?>.Unset(),
             Visibility = boardToPatch.HasProperty(nameof(boardToPatch.Visibility)) 
                 ? PatchValue<VisibilityLevel?>.Set(boardToPatch.Visibility) 
                 : PatchValue<VisibilityLevel?>.Unset()

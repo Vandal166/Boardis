@@ -3,6 +3,7 @@ using Domain.Board.Entities;
 using Domain.BoardLists.Entities;
 using Domain.BoardMembers.Entities;
 using Domain.Common;
+using Domain.Images.Entities;
 using Domain.ListCards.Entities;
 using Domain.MemberPermissions.Entities;
 using Domain.ValueObjects;
@@ -25,6 +26,8 @@ public sealed class BoardisDbContext : DbContext
     public DbSet<ListCard> ListCards => Set<ListCard>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<MemberPermission> MemberPermissions => Set<MemberPermission>();
+    public DbSet<Media> Media => Set<Media>();
+    
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -56,9 +59,7 @@ public sealed class BoardisDbContext : DbContext
             b.Property(board => board.Description)
                 .HasMaxLength(500)
                 .IsRequired(false);
-          
-            b.Property(board => board.WallpaperImageId);
-
+            
             b.Property(board => board.Visibility)
                 .IsRequired()
                 .HasDefaultValue(Domain.Constants.VisibilityLevel.Private)
@@ -212,6 +213,22 @@ public sealed class BoardisDbContext : DbContext
 
             // Index for sorting by Pos
             c.HasIndex(card => new { ListId = card.BoardListId, card.Position });
+        });
+        
+        // ------ Media -------
+        builder.Entity<Media>(m =>
+        {
+            m.HasKey(media => media.Id);
+            
+            m.Property(media => media.BoundToEntityId)
+                .IsRequired();
+            
+            m.Property(media => media.UploadedAt)
+                .HasDefaultValueSql("now()")
+                .ValueGeneratedOnAdd();
+            
+            m.Property(media => media.UploadedByUserId)
+                .IsRequired();
         });
         
         SeedRolesAndPermissions(builder);

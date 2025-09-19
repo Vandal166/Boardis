@@ -20,7 +20,7 @@ internal sealed class GetBoardsQueryHandler : IQueryHandler<GetBoardsQuery, List
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
         
         const string sql = """
-                           SELECT "Id", "Title", "Description", "WallpaperImageId", "Visibility"
+                           SELECT "Id", "Title", "Description", "Visibility"
                            FROM "Boards"
                            LEFT JOIN "BoardMembers" ON "Boards"."Id" = "BoardMembers"."BoardId"
                            WHERE "BoardMembers"."UserId" = @UserId

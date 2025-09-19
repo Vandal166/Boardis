@@ -10,6 +10,5 @@ public sealed record PatchBoardCommand : ICommand
     public Guid RequestingUserId { get; init; }
     public PatchValue<string?> Title { get; init; }
     public PatchValue<string?> Description { get; init; }
-    public PatchValue<Guid?> WallpaperImageId { get; init; }
     public PatchValue<VisibilityLevel?> Visibility { get; init; }
 }

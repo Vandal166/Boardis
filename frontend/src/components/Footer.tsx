@@ -5,7 +5,7 @@ function Footer()
     const navigate = useNavigate();
 
     return (
-        <footer className="w-full bg-gray-800 text-white py-12 shadow-2xl">
+        <footer className="w-full bg-gray-800 text-white py-12 shadow-2xl z-0">
             <div className="container mx-auto px-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div>

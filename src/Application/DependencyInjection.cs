@@ -1,6 +1,5 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Abstractions.CQRS.Behaviours;
-using Application.Contracts.Communication;
 using Application.Contracts.User;
 using Application.Services;
 using FluentValidation;

@@ -50,9 +50,6 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasDefaultValue("Private");
 
-                    b.Property<Guid?>("WallpaperImageId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Title");
@@ -149,6 +146,28 @@ namespace Infrastructure.Data.Migrations
                             Id = new Guid("fedcba98-7654-3210-fedc-ba9876543210"),
                             Key = "Member"
                         });
+                });
+
+            modelBuilder.Entity("Domain.Images.Entities.Media", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BoundToEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Media");
                 });
 
             modelBuilder.Entity("Domain.ListCards.Entities.ListCard", b =>

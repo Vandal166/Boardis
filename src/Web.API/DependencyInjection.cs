@@ -17,6 +17,11 @@ public static class DependencyInjection
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, CustomAuthorizationMiddlewareResultHandler>();
         
         services.AddScoped<IBoardHubNotifier, BoardHubNotifier>();
+        services.AddScoped<IBoardListNotifier, BoardListNotifier>();
+        services.AddScoped<IListCardNotifier, ListCardNotifier>();
+        
+        services.AddScoped<IBoardMemberNotifier, BoardMemberNotifier>();
+        
         services.AddScoped<INotificationNotifier, NotificationNotifier>();
         
         
