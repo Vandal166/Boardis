@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../api';
 import { useConfirmation } from './ConfirmationDialog';
+import toast from 'react-hot-toast';
 
 interface BoardSettingsPanelProps
 {
@@ -208,20 +209,23 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         try
         {
             const form = new FormData();
-            form.append('EntityId', boardId);
             form.append('File', file);
 
-            await api.post('/api/media', form, {
+            await api.post(`/api/boards/${boardId}/media`, form, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            // Optionally: notify parent or show success UI
+            // Optionally notify parent of update
+            if (onUpdated)
+            {
+                onUpdated({ id: boardId, title: editTitle, description: editDescription });
+            }
         }
         catch (err: any)
         {
             if (err?.response?.status !== 403)
             {
                 const errorsObj = err.response?.data?.errors;
-                let msg: string | undefined;
+                let msg: string;
 
                 if (errorsObj && typeof errorsObj === 'object')
                 {
@@ -229,8 +233,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                         .flat()
                         .join(' ');
                 }
-
-                if (!msg)
+                else
                 {
                     msg =
                         err.response?.data?.detail ||
@@ -238,7 +241,8 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                         'Failed to upload image';
                 }
 
-                setError(msg ?? null);
+
+                toast.error(msg);
             }
         }
         finally
@@ -263,15 +267,18 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         setError(null);
         try
         {
-            await api.delete(`/api/media/${boardId}`);
-            // Optionally: notify parent or show success UI
+            await api.delete(`/api/boards/${boardId}/media`);
+            if (onUpdated)
+            {
+                onUpdated({ id: boardId, title: editTitle, description: editDescription });
+            }
         }
         catch (err: any)
         {
             if (err?.response?.status !== 403)
             {
                 const errorsObj = err.response?.data?.errors;
-                let msg: string | undefined;
+                let msg: string;
 
                 if (errorsObj && typeof errorsObj === 'object')
                 {
@@ -279,8 +286,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                         .flat()
                         .join(' ');
                 }
-
-                if (!msg)
+                else
                 {
                     msg =
                         err.response?.data?.detail ||
@@ -288,7 +294,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                         'Failed to delete wallpaper';
                 }
 
-                setError(msg ?? null);
+                toast.error(msg);
             }
         }
         finally

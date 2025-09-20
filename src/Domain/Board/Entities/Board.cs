@@ -5,6 +5,7 @@ using Domain.BoardMembers.Entities;
 using Domain.BoardMembers.Events;
 using Domain.Common;
 using Domain.Constants;
+using Domain.Images.Entities;
 using Domain.ValueObjects;
 using FluentResults;
 
@@ -15,6 +16,7 @@ public sealed class Board : Entity, IAggregateRoot
     public Guid Id { get; private set; }
     public Title Title { get; private set; }
     public string? Description { get; private set; }
+    public Guid? WallpaperImageId { get; private set; } // optional image id in blob storage for the board
     
     public VisibilityLevel Visibility { get; private set; } // e.g. public, private
     
@@ -75,7 +77,6 @@ public sealed class Board : Entity, IAggregateRoot
             if (descriptionResult.IsFailed) 
                 errors.AddRange(descriptionResult.Errors);
         }
-
         if (visibility.IsSet)
         {
             if (visibility.Value is null)
@@ -116,7 +117,7 @@ public sealed class Board : Entity, IAggregateRoot
         var list = _lists.FirstOrDefault(l => l.Id == listId);
         if (list == null)
             return Result.Fail(new Error("List not found.").WithMetadata("Status", 404));
-
+ 
         _lists.Remove(list);
         UpdatedAt = DateTime.UtcNow;
         
@@ -142,13 +143,32 @@ public sealed class Board : Entity, IAggregateRoot
 
     public BoardList? GetListById(Guid listId) => _lists.FirstOrDefault(l => l.Id == listId);
 
-    public Result Delete(Guid requestedByUserId)
+    public Result DeleteBoard(Guid requestedByUserId)
     {
         if(_members.Any(m => m.RoleId == Roles.OwnerId && m.UserId != requestedByUserId))
             return Result.Fail(new Error("Only the owner can delete the board.").WithMetadata("Status", 403));
         
+        AddDomainEvent(new BoardWallpaperRemovedEvent(Id, WallpaperImageId, requestedByUserId));
         AddDomainEvent(new BoardDeletedEvent(Id, requestedByUserId, Members.Select(g => g.UserId).ToList()));
 
+        return Result.Ok();
+    }
+    
+    public Result LeaveBoard(Guid requestedByUserId)
+    {
+        var member = _members.FirstOrDefault(m => m.UserId == requestedByUserId);
+        if (member == null)
+            return Result.Fail(new Error("You are not a member of this board.").WithMetadata("Status", 404));
+
+        if (member.RoleId == Roles.OwnerId)
+            return Result.Fail(new Error("The owner cannot leave the board. Delete it instead.").WithMetadata("Status", 409));
+        
+        _members.Remove(member);
+        UpdatedAt = DateTime.UtcNow;
+        
+        AddDomainEvent(new BoardMemberLeftEvent(Id, requestedByUserId));
+        AddDomainEvent(new BoardUpdatedEvent(Id, requestedByUserId, Members.Select(g => g.UserId).ToList()));
+        
         return Result.Ok();
     }
     
@@ -182,6 +202,8 @@ public sealed class Board : Entity, IAggregateRoot
         if (member.RoleId == Roles.OwnerId)
             return Result.Fail(new Error("Cannot remove the owner of the board.").WithMetadata("Status", 409));
         
+        if(userId == requestedByUserId)
+            return Result.Fail(new Error("You cannot remove yourself from the board.").WithMetadata("Status", 403));
         
         _members.Remove(member);
         UpdatedAt = DateTime.UtcNow;
@@ -191,6 +213,39 @@ public sealed class Board : Entity, IAggregateRoot
 
     public BoardMember? GetMemberByUserId(Guid userId) => _members.FirstOrDefault(m => m.UserId == userId);
     
+    public Result SetWallpaperImageId(Guid wallpaperImageId, Guid requestedByUserId)
+    {
+        var member = _members.FirstOrDefault(m => m.UserId == requestedByUserId);
+        if (member is null)
+            return Result.Fail(new Error("Only board members can set the wallpaper image.").WithMetadata("Status", 403));
+
+        var oldImageId = WallpaperImageId;
+        WallpaperImageId = wallpaperImageId;
+        UpdatedAt = DateTime.UtcNow;
+        AddDomainEvent(new BoardWallpaperAddedEvent(Id, oldImageId, wallpaperImageId, requestedByUserId));
+        AddDomainEvent(new BoardUpdatedEvent(Id, requestedByUserId, Members.Select(g => g.UserId).ToList()));
+        
+        return Result.Ok();
+    }
+    
+    public Result DeleteWallpaperImageId(Guid requestedByUserId)
+    {
+        var member = _members.FirstOrDefault(m => m.UserId == requestedByUserId);
+        if (member is null)
+            return Result.Fail(new Error("Only board members can delete the wallpaper image.").WithMetadata("Status", 403));
+
+        if (WallpaperImageId is null)
+            return Result.Fail(new Error("No wallpaper image to delete.").WithMetadata("Status", 409));
+        
+        var oldImageId = WallpaperImageId.Value;
+        WallpaperImageId = null;
+        UpdatedAt = DateTime.UtcNow;
+        
+        AddDomainEvent(new BoardWallpaperRemovedEvent(Id, oldImageId, requestedByUserId));
+        AddDomainEvent(new BoardUpdatedEvent(Id, requestedByUserId, Members.Select(g => g.UserId).ToList()));
+        
+        return Result.Ok();
+    }
     
     private Result UpdateTitle(string title)
     {

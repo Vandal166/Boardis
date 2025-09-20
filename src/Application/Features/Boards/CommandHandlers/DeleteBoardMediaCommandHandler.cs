@@ -3,42 +3,43 @@ using Application.Contracts;
 using Application.Contracts.Board;
 using Application.Contracts.Media;
 using Application.Features.Boards.Commands;
+using Domain.Constants;
 using FluentResults;
+using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.Boards.CommandHandlers;
 
-internal sealed class DeleteBoardCommandHandler : ICommandHandler<DeleteBoardCommand>
+internal sealed class DeleteBoardMediaCommandHandler : ICommandHandler<DeleteBoardMediaCommand>
 {
     private readonly IBoardRepository _boardRepository;
     private readonly IMediaRepository _mediaRepository;
     private readonly IUnitOfWork _unitOfWork;
-    public DeleteBoardCommandHandler(IBoardRepository boardRepository, IMediaRepository mediaRepository, IUnitOfWork unitOfWork)
+    public DeleteBoardMediaCommandHandler(IBoardRepository boardRepository, IMediaRepository mediaRepository, IUnitOfWork unitOfWork)
     {
         _boardRepository = boardRepository;
         _mediaRepository = mediaRepository;
         _unitOfWork = unitOfWork;
     }
-    
-    
-    public async Task<Result> Handle(DeleteBoardCommand command, CancellationToken ct = default)
+
+    public async Task<Result> Handle(DeleteBoardMediaCommand command, CancellationToken ct = default)
     {
         var board = await _boardRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail(new Error("Board not found").WithMetadata("Status", StatusCodes.Status404NotFound));
         
-        var deleteResult = board.DeleteBoard(command.RequestingUserId);
+        var oldWallpaperId = board.WallpaperImageId;
+        var deleteResult = board.DeleteWallpaperImageId(command.RequestingUserId);
         if (deleteResult.IsFailed)
             return Result.Fail(deleteResult.Errors);
-        
-        if (board.WallpaperImageId is not null)
+
+        if (oldWallpaperId is not null)
         {
-            var oldMedia = await _mediaRepository.GetByIdAsync(board.WallpaperImageId.Value, ct);
+            var oldMedia = await _mediaRepository.GetByIdAsync(oldWallpaperId.Value, ct);
             if (oldMedia is not null)
                 await _mediaRepository.DeleteAsync(oldMedia, ct);
         }
-        await _boardRepository.DeleteAsync(board, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
         
+        await _unitOfWork.SaveChangesAsync(ct);
         return Result.Ok();
     }
 }

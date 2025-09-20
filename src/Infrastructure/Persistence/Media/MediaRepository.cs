@@ -19,16 +19,15 @@ internal sealed class MediaRepository : IMediaRepository
         await _dbContext.Media.AddAsync(media, ct);
     }
 
+    public Task DeleteAsync(Media media, CancellationToken ct = default)
+    {
+        _dbContext.Media.Remove(media);
+        return Task.CompletedTask;
+    }
+
     public async Task<Media?> GetByIdAsync(Guid mediaId, CancellationToken ct = default)
     {
         return await _dbContext.Media
             .FirstOrDefaultAsync(m => m.Id == mediaId, ct);
-    }
-
-    public async Task<List<Media>?> GetByEntityIdAsync(Guid boundToId, CancellationToken ct = default)
-    {
-        return await _dbContext.Media
-            .Where(m => m.BoundToEntityId == boundToId)
-            .ToListAsync(ct);
     }
 }

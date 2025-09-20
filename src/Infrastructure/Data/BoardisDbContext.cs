@@ -60,6 +60,8 @@ public sealed class BoardisDbContext : DbContext
                 .HasMaxLength(500)
                 .IsRequired(false);
             
+            b.Property(board => board.WallpaperImageId);
+            
             b.Property(board => board.Visibility)
                 .IsRequired()
                 .HasDefaultValue(Domain.Constants.VisibilityLevel.Private)
@@ -219,9 +221,6 @@ public sealed class BoardisDbContext : DbContext
         builder.Entity<Media>(m =>
         {
             m.HasKey(media => media.Id);
-            
-            m.Property(media => media.BoundToEntityId)
-                .IsRequired();
             
             m.Property(media => media.UploadedAt)
                 .HasDefaultValueSql("now()")

@@ -24,4 +24,10 @@ internal sealed class BoardMemberNotifier : IBoardMemberNotifier
         await _hubContext.Clients.Group(boardId.ToString())
             .SendAsync("BoardMemberRemoved", boardId, userId, ct);
     }
+    
+    public async Task NotifyBoardMemberLeftAsync(Guid boardId, Guid userId, CancellationToken ct = default)
+    {
+        await _hubContext.Clients.Group(boardId.ToString())
+            .SendAsync("BoardMemberLeft", boardId, userId, ct);
+    }
 }

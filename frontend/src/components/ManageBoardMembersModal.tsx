@@ -102,13 +102,24 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                 fetchMembers();
             }
         }
+
+        function handleBoardMemberLeft(updatedBoardId: string)
+        {
+            if (updatedBoardId === boardId && fetchMembers)
+            {
+                fetchMembers();
+                toast.success('A member has left the board.');
+            }
+        }
         boardHubConnection.on('BoardMemberAdded', handleMemberAdded);
         boardHubConnection.on('BoardMemberRemoved', handleMemberRemoved);
+        boardHubConnection.on('BoardMemberLeft', handleBoardMemberLeft);
 
         return () =>
         {
             boardHubConnection.off('BoardMemberAdded', handleMemberAdded);
             boardHubConnection.off('BoardMemberRemoved', handleMemberRemoved);
+            boardHubConnection.off('BoardMemberLeft', handleBoardMemberLeft);
         };
     }, [boardHubConnection, boardId, fetchMembers]);
 

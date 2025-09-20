@@ -8,5 +8,4 @@ public interface IMediaRepository
     Task DeleteAsync(Media media, CancellationToken ct = default);
     
     Task<Media?> GetByIdAsync(Guid mediaId, CancellationToken ct = default);
-    Task<List<Media>?> GetByEntityIdAsync(Guid boundToId, CancellationToken ct = default);
 }

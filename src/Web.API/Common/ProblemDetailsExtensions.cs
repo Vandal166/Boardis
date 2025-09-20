@@ -74,7 +74,6 @@ public static class ProblemDetailsExtensions
         {
             400 => controller.BadRequest(problemDetails),
             401 => controller.Unauthorized(problemDetails),
-            403 => controller.Forbid(),
             404 => controller.NotFound(problemDetails),
             409 => controller.Conflict(problemDetails),
             _ => controller.StatusCode(status, problemDetails)

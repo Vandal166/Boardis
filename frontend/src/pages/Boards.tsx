@@ -14,6 +14,7 @@ interface Board
   id: string;
   title: string;
   description?: string;
+  wallpaperImageId?: string;
 }
 
 function Boards()
@@ -200,19 +201,18 @@ function Boards()
     const fetchWallpapers = async () =>
     {
       const wallpaperMap: { [boardId: string]: string } = {};
-      await Promise.all(boards.map(async board =>
-      {
-        try
+      await Promise.all(boards
+        .filter(board => !!board.wallpaperImageId) // Only boards with wallpaperImageId
+        .map(async board =>
         {
-          // Fetch media array for this board
-          const res = await api.get(`/api/media/${board.id}`);
-          if (res.status === 200 && Array.isArray(res.data) && res.data.length > 0)
+          try
           {
-            const media = res.data[0];
-            if (media.data)
+            // Fetch media array for this board
+            const res = await api.get(`/api/media/${board.wallpaperImageId}`);
+            if (res.status === 200 && res.data && res.data.data)
             {
               // Decode base64 string to binary
-              const byteString = atob(media.data);
+              const byteString = atob(res.data.data);
               const byteArray = new Uint8Array(byteString.length);
               for (let i = 0; i < byteString.length; i++)
                 byteArray[i] = byteString.charCodeAt(i);
@@ -220,12 +220,11 @@ function Boards()
               wallpaperMap[board.id] = URL.createObjectURL(blob);
             }
           }
-        }
-        catch
-        {
-          // No wallpaper for this board, fallback
-        }
-      }));
+          catch
+          {
+            // No wallpaper for this board, fallback
+          }
+        }));
       if (isMounted)
         setBoardWallpapers(wallpaperMap);
     };

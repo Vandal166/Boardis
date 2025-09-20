@@ -17,11 +17,10 @@ internal sealed class BlobStorage : IBlobStorage
         _blobServiceClient = blobServiceClient;
     }
 
-    public async Task<Result<Guid>> UploadFileAsync(IFormFile fileStream, string contentType, string containerName, CancellationToken ct = default)
+    public async Task<Result<Guid>> UploadFileAsync(Guid mediaId, IFormFile fileStream, string contentType, string containerName, CancellationToken ct = default)
     {
         BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
 
-        var mediaId = Guid.NewGuid();
         var blobClient = containerClient.GetBlobClient(mediaId.ToString());
 
         try

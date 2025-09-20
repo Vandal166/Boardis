@@ -50,6 +50,9 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasDefaultValue("Private");
 
+                    b.Property<Guid?>("WallpaperImageId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Title");
@@ -152,9 +155,6 @@ namespace Infrastructure.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BoundToEntityId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UploadedAt")

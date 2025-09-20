@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Data.Migrations
 {
     [DbContext(typeof(BoardisDbContext))]
-    [Migration("20250919160314_Add Media entity")]
-    partial class AddMediaentity
+    [Migration("20250920141151_Add Media Entity")]
+    partial class AddMediaEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -52,6 +52,9 @@ namespace Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")
                         .HasDefaultValue("Private");
+
+                    b.Property<Guid?>("WallpaperImageId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -155,9 +158,6 @@ namespace Infrastructure.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BoundToEntityId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UploadedAt")

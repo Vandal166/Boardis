@@ -18,7 +18,7 @@ public sealed class PatchBoardRequest : PatchRequest
         set { _description = value; SetHasProperty(nameof(Description)); }
     }
     private string? _description;
-
+    
     public VisibilityLevel? Visibility
     {
         get => _visibility;
