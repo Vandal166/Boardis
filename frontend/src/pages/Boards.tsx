@@ -191,6 +191,53 @@ function Boards()
     (board.description && board.description.toLowerCase().includes(search.toLowerCase()))
   );
 
+  // Add wallpaper state: boardId -> image URL
+  const [boardWallpapers, setBoardWallpapers] = useState<{ [boardId: string]: string }>({});
+
+  // Fetch wallpapers for boards
+  useEffect(() =>
+  {
+    let isMounted = true;
+    const fetchWallpapers = async () =>
+    {
+      const wallpaperMap: { [boardId: string]: string } = {};
+      await Promise.all(boards
+        .filter(board => !!board.wallpaperImageId) // Only boards with wallpaperImageId
+        .map(async board =>
+        {
+          try
+          {
+            // Fetch media array for this board
+            const res = await api.get(`/api/media/${board.wallpaperImageId}`);
+            if (res.status === 200 && res.data && res.data.data)
+            {
+              // Decode base64 string to binary
+              const byteString = atob(res.data.data);
+              const byteArray = new Uint8Array(byteString.length);
+              for (let i = 0; i < byteString.length; i++)
+                byteArray[i] = byteString.charCodeAt(i);
+              const blob = new Blob([byteArray], { type: 'image/jpeg' });
+              wallpaperMap[board.id] = URL.createObjectURL(blob);
+            }
+          }
+          catch
+          {
+            // No wallpaper for this board, fallback
+          }
+        }));
+      if (isMounted)
+        setBoardWallpapers(wallpaperMap);
+    };
+    if (boards.length > 0)
+      fetchWallpapers();
+    else
+      setBoardWallpapers({});
+    return () =>
+    {
+      isMounted = false;
+      Object.values(boardWallpapers).forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [boards]);
 
   // Create board handler
   const handleCreateBoard = async (data: { title: string; description?: string; wallpaperImageId?: string }) =>
@@ -202,7 +249,6 @@ function Boards()
     {
       const payload: any = { title: data.title };
       if (data.description) payload.description = data.description;
-      if (data.wallpaperImageId) payload.wallpaperImageId = data.wallpaperImageId;
 
       const response = await api.post('/api/boards', payload);
 
@@ -359,10 +405,10 @@ function Boards()
                       style={{ minHeight: '220px' }}
                     >
                       {/* Wallpaper or fallback color */}
-                      {board.wallpaperImageId ? (
+                      {boardWallpapers[board.id] ? (
                         <div className="h-32 w-full bg-gray-200">
                           <img
-                            src={`/api/wallpapers/${board.wallpaperImageId}`}
+                            src={boardWallpapers[board.id]}
                             alt="Board wallpaper"
                             className="w-full h-full object-cover" />
                         </div>

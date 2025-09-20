@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.CQRS;
 using Application.Contracts.User;
 using Application.DTOs.Boards;
+using Application.DTOs.Media;
 using Application.Features.Boards.Commands;
 using Application.Features.Boards.Queries;
 using Domain.Board.Entities;
@@ -19,23 +20,33 @@ namespace Web.API.Controllers;
 public sealed class BoardsController : ControllerBase
 {
     private readonly ICommandHandler<CreateBoardCommand, Board> _createBoardHandler;
+    private readonly ICommandHandler<UploadBoardMediaCommand, Board> _uploadMediaHandler;
     private readonly ICommandHandler<DeleteBoardCommand> _deleteBoardHandler;
+    private readonly ICommandHandler<DeleteBoardMediaCommand> _deleteBoardMediaHandler;
+    private readonly ICommandHandler<LeaveBoardCommand> _leaveBoardHandler;
     private readonly IQueryHandler<GetBoardByIdQuery, BoardResponse> _getBoardByIdHandler;
     private readonly IQueryHandler<GetBoardsQuery, List<BoardResponse>> _getBoardsHandler;
     private readonly ICommandHandler<PatchBoardCommand> _patchBoardHandler;
     private readonly ICurrentUser _currentUser;
     
     public BoardsController(ICommandHandler<CreateBoardCommand, Board> createBoardHandler,
-        ICommandHandler<DeleteBoardCommand> deleteBoardHandler, IQueryHandler<GetBoardByIdQuery, BoardResponse> getBoardByIdHandler,
+        ICommandHandler<UploadBoardMediaCommand, Board> uploadMediaHandler,
+        ICommandHandler<DeleteBoardCommand> deleteBoardHandler,
+        ICommandHandler<DeleteBoardMediaCommand> deleteBoardMediaHandler,
+        IQueryHandler<GetBoardByIdQuery, BoardResponse> getBoardByIdHandler,
         IQueryHandler<GetBoardsQuery, List<BoardResponse>> getBoardsHandler,
-        ICurrentUser currentUser, ICommandHandler<PatchBoardCommand> patchBoardHandler)
+        ICommandHandler<PatchBoardCommand> patchBoardHandler,
+        ICurrentUser currentUser, ICommandHandler<LeaveBoardCommand> leaveBoardHandler)
     {
         _createBoardHandler = createBoardHandler;
+        _uploadMediaHandler = uploadMediaHandler;
         _deleteBoardHandler = deleteBoardHandler;
+        _deleteBoardMediaHandler = deleteBoardMediaHandler;
         _getBoardByIdHandler = getBoardByIdHandler;
         _getBoardsHandler = getBoardsHandler;
-        _currentUser = currentUser;
         _patchBoardHandler = patchBoardHandler;
+        _currentUser = currentUser;
+        _leaveBoardHandler = leaveBoardHandler;
     }
     
     [HttpGet("{boardId:guid}")]
@@ -76,7 +87,6 @@ public sealed class BoardsController : ControllerBase
         {
             Title = request.Title,
             Description = request.Description,
-            WallpaperImageId = request.WallpaperImageId,
             OwnerId = _currentUser.Id
         };
         
@@ -98,6 +108,22 @@ public sealed class BoardsController : ControllerBase
         };
         
         var result = await _deleteBoardHandler.Handle(command, ct);
+        if (result.IsFailed)
+            return result.ToProblemResponse(this);
+        
+        return NoContent();
+    }
+    
+    [HttpPost("{boardId:guid}/leave")]
+    public async Task<IActionResult> LeaveBoard(Guid boardId, CancellationToken ct = default)
+    {
+        var command = new LeaveBoardCommand
+        {
+            BoardId = boardId,
+            RequestingUserId = _currentUser.Id
+        };
+        
+        var result = await _leaveBoardHandler.Handle(command, ct);
         if (result.IsFailed)
             return result.ToProblemResponse(this);
         
@@ -133,9 +159,6 @@ public sealed class BoardsController : ControllerBase
             Description = boardToPatch.HasProperty(nameof(boardToPatch.Description)) 
                 ? PatchValue<string?>.Set(boardToPatch.Description) 
                 : PatchValue<string?>.Unset(),
-            WallpaperImageId = boardToPatch.HasProperty(nameof(boardToPatch.WallpaperImageId)) 
-                ? PatchValue<Guid?>.Set(boardToPatch.WallpaperImageId) 
-                : PatchValue<Guid?>.Unset(),
             Visibility = boardToPatch.HasProperty(nameof(boardToPatch.Visibility)) 
                 ? PatchValue<VisibilityLevel?>.Set(boardToPatch.Visibility) 
                 : PatchValue<VisibilityLevel?>.Unset()
@@ -146,6 +169,42 @@ public sealed class BoardsController : ControllerBase
             return updateResult.ToProblemResponse(this);
         
         
+        return NoContent();
+    }
+    
+    [HttpPost("{boardId:guid}/media")]
+    [HasPermission(Permissions.Update)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadBoardMedia(Guid boardId, [FromForm] UploadMediaRequest request, CancellationToken ct = default)
+    {
+        var command = new UploadBoardMediaCommand
+        {
+            BoardId = boardId,
+            File = request.File,
+            RequestingUserId = _currentUser.Id
+        };
+
+        var result = await _uploadMediaHandler.Handle(command, ct);
+        if (result.IsFailed)
+            return result.ToProblemResponse(this);
+
+        return CreatedAtAction(nameof(GetBoardById), new { boardId = result.Value.Id }, result.Value);
+    }
+
+    [HttpDelete("{boardId:guid}/media")]
+    [HasPermission(Permissions.Delete)]
+    public async Task<IActionResult> DeleteBoardMedia(Guid boardId, CancellationToken ct = default)
+    {
+        var command = new DeleteBoardMediaCommand
+        {
+            BoardId = boardId,
+            RequestingUserId = _currentUser.Id
+        };
+
+        var result = await _deleteBoardMediaHandler.Handle(command, ct);
+        if (result.IsFailed)
+            return result.ToProblemResponse(this);
+
         return NoContent();
     }
 }

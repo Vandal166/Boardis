@@ -46,7 +46,7 @@ public sealed class ListCard : Entity
 
         if (title.IsSet)
         {
-            if(title.Value is null) //TODO is this check necessary? Since UpdatePosition checks anyway if null/empty
+            if(title.Value is null)
             {
                 errors.Add(new Error("Title cannot be null").WithMetadata("PropertyName", nameof(Title)));
             }

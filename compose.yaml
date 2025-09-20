@@ -12,6 +12,8 @@
           condition: service_healthy
         redis:
             condition: service_started
+        azurite:
+          condition: service_started
     environment:
       - ASPNETCORE_URLS=http://+:5185 # Listen on port 5185
       - ASPNETCORE_ENVIRONMENT=Development # running in Development mode
@@ -109,6 +111,18 @@
       - web.keycloak
     networks:
       - boardis-network
+        
+        
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    ports:
+        - "10000:10000" # Blob service
+    volumes:
+        - ./.containers/azurite:/data
+    networks:
+      - boardis-network
+    
   
 networks:
   boardis-network:

@@ -25,7 +25,7 @@ function BoardView()
   const [showSettings, setShowSettings] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   // Board info for settings panel
-  const [boardInfo, setBoardInfo] = useState<{ id: string; title: string; description?: string } | null>(null);
+  const [boardInfo, setBoardInfo] = useState<{ id: string; title: string; description?: string; wallpaperImageId?: string; } | null>(null);
 
   const {
     lists,
@@ -37,25 +37,44 @@ function BoardView()
     handleCreateList,
   } = useBoardLists(boardId, keycloak, navigate, initialized);
 
+  // Centralized fetch function
+  const fetchBoardInfo = useCallback(async () =>
+  {
+    if (!boardId || !initialized || !keycloak.authenticated || !keycloak.token) return;
+    try
+    {
+      const res = await api.get(`/api/boards/${boardId}`);
+      setBoardInfo(res.data);
+    } catch
+    {
+      setBoardInfo(null);
+    }
+  }, [boardId, initialized, keycloak.authenticated, keycloak.token]);
+
+  useEffect(() =>
+  {
+    fetchBoardInfo();
+  }, [fetchBoardInfo]);
+
   const boardHubConnection = useBoardSignalR();
   useEffect(() =>
   {
+    // Defer connection/join until Keycloak is ready
+    if (!initialized || !keycloak.authenticated || !keycloak.token || !boardId)
+      return;
+
     const connectAndJoin = async () =>
     {
       try
       {
-        // Only start if disconnected
         if (boardHubConnection.state === HubConnectionState.Disconnected)
         {
           await boardHubConnection.start();
           console.log('Connection started');
         }
 
-        if (boardId)
-        {
-          await boardHubConnection.invoke('JoinGroup', boardId);
-          console.log('Joined board group: ' + boardId);
-        }
+        await boardHubConnection.invoke('JoinGroup', boardId);
+        console.log('Joined board group: ' + boardId);
       }
       catch (err)
       {
@@ -70,11 +89,7 @@ function BoardView()
     {
       if (updatedBoardId === boardId)
       {
-        // Refetch board info and update state
-        await api.get(`/api/boards/${boardId}`)
-          .then(res => setBoardInfo(res.data))
-          .catch(() => setBoardInfo(null));
-        toast.success('Board updated!');
+        await fetchBoardInfo();
       }
     };
 
@@ -90,10 +105,49 @@ function BoardView()
     boardHubConnection.on('BoardUpdated', handleBoardUpdated);
     boardHubConnection.on('BoardDeleted', handleBoardDeleted);
 
+    boardHubConnection.on('BoardListCreated', async (updatedBoardId: string) =>
+    {
+      if (boardId === updatedBoardId)
+      {
+        console.log('BoardListCreated event received for board ' + updatedBoardId);
+        // Refetch lists
+        await api.get(`/api/boards/${boardId}/lists`)
+          .then(res => setLists(res.data))
+          .catch(() => setLists([]));
+      }
+    });
+
+    boardHubConnection.on('BoardListUpdated', async (updatedBoardId: string, updatedListId: string) =>
+    {
+      if (boardId === updatedBoardId)
+      {
+        console.log('BoardListUpdated event received for board ' + updatedBoardId + ' list ' + updatedListId);
+        // Fetch only the updated list
+        await api.get(`/api/boards/${boardId}/lists/${updatedListId}`)
+          .then(res =>
+          {
+            setLists(prev =>
+              [...prev.map(l => l.id === updatedListId ? res.data : l)]
+                .sort((a, b) => a.position - b.position)
+            );
+          });
+      }
+    });
+
+    boardHubConnection.on('BoardListDeleted', async (updatedBoardId: string, deletedListId: string) =>
+    {
+      if (boardId === updatedBoardId)
+      {
+        console.log('BoardListDeleted event received for board ' + updatedBoardId + ' list ' + deletedListId);
+        //delete from local state
+        setLists(prev => prev.filter(l => l.id !== deletedListId));
+      }
+    });
+
     // Cleanup: Leave group and remove listeners on unmount
     return () =>
     {
-      if (boardId && boardHubConnection.state === HubConnectionState.Connected)
+      if (boardHubConnection.state === HubConnectionState.Connected)
       {
         boardHubConnection.invoke('LeaveGroup', boardId)
           .then(() => console.log('Left board group: ' + boardId))
@@ -101,8 +155,11 @@ function BoardView()
       }
       boardHubConnection.off('BoardUpdated', handleBoardUpdated);
       boardHubConnection.off('BoardDeleted', handleBoardDeleted);
+      boardHubConnection.off('BoardListCreated');
+      boardHubConnection.off('BoardListUpdated');
+      boardHubConnection.off('BoardListDeleted');
     };
-  }, [boardId, boardHubConnection, navigate]);
+  }, [boardId, boardHubConnection, navigate, initialized, keycloak.authenticated, keycloak.token, fetchBoardInfo]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -115,10 +172,6 @@ function BoardView()
   const [membersLoading, setMembersLoading] = useState(true);
 
   // Instead, just use list ids for sortableItems
-  const sortableItems = useMemo(
-    () => lists.map(l => l.id),
-    [lists]
-  );
 
   const fetchMembers = async () =>
   {
@@ -298,13 +351,6 @@ function BoardView()
     }
   }, [lists, keycloak.token, boardId]);
 
-  useEffect(() =>
-  {
-    if (!boardId || !initialized || !keycloak.authenticated || !keycloak.token) return;
-    api.get(`/api/boards/${boardId}`)
-      .then(res => setBoardInfo(res.data))
-      .catch(() => setBoardInfo(null));
-  }, [boardId, initialized, keycloak.authenticated, keycloak.token]);
 
   useEffect(() =>
   {
@@ -321,6 +367,94 @@ function BoardView()
     return () => window.removeEventListener("boardis:removed", handleRemoved);
   }, [boardId, navigate]);
 
+  // Wallpaper state for this board
+  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
+
+  useEffect(() =>
+  {
+    let isMounted = true;
+    const fetchWallpaper = async () =>
+    {
+      // Defer API call until Keycloak is ready to avoid 401 redirect
+      if (!boardId || !initialized || !keycloak.authenticated || !keycloak.token)
+      {
+        if (isMounted) setWallpaperUrl(null);
+        return;
+      }
+      try
+      {
+        if (!boardInfo?.wallpaperImageId)
+        {
+          if (isMounted) setWallpaperUrl(null);
+          return;
+        }
+
+        // Fetch media object for this board
+        const res = await api.get(`/api/media/${boardInfo.wallpaperImageId}`);
+        if (res.status === 200 && res.data && res.data.data)
+        {
+          // Decode base64 string to binary
+          const byteString = atob(res.data.data);
+          const byteArray = new Uint8Array(byteString.length);
+          for (let i = 0; i < byteString.length; i++)
+            byteArray[i] = byteString.charCodeAt(i);
+          const blob = new Blob([byteArray], { type: 'image/jpeg' });
+          const url = URL.createObjectURL(blob);
+          if (isMounted) setWallpaperUrl(url);
+        }
+        else if (isMounted) setWallpaperUrl(null);
+      }
+      catch
+      {
+        if (isMounted) setWallpaperUrl(null);
+      }
+    };
+    fetchWallpaper();
+    return () =>
+    {
+      isMounted = false;
+      if (wallpaperUrl) URL.revokeObjectURL(wallpaperUrl);
+    };
+  }, [boardId, initialized, keycloak.authenticated, keycloak.token, boardInfo]);
+
+  const [leaveLoading, setLeaveLoading] = useState(false);
+
+  // Add search state for lists
+  const [search, setSearch] = useState('');
+
+  // Filter lists by title
+  const filteredLists = useMemo(
+    () => lists.filter(list =>
+      list.title.toLowerCase().includes(search.toLowerCase())
+    ),
+    [lists, search]
+  );
+
+
+  const handleLeaveBoard = async () =>
+  {
+    if (!boardId || !keycloak.token) return;
+    setLeaveLoading(true);
+    try
+    {
+      await api.post(`/api/boards/${boardId}/leave`);
+      toast.success('You have left the board.');
+      navigate('/dashboard');
+    }
+    catch (err: any)
+    {
+      let msg = err?.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message);
+      if (!msg)
+        msg = 'Failed to leave the board.';
+
+      toast.error(msg);
+    }
+    finally
+    {
+      setLeaveLoading(false);
+    }
+  };
+
   if (isLoading)
   {
     return (
@@ -336,91 +470,133 @@ function BoardView()
   }
 
   return (
-    <div className="min-h-screen bg-gray-300 text-gray-900 font-sans">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="w-full p-6">
-          {/* Top bar with Add Member and Settings */}
-          <div className="flex justify-between items-center mb-4">
-            <button
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-              onClick={() => setShowAddMember(true)}
-            >
-              <UserPlusIcon className="w-5 h-5" />
-              Manage members
-            </button>
-            <button
-              className="p-2 rounded-full hover:bg-gray-200 transition"
-              onClick={() => setShowSettings(v => !v)}
-              aria-label="Board settings"
-            >
-              <Cog6ToothIcon className="w-7 h-7 text-gray-700" />
-            </button>
-          </div>
-
-          {/* Add Member Modal */}
-          {showAddMember && (
-            <>
-              <ManageBoardMembersModal
-                boardId={boardId!}
-                onClose={() => setShowAddMember(false)}
-                members={members}
-                onAdd={handleAddMember}
-                onRemove={handleRemoveMember}
-                isLoading={membersLoading}
-              />
-            </>
-          )}
-
-          {/* Board Settings Panel */}
-          {showSettings && boardInfo && (
-            <BoardSettingsPanel
-              onClose={() => setShowSettings(false)}
-              boardId={boardInfo.id}
-              title={boardInfo.title}
-              description={boardInfo.description}
-              onDeleted={() =>
-              {
-                toast.success('Board deleted successfully.');
-                navigate('/dashboard');
-              }}
-            />
-          )}
-
-          <div className="max-w-[1664px] mx-auto">
-            <SortableContext
-              items={sortableItems}
-              strategy={rectSortingStrategy}
-            >
-              <div className="grid grid-cols-5 gap-4 auto-rows-fr">
-                {/* Only render actual lists, no empty slots */}
-                {lists.map((list) => (
-                  <SortableList
-                    key={list.id}
-                    list={list}
-                    onDeleted={() => setLists(prev => prev.filter(l => l.id !== list.id))}
-                    onTitleUpdated={(newTitle) =>
-                      setLists(prev => prev.map(l => l.id === list.id ? { ...l, title: newTitle } : l))
-                    }
-                    onColorUpdated={(newColor) =>
-                      setLists(prev => prev.map(l => l.id === list.id ? { ...l, colorArgb: newColor } : l))
-                    }
-                  />
-                ))}
-                <AddListButton
-                  onCreate={handleCreateList}
-                  error={error}
-                  fieldErrors={fieldErrors}
-                  clearErrors={() => setFieldErrors({})}
-                />
+    <div className="min-h-screen text-gray-900 font-sans relative">
+      {/* Wallpaper background */}
+      {wallpaperUrl ? (
+        <img
+          src={wallpaperUrl}
+          alt="Board wallpaper"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          style={{ minHeight: '100%', minWidth: '100%' }}
+        />
+      ) : (
+        <div className="absolute inset-0 w-full h-full base-gradient-bg z-0" />
+      )}
+      {/* Overlay content */}
+      <div className="relative z-10 min-h-screen bg-transparent bg-opacity-70">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="w-full p-6">
+            {/* Top bar with Add Member and Settings */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-2">
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  onClick={() => setShowAddMember(true)}
+                >
+                  <UserPlusIcon className="w-5 h-5" />
+                  Manage members
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                  onClick={handleLeaveBoard}
+                  disabled={leaveLoading}
+                >
+                  {leaveLoading ? <Spinner className="w-5 h-5" /> : null}
+                  Leave board
+                </button>
               </div>
-            </SortableContext>
+              {/* Search bar for lists - make it grow to fill space */}
+              <input
+                type="text"
+                placeholder="Search lists by title..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="flex-grow mx-6 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                style={{ minWidth: 0 }}
+              />
+              <button
+                className="p-2 rounded-full hover:bg-gray-200 transition"
+                onClick={() => setShowSettings(v => !v)}
+                aria-label="Board settings"
+              >
+                <Cog6ToothIcon className="w-7 h-7 text-gray-700" />
+              </button>
+            </div>
+
+            {/* Add Member Modal */}
+            {showAddMember && (
+              <>
+                <ManageBoardMembersModal
+                  boardId={boardId!}
+                  onClose={() => setShowAddMember(false)}
+                  members={members}
+                  onAdd={handleAddMember}
+                  onRemove={handleRemoveMember}
+                  isLoading={membersLoading}
+                  fetchMembers={fetchMembers}
+                />
+              </>
+            )}
+
+            {/* Board Settings Panel */}
+            {showSettings && boardInfo && (
+              <BoardSettingsPanel
+                onClose={() => setShowSettings(false)}
+                onUpdated={async () =>
+                {
+                  await fetchBoardInfo();
+                }}
+                boardId={boardInfo.id}
+                title={boardInfo.title}
+                description={boardInfo.description}
+                onDeleted={() =>
+                {
+                  toast.success('Board deleted successfully.');
+                  navigate('/dashboard');
+                }}
+              />
+            )}
+
+            <div className="max-w-[1664px] mx-auto">
+              <SortableContext
+                items={filteredLists.map(l => l.id)}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid grid-cols-5 gap-4 auto-rows-fr">
+                  {/* Only render actual lists, no empty slots */}
+                  {filteredLists.map((list) => (
+                    <SortableList
+                      key={list.id}
+                      list={list}
+                      onDeleted={() => setLists(prev => prev.filter(l => l.id !== list.id))}
+                      onTitleUpdated={(newTitle) =>
+                        setLists(prev => prev.map(l => l.id === list.id ? { ...l, title: newTitle } : l))
+                      }
+                      onColorUpdated={(newColor) =>
+                        setLists(prev => prev.map(l => l.id === list.id ? { ...l, colorArgb: newColor } : l))
+                      }
+                    />
+                  ))}
+                  <AddListButton
+                    onCreate={handleCreateList}
+                    error={error}
+                    fieldErrors={fieldErrors}
+                    clearErrors={() => setFieldErrors({})}
+                  />
+                </div>
+                {/* Show message if no lists match search */}
+                {filteredLists.length === 0 && search.trim() !== '' && (
+                  <p className="text-gray-600 text-center mt-8">No lists found matching "{search}"</p>
+                )}
+              </SortableContext>
+            </div>
           </div>
-        </div>
-      </DndContext>
+        </DndContext>
+      </div>
     </div>
   );
 }

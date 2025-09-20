@@ -164,6 +164,14 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
         }
     };
 
+    // Sync local state with incoming card prop (for live updates)
+    useEffect(() =>
+    {
+        setTitle(card.title);
+        setTitleInput(card.title);
+        setCompletedAt(card.completedAt);
+    }, [card.title, card.completedAt]);
+
     return (
         <li
             ref={setNodeRef}

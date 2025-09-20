@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useKeycloak } from '@react-keycloak/web';
 import { useSortable } from '@dnd-kit/sortable';
@@ -15,6 +15,7 @@ import ListColorPicker from './ListColorPicker';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import SortableCard from './SortableCard';
+import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 
 export interface BoardList
 {
@@ -57,6 +58,12 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
     const [showColorPicker, setShowColorPicker] = useState(false);
     const [listColor, setListColor] = useState(list.colorArgb);
 
+    // Sync local color state with prop changes
+    useEffect(() =>
+    {
+        setListColor(list.colorArgb);
+    }, [list.colorArgb]);
+
 
     const {
         cards,
@@ -67,7 +74,55 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
         refetch,
     } = useUserListCards(boardId, list.id, keycloak, navigate, initialized);
 
-    // Maintain local ordering for optimistic updates
+
+    const boardHubConnection = useBoardSignalR();
+
+    // Stable refetch callback for event listeners
+    const refetchCards = useCallback(() =>
+    {
+        refetch();
+    }, [refetch]);
+
+    useEffect(() =>
+    {
+        function handleCardCreated(updatedBoardId: string, updatedListId: string)
+        {
+            if (boardId === updatedBoardId && list.id === updatedListId)
+            {
+                console.log('ListCardCreated event received for board ' + updatedBoardId + ' list ' + updatedListId);
+                refetchCards();
+            }
+        }
+        function handleCardUpdated(updatedBoardId: string, updatedListId: string)
+        {
+            if (boardId === updatedBoardId && list.id === updatedListId)
+            {
+                console.log('ListCardUpdated event received for board ' + updatedBoardId + ' list ' + updatedListId);
+                refetchCards();
+            }
+        }
+        function handleCardDeleted(updatedBoardId: string, updatedListId: string)
+        {
+            if (boardId === updatedBoardId && list.id === updatedListId)
+            {
+                console.log('ListCardDeleted event received for board ' + updatedBoardId + ' list ' + updatedListId);
+                refetchCards();
+            }
+        }
+
+        boardHubConnection.on('ListCardCreated', handleCardCreated);
+        boardHubConnection.on('ListCardUpdated', handleCardUpdated);
+        boardHubConnection.on('ListCardDeleted', handleCardDeleted);
+
+        return () =>
+        {
+            boardHubConnection.off('ListCardCreated', handleCardCreated);
+            boardHubConnection.off('ListCardUpdated', handleCardUpdated);
+            boardHubConnection.off('ListCardDeleted', handleCardDeleted);
+        };
+    }, [boardHubConnection, boardId, list.id, refetchCards]);
+
+
     const sortedFromHook = useMemo(() => [...cards].sort((a, b) => a.position - b.position), [cards]);
     const [localCards, setLocalCards] = useState(sortedFromHook);
     useEffect(() => setLocalCards(sortedFromHook), [sortedFromHook]);

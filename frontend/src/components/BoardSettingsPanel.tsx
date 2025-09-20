@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../api';
 import { useConfirmation } from './ConfirmationDialog';
+import toast from 'react-hot-toast';
 
 interface BoardSettingsPanelProps
 {
@@ -16,8 +17,9 @@ interface BoardSettingsPanelProps
 const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, position, boardId, title, description, onUpdated, onDeleted }) =>
 {
     const [show, setShow] = useState(false);
-    const [visible, setVisible] = useState(true); // controls exit animation
+    const [visible, setVisible] = useState(true);
     const panelRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null); // for wallpaper upload
 
     // Editing state
     const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
@@ -26,6 +28,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [uploading, setUploading] = useState(false); // uploading state
     const confirm = useConfirmation();
 
     useEffect(() =>
@@ -176,6 +179,130 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         }
     };
 
+    // Trigger hidden file input
+    const handleChangeWallpaperClick = () =>
+    {
+        fileInputRef.current?.click();
+    };
+
+    // Handle file selection + confirm + upload
+    const handleWallpaperSelected = async (e: React.ChangeEvent<HTMLInputElement>) =>
+    {
+        const file = e.target.files?.[0];
+        if (!file)
+            return;
+
+        const confirmed = await confirm.confirm({
+            title: 'Change wallpaper',
+            message: `Upload "${file.name}" as this board's wallpaper?`,
+            confirmText: 'Ok',
+            cancelText: 'Cancel'
+        });
+        if (!confirmed)
+        {
+            e.target.value = '';
+            return;
+        }
+
+        setUploading(true);
+        setError(null);
+        try
+        {
+            const form = new FormData();
+            form.append('File', file);
+
+            await api.post(`/api/boards/${boardId}/media`, form, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            // Optionally notify parent of update
+            if (onUpdated)
+            {
+                onUpdated({ id: boardId, title: editTitle, description: editDescription });
+            }
+        }
+        catch (err: any)
+        {
+            if (err?.response?.status !== 403)
+            {
+                const errorsObj = err.response?.data?.errors;
+                let msg: string;
+
+                if (errorsObj && typeof errorsObj === 'object')
+                {
+                    msg = Object.values(errorsObj)
+                        .flat()
+                        .join(' ');
+                }
+                else
+                {
+                    msg =
+                        err.response?.data?.detail ||
+                        err.response?.data?.title ||
+                        'Failed to upload image';
+                }
+
+
+                toast.error(msg);
+            }
+        }
+        finally
+        {
+            setUploading(false);
+            e.target.value = '';
+        }
+    };
+
+    // Handle wallpaper delete
+    const handleDeleteWallpaper = async () =>
+    {
+        const confirmed = await confirm.confirm({
+            title: 'Delete wallpaper',
+            message: 'Are you sure you want to delete this board\'s wallpaper?',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
+        });
+        if (!confirmed) return;
+
+        setUploading(true);
+        setError(null);
+        try
+        {
+            await api.delete(`/api/boards/${boardId}/media`);
+            if (onUpdated)
+            {
+                onUpdated({ id: boardId, title: editTitle, description: editDescription });
+            }
+        }
+        catch (err: any)
+        {
+            if (err?.response?.status !== 403)
+            {
+                const errorsObj = err.response?.data?.errors;
+                let msg: string;
+
+                if (errorsObj && typeof errorsObj === 'object')
+                {
+                    msg = Object.values(errorsObj)
+                        .flat()
+                        .join(' ');
+                }
+                else
+                {
+                    msg =
+                        err.response?.data?.detail ||
+                        err.response?.data?.title ||
+                        'Failed to delete wallpaper';
+                }
+
+                toast.error(msg);
+            }
+        }
+        finally
+        {
+            setUploading(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50">
             {/* Overlay */}
@@ -285,9 +412,29 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-700 mb-1">Change wallpaper image</h3>
-                        <button className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 transition text-sm">
-                            Change wallpaper
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 transition text-sm"
+                                onClick={handleChangeWallpaperClick}
+                                disabled={uploading}
+                            >
+                                {uploading ? 'Uploading...' : 'Change wallpaper'}
+                            </button>
+                            <button
+                                className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition text-sm"
+                                onClick={handleDeleteWallpaper}
+                                disabled={uploading}
+                            >
+                                {uploading ? 'Deleting...' : 'Delete wallpaper'}
+                            </button>
+                        </div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleWallpaperSelected}
+                        />
                     </div>
                     <div>
                         <button

@@ -15,10 +15,6 @@ public sealed class CreateBoardCommandValidator : AbstractValidator<CreateBoardC
         RuleFor(c => c.Description)
             .MaximumLength(500).WithMessage("Description cannot exceed 500 characters.")
             .When(c => c.Description != null);
-        
-        RuleFor(c => c.WallpaperImageId)
-            .Must(id => Guid.TryParse(id.ToString(), out _)).WithMessage("WallpaperImageId must be a valid GUID.")
-            .When(c => c.WallpaperImageId != null);
 
         RuleFor(c => c.OwnerId)
             .NotEmpty().WithMessage("Owner ID is required.")

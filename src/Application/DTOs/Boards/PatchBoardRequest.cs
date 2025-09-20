@@ -18,14 +18,7 @@ public sealed class PatchBoardRequest : PatchRequest
         set { _description = value; SetHasProperty(nameof(Description)); }
     }
     private string? _description;
-
-    public Guid? WallpaperImageId
-    {
-        get => _wallpaperImageId;
-        set { _wallpaperImageId = value; SetHasProperty(nameof(WallpaperImageId)); }
-    }
-    private Guid? _wallpaperImageId;
-
+    
     public VisibilityLevel? Visibility
     {
         get => _visibility;

@@ -25,7 +25,7 @@ internal sealed class CreateBoardCommandHandler : ICommandHandler<CreateBoardCom
         if (!titleResult.IsSuccess)
             return Result.Fail<Board>(titleResult.Error.ErrorMessage);
         
-        var boardResult = Board.Create(titleResult.ValueObject, command.Description, command.WallpaperImageId, command.OwnerId);
+        var boardResult = Board.Create(titleResult.ValueObject, command.Description, command.OwnerId);
         if (boardResult.IsFailed)
             return Result.Fail<Board>(boardResult.Errors);
 

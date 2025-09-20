@@ -23,13 +23,21 @@ internal sealed class RemoveBoardMemberPermissionCommandHandler : ICommandHandle
         if (board is null)
             return Result.Fail(new Error("Board not found."));
         
-        var member = board.GetMemberByUserId(command.MemberId);
-        if (member is null)
-            return Result.Fail(new Error("The specified member does not belong to the board."));
-        
         if(command.RequestingUserId == command.MemberId)
             return Result.Fail(new Error("You cannot remove permissions from yourself.")
                 .WithMetadata("Status", StatusCodes.Status400BadRequest));
+        
+        var currentUserMember = board.GetMemberByUserId(command.RequestingUserId);
+        if (currentUserMember is null)
+            return Result.Fail(new Error("You are not a member of this board."));
+        
+        if(currentUserMember.RoleId != Domain.Constants.Roles.OwnerId)
+            return Result.Fail(new Error("Only the board owner can remove permissions from members.")
+                .WithMetadata("Status", StatusCodes.Status400BadRequest));
+        
+        var member = board.GetMemberByUserId(command.MemberId);
+        if (member is null)
+            return Result.Fail(new Error("The specified member does not belong to the board."));
         
         var permissionResult = member.RemovePermission(command.Permission, command.RequestingUserId);
         if (permissionResult.IsFailed)

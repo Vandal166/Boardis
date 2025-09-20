@@ -11,11 +11,13 @@ internal sealed class BoardMemberRemovedEventHandler : EventHandlerBase<BoardMem
     private readonly IDistributedCache _cache;
     private readonly INotificationNotifier _notificationNotifier;
     private readonly IKeycloakUserService _keycloakUserService;
-    public BoardMemberRemovedEventHandler(IDistributedCache cache, INotificationNotifier notificationNotifier, IKeycloakUserService keycloakUserService)
+    private readonly IBoardMemberNotifier _boardMemberNotifier;
+    public BoardMemberRemovedEventHandler(IDistributedCache cache, INotificationNotifier notificationNotifier, IKeycloakUserService keycloakUserService, IBoardMemberNotifier boardMemberNotifier)
     {
         _cache = cache;
         _notificationNotifier = notificationNotifier;
         _keycloakUserService = keycloakUserService;
+        _boardMemberNotifier = boardMemberNotifier;
     }
 
     public override async Task Handle(BoardMemberRemovedEvent @event, CancellationToken ct = default)
@@ -28,6 +30,8 @@ internal sealed class BoardMemberRemovedEventHandler : EventHandlerBase<BoardMem
             Console.WriteLine($"Sending notification to user {@event.RemovedUserId} about being removed from board {@event.BoardId} by {byUser.Value.Username}");
             await _notificationNotifier.NotifyBoardMemberRemovedAsync(@event.BoardId, @event.RemovedUserId, byUser.Value.Username, ct);
         }
+        
+        await _boardMemberNotifier.NotifyBoardMemberRemovedAsync(@event.BoardId, @event.RemovedUserId, ct);
         
         await _cache.RemoveAsync($"board_members_{@event.BoardId}", ct); // invalidating board's members cache
         await _cache.RemoveAsync($"boards_{@event.RemovedUserId}", ct); // invalidating the removed user boards cache

@@ -30,8 +30,6 @@ internal sealed class CreateBoardListCommandHandler : ICommandHandler<CreateBoar
             return Result.Fail<BoardList>(addListResult.Errors);
         
         var boardList = addListResult.Value;
-        //TODO no need to check if pos occupied, AddList does it
-        // after board.AddList(...)
 
         await _unitOfWork.SaveChangesAsync(ct);
         

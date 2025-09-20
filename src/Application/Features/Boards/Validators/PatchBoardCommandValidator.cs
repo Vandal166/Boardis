@@ -33,13 +33,7 @@ public sealed class PatchBoardCommandValidator : AbstractValidator<PatchBoardCom
             RuleFor(c => c.Description.Value)
                 .MaximumLength(500).WithMessage("Description cannot exceed 500 characters.");
         });
-
-        When(c => c.WallpaperImageId.IsSet, () =>
-        {
-            RuleFor(c => c.WallpaperImageId.Value)
-                .Must(id => id is null || id != Guid.Empty).WithMessage("WallpaperImageId must be a valid GUID or null.");
-        });
-
+        
         When(c => c.Visibility.IsSet, () =>
         {
             RuleFor(c => c.Visibility.Value)

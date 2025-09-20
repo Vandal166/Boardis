@@ -24,7 +24,7 @@ internal sealed class PatchBoardCommandHandler : ICommandHandler<PatchBoardComma
         if (board is null)
             return Result.Fail("Board not found");
         
-        var updateResult = board.Patch(command.Title, command.Description, command.WallpaperImageId, command.Visibility, command.RequestingUserId);
+        var updateResult = board.Patch(command.Title, command.Description, command.Visibility, command.RequestingUserId);
         if (updateResult.IsFailed)
             return Result.Fail(updateResult.Errors);
 

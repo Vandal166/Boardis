@@ -4,7 +4,7 @@ interface Props
 {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { title: string; description?: string; wallpaperImageId?: string }) => Promise<void>;
+  onCreate: (data: { title: string; description?: string; }) => Promise<void>;
   loading?: boolean;
   error?: string | null;
   fieldErrors?: { [key: string]: string[] };
@@ -21,7 +21,6 @@ const CreateBoardDropdown: React.FC<Props> = ({
 {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [wallpaperImageId, setWallpaperImageId] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -31,7 +30,6 @@ const CreateBoardDropdown: React.FC<Props> = ({
     {
       setTitle('');
       setDescription('');
-      setWallpaperImageId('');
     }
 
     function handleClick(e: MouseEvent)
@@ -53,7 +51,6 @@ const CreateBoardDropdown: React.FC<Props> = ({
     await onCreate({
       title: title.trim(),
       description: description.trim(),
-      wallpaperImageId: wallpaperImageId.trim(),
     });
   };
 
@@ -110,7 +107,7 @@ const CreateBoardDropdown: React.FC<Props> = ({
           ))}
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">
+          {/* <label className="block text-sm font-medium mb-1">
             Wallpaper Image ID
           </label>
           <input
@@ -122,7 +119,7 @@ const CreateBoardDropdown: React.FC<Props> = ({
           />
           {fieldErrors.WallpaperImageId && fieldErrors.WallpaperImageId.map((msg, i) => (
             <div key={i} className="text-red-600 text-sm mt-1">{msg}</div>
-          ))}
+          ))} */}
         </div>
         {error && (
           <div className="text-red-600 text-sm">{error}</div>

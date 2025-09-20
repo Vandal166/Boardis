@@ -16,7 +16,7 @@ internal sealed class BoardDeletedEventHandler : EventHandlerBase<BoardDeletedEv
     }
     public override async Task Handle(BoardDeletedEvent @event, CancellationToken ct = default)
     {
-        Console.WriteLine($"fBoardDeletedEvent handled for BoardId: {@event.BoardId} which occurred on {@event.OccurredOn}");
+        Console.WriteLine($"BoardDeletedEvent handled for BoardId: {@event.BoardId} which occurred on {@event.OccurredOn}");
         
         await _cache.RemoveAsync($"boards_{@event.ByUserId}", ct);
         // Invalidating the board members cache otherwise they won't see the updated board details from their boards list
