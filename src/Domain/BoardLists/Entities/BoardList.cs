@@ -31,11 +31,11 @@ public sealed class BoardList : Entity
     internal static Result<BoardList> Create(Guid BoardId, string Title, double Position)
     {
         if (BoardId == Guid.Empty)
-            return Result.Fail<BoardList>(new Error("BoardId is required.").WithMetadata("PropertyName", nameof(BoardId)));
+            return Result.Fail<BoardList>(new Error("BoardIdRequired").WithMetadata("PropertyName", nameof(BoardId)));
         
         var titleResult = ValueObjects.Title.TryFrom(Title);
         if (!titleResult.IsSuccess)
-            return Result.Fail<BoardList>(titleResult.Error.ErrorMessage);
+            return Result.Fail<BoardList>("TitleInvalid");
         
         return Result.Ok(new BoardList
         {
@@ -54,7 +54,7 @@ public sealed class BoardList : Entity
         {
             if(title.Value is null)
             {
-                errors.Add(new Error("Title cannot be null.").WithMetadata("PropertyName", nameof(Title)));
+                errors.Add(new Error("TitleCannotBeNull").WithMetadata("PropertyName", nameof(Title)));
             }
             else
             {
@@ -68,7 +68,7 @@ public sealed class BoardList : Entity
         {
             if(position.Value is null)
             {
-                errors.Add(new Error("Position cannot be null").WithMetadata("PropertyName", nameof(Position)));
+                errors.Add(new Error("PositionCannotBeNull").WithMetadata("PropertyName", nameof(Position)));
             }
             else
             {
@@ -117,7 +117,7 @@ public sealed class BoardList : Entity
     {
         var card = _cards.FirstOrDefault(c => c.Id == cardId);
         if (card is null)
-            return Result.Fail(new Error("Card not found.").WithMetadata("Status", 404));
+            return Result.Fail(new Error("CardNotFound").WithMetadata("Status", 404));
 
         _cards.Remove(card);
         UpdatedAt = DateTime.UtcNow;
@@ -130,7 +130,7 @@ public sealed class BoardList : Entity
     {
         var card = _cards.FirstOrDefault(c => c.Id == cardId);
         if (card is null)
-            return Result.Fail(new Error("Card not found.").WithMetadata("Status", 404));
+            return Result.Fail(new Error("CardNotFound").WithMetadata("Status", 404));
         
         var updateResult = card.Patch(title, position, description, completedAt);
         if (updateResult.IsFailed)
@@ -147,7 +147,7 @@ public sealed class BoardList : Entity
     {
         var titleResult = Title.TryFrom(title);
         if(!titleResult.IsSuccess)
-            return Result.Fail(titleResult.Error.ErrorMessage);
+            return Result.Fail("TitleInvalid");
 
         this.Title = titleResult.ValueObject;
         return Result.Ok();
@@ -156,7 +156,7 @@ public sealed class BoardList : Entity
     private Result UpdatePosition(double position)
     {
         if (position < 0)
-            return Result.Fail(new Error("Position must be a non-negative.").WithMetadata("PropertyName", nameof(Position)));
+            return Result.Fail(new Error("PositionMustBeNonNegative").WithMetadata("PropertyName", nameof(Position)));
         
         this.Position = position;
         UpdatedAt = DateTime.UtcNow;
@@ -172,7 +172,7 @@ public sealed class BoardList : Entity
         }
         catch (ArgumentException)
         {
-            return Result.Fail(new Error("Invalid color ARGB value.").WithMetadata("PropertyName", nameof(ListColor)));
+            return Result.Fail(new Error("InvalidColorArgbValue").WithMetadata("PropertyName", nameof(ListColor)));
         }
     }
 }

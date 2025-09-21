@@ -24,7 +24,7 @@ internal sealed class DeleteBoardCommandHandler : ICommandHandler<DeleteBoardCom
     {
         var board = await _boardRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
         
         var deleteResult = board.DeleteBoard(command.RequestingUserId);
         if (deleteResult.IsFailed)

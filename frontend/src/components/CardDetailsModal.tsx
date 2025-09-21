@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Spinner from './Spinner';
 import api from '../api';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 type BoardCard = {
     id: string;
@@ -22,6 +23,7 @@ interface CardDetailsModalProps
 
 const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose, onUpdated }) =>
 {
+    const { t } = useTranslation();
     const [title, setTitle] = useState(card.title);
     const [description, setDescription] = useState(card.description ?? '');
     const [loading, setLoading] = useState(false);
@@ -73,7 +75,7 @@ const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose, onUp
                 patchOps.push({ op: 'replace', path: '/description', value: description });
             if (patchOps.length === 0)
             {
-                setSuccess('No changes to save.');
+                setSuccess(t('cardDetailsNoChanges'));
                 setLoading(false);
                 return;
             }
@@ -82,14 +84,14 @@ const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose, onUp
                 patchOps,
                 { headers: { 'Content-Type': 'application/json-patch+json' } }
             );
-            toast.success('Card updated successfully.');
+            toast.success(t('cardDetailsUpdateSuccess'));
 
             if (onUpdated)
                 onUpdated({ ...card, title, description });
         }
         catch (err: any)
         {
-            let message = 'Failed to update card.';
+            let message = t('cardDetailsUpdateFailed');
             if (err.response?.data?.errors)
             {
                 setFieldErrors(err.response.data.errors);
@@ -157,17 +159,17 @@ const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose, onUp
                 style={{ willChange: 'opacity, transform' }}
             >
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Card Details</h2>
+                    <h2 className="text-xl font-bold">{t('cardDetailsTitle')}</h2>
                     <button
                         className="text-gray-400 hover:text-gray-700 text-2xl font-bold"
                         onClick={handleRequestClose}
-                        aria-label="Close"
+                        aria-label={t('cardDetailsCloseAria')}
                     >
                         ×
                     </button>
                 </div>
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('cardDetailsLabelTitle')}</label>
                     <input
                         className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         value={title}
@@ -179,7 +181,7 @@ const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose, onUp
                     )}
                 </div>
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('cardDetailsLabelDescription')}</label>
                     <textarea
                         ref={descRef}
                         className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
@@ -195,7 +197,7 @@ const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose, onUp
                 </div>
                 {card.completedAt && (
                     <div className="mb-2 text-xs text-green-600">
-                        Completed: {new Date(card.completedAt).toLocaleString()}
+                        {t('cardDetailsCompleted', { date: new Date(card.completedAt).toLocaleString() })}
                     </div>
                 )}
                 {error && !Object.keys(fieldErrors).length && (
@@ -208,14 +210,14 @@ const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose, onUp
                         onClick={handleRequestClose}
                         disabled={loading}
                     >
-                        Cancel
+                        {t('cardDetailsCancel')}
                     </button>
                     <button
                         className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold"
                         onClick={handleSave}
                         disabled={loading}
                     >
-                        {loading ? <Spinner /> : 'Save'}
+                        {loading ? <Spinner /> : t('cardDetailsSave')}
                     </button>
                 </div>
             </div>

@@ -28,7 +28,7 @@ internal sealed class GetBoardByIdQueryHandler : IQueryHandler<GetBoardByIdQuery
         
         var boardResponse = await connection.QuerySingleOrDefaultAsync<BoardResponse>(sql, new { BoardId = query.BoardId });
         if (boardResponse is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
         
         return Result.Ok(boardResponse);
     }

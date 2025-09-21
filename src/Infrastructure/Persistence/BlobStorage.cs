@@ -35,7 +35,7 @@ internal sealed class BlobStorage : IBlobStorage
         catch (Azure.RequestFailedException e)
         {
             Console.WriteLine(e.Message);
-            return Result.Fail(new Error("Failed to upload file to blob storage.").WithMetadata("Status", e.Status).CausedBy(e));
+            return Result.Fail(new Error("FailedToUploadBlob").WithMetadata("Status", e.Status).CausedBy(e));
         }
 
         return Result.Ok(mediaId);
@@ -52,7 +52,7 @@ internal sealed class BlobStorage : IBlobStorage
             var response = await blobClient.DownloadContentAsync(cancellationToken: ct);
             
             if (response.Value.Content is null)
-                return Result.Fail(new Error($"File with ID {mediaId} not found in blob storage.").WithMetadata("Status", StatusCodes.Status404NotFound));
+                return Result.Fail(new Error("BlobFileNotFound").WithMetadata("Status", StatusCodes.Status404NotFound));
 
             // returning the file stream and content type from the blob
             return Result.Ok(response.Value.Content.ToStream());
@@ -60,12 +60,12 @@ internal sealed class BlobStorage : IBlobStorage
         catch (Azure.RequestFailedException e)
         {
             Console.WriteLine(e.Message);
-            return Result.Fail(new Error("Failed to download file from blob storage.").WithMetadata("Status", e.Status).CausedBy(e));
+            return Result.Fail(new Error("FailedToDownloadBlob").WithMetadata("Status", e.Status).CausedBy(e));
         }
         catch (Exception e)
         {
             Console.WriteLine(e.Message);
-            return Result.Fail(new Error("An unexpected error occurred while downloading the file from blob storage.").CausedBy(e));
+            return Result.Fail(new Error("UnexpectedBlobDownloadError").CausedBy(e));
         }
     }
 

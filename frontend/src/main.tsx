@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard.tsx';
 import { ConfirmationDialogProvider } from './components/ConfirmationDialog.tsx';
 import { SignalRProvider } from './communication/globalNotificationContex.tsx';
 import { BoardSignalRProvider } from './communication/BoardSignalRProvider.tsx';
+import './utils/18n/index.tsx';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="container mx-auto p-6">

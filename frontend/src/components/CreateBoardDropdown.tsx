@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props
 {
@@ -22,6 +23,7 @@ const CreateBoardDropdown: React.FC<Props> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   // Close dropdown on outside click
   useEffect(() =>
@@ -69,11 +71,11 @@ const CreateBoardDropdown: React.FC<Props> = ({
       <div className="absolute -top-2 right-6 w-4 h-4">
         <div className="w-4 h-4 bg-white rotate-45 shadow-lg" />
       </div>
-      <h2 className="text-lg font-bold mb-4">Create Board</h2>
+      <h2 className="text-lg font-bold mb-4">{t('createBoardTitle')}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">
-            Title <span className="text-red-500">*</span>
+            {t('createBoardLabelTitle')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -88,7 +90,7 @@ const CreateBoardDropdown: React.FC<Props> = ({
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">
-            Description
+            {t('createBoardLabelDescription')}
           </label>
           <textarea
             value={description}
@@ -106,21 +108,6 @@ const CreateBoardDropdown: React.FC<Props> = ({
             <div key={i} className="text-red-600 text-sm mt-1">{msg}</div>
           ))}
         </div>
-        <div>
-          {/* <label className="block text-sm font-medium mb-1">
-            Wallpaper Image ID
-          </label>
-          <input
-            type="text"
-            value={wallpaperImageId}
-            onChange={e => setWallpaperImageId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Optional GUID"
-          />
-          {fieldErrors.WallpaperImageId && fieldErrors.WallpaperImageId.map((msg, i) => (
-            <div key={i} className="text-red-600 text-sm mt-1">{msg}</div>
-          ))} */}
-        </div>
         {error && (
           <div className="text-red-600 text-sm">{error}</div>
         )}
@@ -131,14 +118,14 @@ const CreateBoardDropdown: React.FC<Props> = ({
             onClick={onClose}
             disabled={loading}
           >
-            Cancel
+            {t('createBoardCancel')}
           </button>
           <button
             type="submit"
             className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
             disabled={loading}
           >
-            {loading ? 'Creating...' : 'Create'}
+            {loading ? t('createBoardCreating') : t('createBoardCreate')}
           </button>
         </div>
       </form>

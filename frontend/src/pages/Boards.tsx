@@ -8,6 +8,7 @@ import BoardSettingsPanel from '../components/BoardSettingsPanel';
 import toast from 'react-hot-toast';
 import { HubConnectionState } from '@microsoft/signalr';
 import { useBoardSignalR } from '../communication/BoardSignalRProvider';
+import { useTranslation } from 'react-i18next';
 
 interface Board
 {
@@ -21,6 +22,7 @@ function Boards()
 {
   const { keycloak, initialized } = useKeycloak();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [boards, setBoards] = useState<Board[]>([]);
   const [, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -350,7 +352,7 @@ function Boards()
       <div className="max-w-4xl mx-auto px-4 pt-8 pb-2 flex items-center gap-4 relative">
         <input
           type="text"
-          placeholder="Search boards by title..."
+          placeholder={t('boardsSearchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400" />
@@ -359,7 +361,7 @@ function Boards()
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition whitespace-nowrap flex-shrink-0"
             onClick={() => setShowModal((v) => !v)}
           >
-            Create board
+            {t('boardsCreateButton')}
           </button>
           <CreateBoardDropdown
             open={showModal}
@@ -386,7 +388,7 @@ function Boards()
 
           <div className="w-full max-w-6xl p-6 mx-auto">
             <h2 className="text-3xl font-bold text-blue-800 mb-6">
-              Boards
+              {t('boardsTitle')}
             </h2>
             {/* {error && <p className="text-red-600 mb-4 text-center">{error}</p>} */}
             {boards.length > 0 ? (
@@ -423,7 +425,7 @@ function Boards()
                           </div>
                           <button
                             className="text-gray-500 hover:text-gray-700 rounded p-2 min-w-8 min-h-8 flex items-center justify-center -mr-1 cursor-pointer transition-colors duration-150 hover:bg-gray-200"
-                            aria-label="Open board settings"
+                            aria-label={t('boardsSettingsAria')}
                             ref={el => { ellipsisRefs.current[board.id] = el; }}
                             onClick={e =>
                             {
@@ -449,7 +451,7 @@ function Boards()
                         </div>
                         {/* Description */}
                         <div className="text-sm text-gray-500 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                          {board.description || "No description"}
+                          {board.description || t('boardsNoDescription')}
                         </div>
                       </div>
                     </div>
@@ -457,9 +459,9 @@ function Boards()
                 ))}
               </ul>
             ) : search.trim() === '' ? (
-              <p className="text-gray-600 text-center">No boards found. Create one now 😎🤙</p>
+              <p className="text-gray-600 text-center">{t('boardsNoBoards')}</p>
             ) : (
-              <p className="text-gray-600 text-center">No boards found matching "{search}"</p>
+              <p className="text-gray-600 text-center">{t('boardsNoBoardsMatching', { search })}</p>
             )}
           </div>
         </>
@@ -496,7 +498,7 @@ function Boards()
               setBoards(prev => prev.filter(b => b.id !== board.id));
               setOpenSettingsBoardId(null);
               setSettingsPanelPosition(null);
-              toast.success('Board deleted successfully.');
+              toast.success(t('boardsDeleteSuccess'));
             }}
           />
         );

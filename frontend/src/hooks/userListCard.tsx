@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../api";
+import { useTranslation } from 'react-i18next';
 
 
 export interface ListCard
@@ -26,6 +27,7 @@ export function useUserListCards(
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string[] }>({});
+    const { t } = useTranslation();
 
     const fetchData = async () =>
     {
@@ -43,7 +45,7 @@ export function useUserListCards(
             } catch (error)
             {
                 console.error('Failed to fetch list cards:', error);
-                setError('Failed to load list cards. Please try again later.');
+                setError(t('userListCardFailed'));
             } finally
             {
                 setIsLoading(false);
@@ -95,7 +97,7 @@ export function useUserListCards(
             }
             else
             {
-                setError('Failed to add card. Please try again.');
+                setError(t('userListCardAddFailed'));
             }
             return false;
         }

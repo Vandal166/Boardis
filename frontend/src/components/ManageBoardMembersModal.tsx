@@ -6,6 +6,7 @@ import { useConfirmationDialogOpen } from './ConfirmationDialog';
 import api from '../api';
 import { toast } from 'react-hot-toast';
 import { useBoardSignalR } from '../communication/BoardSignalRProvider';
+import { useTranslation } from 'react-i18next';
 
 interface Member
 {
@@ -43,6 +44,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
     const listRef = useRef<HTMLUListElement>(null);
     const confirmationDialogOpen = useConfirmationDialogOpen();
     const boardHubConnection = useBoardSignalR();
+    const { t } = useTranslation();
 
     // permissions popover state
     const [permState, setPermState] = useState<{
@@ -275,11 +277,11 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                 style={{ willChange: 'opacity, transform' }}
             >
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Manage Members</h2>
+                    <h2 className="text-xl font-bold">{t('manageMembersTitle')}</h2>
                     <button
                         className="text-gray-400 hover:text-gray-700 text-2xl font-bold"
                         onClick={handleRequestClose}
-                        aria-label="Close"
+                        aria-label={t('manageMembersCloseAria')}
                     >
                         ×
                     </button>
@@ -290,7 +292,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                 />
                 {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
                 <div>
-                    <h3 className="font-semibold mb-2">Current Members</h3>
+                    <h3 className="font-semibold mb-2">{t('manageMembersCurrentMembers')}</h3>
                     {isLoading ? (
                         <div className="flex justify-center py-8">
                             <Spinner />
@@ -316,9 +318,9 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                                             <button
                                                 onClick={(e) => togglePermissions(member.userId, e.currentTarget)}
                                                 className="text-xs bg-gray-200 px-2 py-0.5 rounded hover:bg-gray-300 transition"
-                                                aria-label="View permissions"
+                                                aria-label={t('manageMembersViewPermissionsAria')}
                                             >
-                                                Permissions
+                                                {t('manageMembersPermissions')}
                                             </button>
                                         </div>
                                         <div className="text-xs text-gray-500">{member.email}</div>
@@ -332,7 +334,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                                 </li>
                             ))}
                             {members.length === 0 && (
-                                <li className="text-gray-400 text-sm">No members yet.</li>
+                                <li className="text-gray-400 text-sm">{t('manageMembersNoMembers')}</li>
                             )}
                         </ul>
                     )}
@@ -345,12 +347,12 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                     >
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
-                                Permissions
+                                {t('manageMembersPermissions')}
                             </span>
                             <button
                                 className="text-xs text-gray-400 hover:text-gray-600"
                                 onClick={() => setPermState(null)}
-                                aria-label="Close permissions panel"
+                                aria-label={t('manageMembersClosePermissionsPanelAria')}
                             >
                                 ×
                             </button>
@@ -361,12 +363,12 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                             </div>
                         )}
                         {!permState.loading && permState.error && (
-                            <div className="text-xs text-red-600">{permState.error}</div>
+                            <div className="text-xs text-red-600">{t('manageMembersErrorLoadingPermissions')}</div>
                         )}
                         {!permState.loading && !permState.error && (
                             <div className="flex flex-wrap gap-1">
                                 {permState.all.length === 0 && (
-                                    <span className="text-xs text-gray-400">No permissions defined.</span>
+                                    <span className="text-xs text-gray-400">{t('manageMembersNoPermissionsDefined')}</span>
                                 )}
                                 {permState.all
                                     .slice()
@@ -390,7 +392,7 @@ const ManageBoardMembersModal: React.FC<ManageBoardMembersModalProps> = ({
                                                         ? 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-red-100 hover:text-red-600 hover:border-red-300'
                                                         : 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200 hover:text-gray-600')
                                                 }
-                                                title={granted ? 'Click to revoke' : 'Click to grant'}
+                                                title={granted ? t('manageMembersClickToRevoke') : t('manageMembersClickToGrant')}
                                             >
                                                 {busy ? '...' : p}
                                             </button>

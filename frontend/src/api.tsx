@@ -1,6 +1,7 @@
 import axios from 'axios';
 import camelcaseKeys from 'camelcase-keys';
 import toast from 'react-hot-toast';
+import i18n from './utils/18n'; // import your i18n instance
 
 
 const api = axios.create();
@@ -22,6 +23,11 @@ api.interceptors.request.use(async (config) =>
         {
             config.headers['Authorization'] = `Bearer ${token}`; // attaching authorization token to every request
         }
+    }
+    // Accept-Language header
+    if (config.headers)
+    {
+        config.headers['Accept-Language'] = i18n.language || 'en';
     }
     return config;
 });

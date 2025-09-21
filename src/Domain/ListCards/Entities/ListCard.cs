@@ -21,11 +21,11 @@ public sealed class ListCard : Entity
     internal static Result<ListCard> Create(Guid ListId, string Title, string? Description, double Position)
     {
         if (ListId == Guid.Empty)
-            return Result.Fail<ListCard>(new Error("List ID cannot be empty.").WithMetadata("PropertyName", nameof(ListId)));
+            return Result.Fail<ListCard>(new Error("ListIdRequired").WithMetadata("PropertyName", nameof(ListId)));
         
         var titleResult = ValueObjects.Title.TryFrom(Title);
         if (!titleResult.IsSuccess)
-            return Result.Fail<ListCard>(titleResult.Error.ErrorMessage);
+            return Result.Fail<ListCard>("TitleInvalid");
         
         var card = new ListCard
         {
@@ -48,7 +48,7 @@ public sealed class ListCard : Entity
         {
             if(title.Value is null)
             {
-                errors.Add(new Error("Title cannot be null").WithMetadata("PropertyName", nameof(Title)));
+                errors.Add(new Error("TitleCannotBeNull").WithMetadata("PropertyName", nameof(Title)));
             }
             else
             {
@@ -62,7 +62,7 @@ public sealed class ListCard : Entity
         {
             if(position.Value is null)
             {
-                errors.Add(new Error("Position cannot be null").WithMetadata("PropertyName", nameof(Position)));
+                errors.Add(new Error("PositionCannotBeNull").WithMetadata("PropertyName", nameof(Position)));
             }
             else
             {
@@ -98,7 +98,7 @@ public sealed class ListCard : Entity
     {
         var titleResult = Title.TryFrom(title);
         if (!titleResult.IsSuccess)
-            return Result.Fail(titleResult.Error.ErrorMessage);
+            return Result.Fail("TitleInvalid");
 
         this.Title = titleResult.ValueObject;
         return Result.Ok();
@@ -107,7 +107,7 @@ public sealed class ListCard : Entity
     private Result UpdateDescription(string? description)
     {
         if (description is { Length: > 500 })
-            return Result.Fail(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
+            return Result.Fail(new Error("DescriptionTooLong").WithMetadata("PropertyName", nameof(Description)));
         
         this.Description = description;
         return Result.Ok();
@@ -116,7 +116,7 @@ public sealed class ListCard : Entity
     private Result UpdatePosition(double position)
     {
         if (position < 0)
-            return Result.Fail(new Error("Position cannot be negative.").WithMetadata("PropertyName", nameof(Position)));
+            return Result.Fail(new Error("PositionMustBeNonNegative").WithMetadata("PropertyName", nameof(Position)));
         
         this.Position = position;
         return Result.Ok();
@@ -125,7 +125,7 @@ public sealed class ListCard : Entity
     private Result UpdateCompletedAt(DateTime? completedAt)
     {
         if( completedAt is not null && completedAt > DateTime.UtcNow)
-            return Result.Fail(new Error("CompletedAt cannot be in the future.").WithMetadata("PropertyName", nameof(CompletedAt)));
+            return Result.Fail(new Error("CompletedAtCannotBeInFuture").WithMetadata("PropertyName", nameof(CompletedAt)));
 
         this.CompletedAt = completedAt;
         return Result.Ok();

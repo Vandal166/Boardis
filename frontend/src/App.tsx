@@ -10,7 +10,7 @@ function App()
   const { keycloak, initialized } = useKeycloak();
   const navigate = useNavigate();
 
-  // Set the token getter once Keycloak is available
+  // setting the token getter once Keycloak is available
   useEffect(() =>
   {
     setTokenGetter(() => keycloak?.token);
@@ -31,8 +31,11 @@ function App()
 
   return (
     <div>
-      <Toaster position="top-right" />
-      {initialized ? ( // waiting for keycloak to initialize, all routes do not render until then
+      <Toaster
+        position="top-right"
+        containerStyle={{ top: 60, right: 0 }} // moves the container lower
+      />
+      {initialized ? (
         <Outlet />
       ) : (
         <div>

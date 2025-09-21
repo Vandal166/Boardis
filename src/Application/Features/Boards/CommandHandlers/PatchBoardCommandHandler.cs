@@ -22,7 +22,7 @@ internal sealed class PatchBoardCommandHandler : ICommandHandler<PatchBoardComma
     {
         var board = await _boardRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
         
         var updateResult = board.Patch(command.Title, command.Description, command.Visibility, command.RequestingUserId);
         if (updateResult.IsFailed)

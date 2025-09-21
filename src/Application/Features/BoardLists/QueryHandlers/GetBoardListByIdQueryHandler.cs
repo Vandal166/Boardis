@@ -19,11 +19,11 @@ internal sealed class GetBoardListByIdQueryHandler : IQueryHandler<GetBoardListB
     {
         var board = await _boardRepository.GetWithLists(query.BoardId, ct);
         if (board is null)
-            return Result.Fail<BoardListResponse>("Board not found");
+            return Result.Fail<BoardListResponse>("BoardNotFound");
         
         var boardList = board.GetListById(query.BoardListId);
         if (boardList is null)
-            return Result.Fail("Board list not found");
+            return Result.Fail("ListNotFound");
         
         var boardListResponse = new BoardListResponse
         {

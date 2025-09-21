@@ -23,7 +23,7 @@ internal sealed class RemoveBoardMemberCommandHandler : ICommandHandler<RemoveBo
     {
         var board = await _boardRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
 
         var removeResult = board.RemoveMember(command.UserIdToRemove, command.RequestingUserId);
         if (removeResult.IsFailed)

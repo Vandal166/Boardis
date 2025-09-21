@@ -14,4 +14,14 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendors': ['react', 'react-dom', 'react-router-dom'], // Separate chunk for React and related libraries
+          'i18n-vendors': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'], // Separate chunk for i18n libraries
+        },
+      },
+    },
+  },
 });

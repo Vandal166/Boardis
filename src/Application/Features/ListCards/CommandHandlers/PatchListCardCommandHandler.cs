@@ -21,11 +21,11 @@ internal sealed class PatchListCardCommandHandler : ICommandHandler<PatchCardCom
     {
         var board = await _boardRepository.GetWithCards(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
         
         var boardList = board.GetListById(command.BoardListId);
         if(boardList is null)
-            return Result.Fail("List not found in this board");
+            return Result.Fail("ListNotFound");
         
         var updateResult = boardList.PatchCard(command.CardId, command.RequestingUserId, command.Title, command.Position, command.Description, command.CompletedAt);
         if (updateResult.IsFailed)

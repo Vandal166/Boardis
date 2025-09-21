@@ -1,36 +1,37 @@
 ﻿using Application.Contracts.Keycloak;
 using Application.Features.BoardMembers.Commands;
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using Web.Resources.Resources.Boards;
 
 namespace Application.Features.BoardMembers.Validators;
 
 public sealed class AddBoardMemberValidator : AbstractValidator<AddBoardMemberCommand>
 {
-    public AddBoardMemberValidator(IKeycloakUserService keycloakUserService)
+    public AddBoardMemberValidator(IKeycloakUserService keycloakUserService, IStringLocalizer<BoardResources> localizer)
     {
         RuleFor(x => x.BoardId)
-            .NotEmpty().WithMessage("Board is required.")
-            .NotEqual(Guid.Empty).WithMessage("ID cannot be an empty GUID.");
+            .NotEmpty().WithMessage(localizer["BoardIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["BoardIdNotEmptyGuid"]);
         
         RuleFor(x => x.UserIdToAdd)
-            .NotEmpty().WithMessage("User to add is required.")
-            .NotEqual(Guid.Empty).WithMessage("ID cannot be an empty GUID.")
+            .NotEmpty().WithMessage(localizer["UserIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["UserIdNotEmptyGuid"])
             .MustAsync(async (userId, ct) => 
             {
                 var result = await keycloakUserService.GetUserByIdAsync(userId, ct);
                 return result.IsSuccess;
             })
-            .WithMessage(x => $"User with ID '{x.UserIdToAdd}' does not exist.");
+            .WithMessage(localizer["UserIdToAddUserNotExist"]);
         
         RuleFor(x => x.RequestingUserId)
-            .NotEmpty().WithMessage("Requesting user is required.")
-            .NotEqual(Guid.Empty).WithMessage("ID cannot be an empty GUID.")
+            .NotEmpty().WithMessage(localizer["RequestingUserIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["RequestingUserIdNotEmptyGuid"])
             .MustAsync(async (userId, ct) => 
             {
                 var result = await keycloakUserService.GetUserByIdAsync(userId, ct);
                 return result.IsSuccess;
             })
-            .WithMessage(x => $"Requesting user with ID '{x.RequestingUserId}' does not exist.");
-       
+            .WithMessage(localizer["RequestingUserIdUserNotExist"]);
     }
 }

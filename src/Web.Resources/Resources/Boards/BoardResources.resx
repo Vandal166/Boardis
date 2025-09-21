@@ -1,0 +1,236 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+            
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <!-- Should be in separate files for organisation -->
+    <data name="TitleRequired" xml:space="preserve">
+        <value>Title is required.</value>
+    </data>
+    <data name="TitleMaxLength" xml:space="preserve">
+        <value>Title cannot exceed {0} characters.</value>
+    </data>
+    <data name="DescriptionMaxLength" xml:space="preserve">
+        <value>Description cannot exceed {0} characters.</value>
+    </data>
+    <data name="OwnerIdRequired" xml:space="preserve">
+        <value>Owner ID is required.</value>
+    </data>
+    <data name="OwnerIdNotEmptyGuid" xml:space="preserve">
+        <value>Owner ID cannot be an empty GUID.</value>
+    </data>
+    <data name="OwnerIdUserNotExist" xml:space="preserve">
+        <value>User with the specified Owner ID does not exist.</value>
+    </data>
+    <data name="BoardIdRequired" xml:space="preserve">
+        <value>Board ID is required.</value>
+    </data>
+    <data name="BoardIdNotEmptyGuid" xml:space="preserve">
+        <value>Board ID cannot be an empty GUID.</value>
+    </data>
+    <data name="RequestingUserIdRequired" xml:space="preserve">
+        <value>Requesting User ID is required.</value>
+    </data>
+    <data name="RequestingUserIdNotEmptyGuid" xml:space="preserve">
+        <value>Requesting User ID cannot be an empty GUID.</value>
+    </data>
+    <data name="RequestingUserIdUserNotExist" xml:space="preserve">
+        <value>User with the given Requesting User ID does not exist.</value>
+    </data>
+    <data name="VisibilityRequired" xml:space="preserve">
+        <value>Visibility cannot be null.</value>
+    </data>
+    <data name="VisibilityInvalid" xml:space="preserve">
+        <value>Invalid visibility level.</value>
+    </data>
+    <data name="FileRequired" xml:space="preserve">
+        <value>File is required.</value>
+    </data>
+    <data name="FileNotEmpty" xml:space="preserve">
+        <value>File cannot be empty.</value>
+    </data>
+    <data name="FileMaxSize" xml:space="preserve">
+        <value>File size cannot exceed {0} MB.</value>
+    </data>
+    <data name="FileTypeInvalid" xml:space="preserve">
+        <value>Unsupported file type. Allowed types are: JPEG, PNG, GIF.</value>
+    </data>
+    
+    <data name="BoardNotFound" xml:space="preserve">
+        <value>Board not found.</value>
+    </data>
+    <data name="BoardDeleteNotOwner" xml:space="preserve">
+      <value>Only the owner can delete the board.</value>
+    </data>
+    <data name="TitleCannotBeNull" xml:space="preserve">
+        <value>Title cannot be null.</value>
+    </data>
+    <data name="VisibilityCannotBeNull" xml:space="preserve">
+        <value>Visibility cannot be null.</value>
+    </data>
+    <data name="ListNotFound" xml:space="preserve">
+        <value>List not found.</value>
+    </data>
+    <data name="NotMemberOfBoard" xml:space="preserve">
+        <value>You are not a member of this board.</value>
+    </data>
+    <data name="OwnerCannotLeaveBoard" xml:space="preserve">
+        <value>The owner cannot leave the board. Delete it instead.</value>
+    </data>
+    <data name="UserIsMemberAlready" xml:space="preserve">
+        <value>User is already a member of this board.</value>
+    </data>
+    <data name="MemberNotFound" xml:space="preserve">
+        <value>Member not found.</value>
+    </data>
+    <data name="CannotRemoveOwner" xml:space="preserve">
+        <value>Cannot remove the owner of the board.</value>
+    </data>
+    <data name="CannotRemoveSelf" xml:space="preserve">
+        <value>You cannot remove yourself from the board.</value>
+    </data>
+    <data name="OnlyMembersCanSetWallpaper" xml:space="preserve">
+        <value>Only board members can set the wallpaper image.</value>
+    </data>
+    <data name="OnlyMembersCanDeleteWallpaper" xml:space="preserve">
+        <value>Only board members can delete the wallpaper image.</value>
+    </data>
+    <data name="NoWallpaperToDelete" xml:space="preserve">
+        <value>No wallpaper image to delete.</value>
+    </data>
+    <data name="TitleInvalid" xml:space="preserve">
+        <value>Title is invalid.</value>
+    </data>
+    <data name="DescriptionTooLong" xml:space="preserve">
+        <value>Description cannot exceed 500 characters.</value>
+    </data>
+    <data name="PositionCannotBeNull" xml:space="preserve">
+        <value>Position cannot be null.</value>
+    </data>
+    <data name="CardNotFound" xml:space="preserve">
+        <value>Card not found.</value>
+    </data>
+    <data name="PositionMustBeNonNegative" xml:space="preserve">
+        <value>Position must be a non-negative.</value>
+    </data>
+    <data name="InvalidColorArgbValue" xml:space="preserve">
+        <value>Invalid color ARGB value.</value>
+    </data>
+    <data name="ListIdRequired" xml:space="preserve">
+        <value>List ID cannot be empty.</value>
+    </data>
+    <data name="CompletedAtCannotBeInFuture" xml:space="preserve">
+        <value>CompletedAt cannot be in the future.</value>
+    </data>
+    <data name="UserIdRequired" xml:space="preserve">
+        <value>User ID cannot be empty.</value>
+    </data>
+    <data name="RoleIdRequired" xml:space="preserve">
+        <value>Assign a role to the member.</value>
+    </data>
+    <data name="NoNewPermissionsAdded" xml:space="preserve">
+        <value>No new permissions were added.</value>
+    </data>
+    <data name="MemberDoesNotHavePermission" xml:space="preserve">
+        <value>The member does not have the specified permission.</value>
+    </data>
+    <data name="CannotRemoveLastPermission" xml:space="preserve">
+        <value>Cannot remove the last permission from a member.</value>
+    </data>
+    <data name="BoardListIdRequired" xml:space="preserve">
+        <value>Board List ID is required.</value>
+    </data>
+    <data name="BoardListIdNotEmptyGuid" xml:space="preserve">
+        <value>Board List ID cannot be an empty GUID.</value>
+    </data>
+    <data name="PositionGreaterThanZero" xml:space="preserve">
+        <value>Position must be greater than zero.</value>
+    </data>
+    <data name="UserIdNotEmptyGuid" xml:space="preserve">
+        <value>User ID cannot be an empty GUID.</value>
+    </data>
+    <data name="UserIdToAddUserNotExist" xml:space="preserve">
+        <value>User to add does not exist.</value>
+    </data>
+    <data name="CardIdRequired" xml:space="preserve">
+        <value>Card ID is required.</value>
+    </data>
+    <data name="CardIdNotEmptyGuid" xml:space="preserve">
+        <value>Card ID cannot be an empty GUID.</value>
+    </data> 
+    
+    <data name="MediaNotFound" xml:space="preserve">
+        <value>Media not found</value>
+    </data>
+    <data name="MemberIdRequired" xml:space="preserve">
+        <value>Member ID is required.</value>
+    </data>
+    <data name="PermissionRequired" xml:space="preserve">
+        <value>Permission is required.</value>
+    </data>
+    <data name="OnlyOwnerCanAddPermissions" xml:space="preserve">
+        <value>Only the board owner can add permissions to members.</value>
+    </data>
+    <data name="OnlyOwnerCanRemovePermissions" xml:space="preserve">
+        <value>Only the board owner can remove permissions from members.</value>
+    </data>
+    <data name="MemberNotFoundOnBoard" xml:space="preserve">
+        <value>The specified member does not belong to the board.</value>
+    </data>
+    <data name="CannotRemoveOwnPermissions" xml:space="preserve">
+        <value>You cannot remove permissions from yourself.</value>
+    </data>
+    <data name="FailedToUploadBlob" xml:space="preserve">
+        <value>Failed to upload file to blob storage.</value>
+    </data>
+    <data name="FailedToDownloadBlob" xml:space="preserve">
+        <value>Failed to download file from blob storage.</value>
+    </data>
+    <data name="BlobFileNotFound" xml:space="preserve">
+        <value>File not found in blob storage.</value>
+    </data>
+    <data name="UnexpectedBlobDownloadError" xml:space="preserve">
+        <value>An unexpected error occurred while downloading the file from blob storage.</value>
+    </data>
+    <data name="BoardIdNotInRoute" xml:space="preserve">
+        <value>Board ID is missing or invalid in route.</value>
+    </data>
+    <data name="UserPermissionsNotFound" xml:space="preserve">
+        <value>Could not retrieve user permissions.</value>
+    </data>
+    <data name="MissingRequiredPermission" xml:space="preserve">
+        <value>You lack the required permission for this action.</value>
+    </data>
+    <data name="UserIdInvalid" xml:space="preserve">
+        <value>User ID is invalid.</value>
+    </data>
+    <data name="UsernameInvalid" xml:space="preserve">
+        <value>Username is invalid.</value>
+    </data>
+    <data name="EmailInvalid" xml:space="preserve">
+        <value>Email is invalid.</value>
+    </data>
+    <data name="NotificationBoardInviteTitle" xml:space="preserve">
+        <value>You have been invited to a board</value>
+    </data>
+    <data name="NotificationBoardRemovedTitle" xml:space="preserve">
+        <value>You have been removed from the board</value>
+    </data>
+    
+    
+</root>

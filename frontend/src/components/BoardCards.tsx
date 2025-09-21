@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface BoardCard
 {
@@ -18,6 +19,8 @@ interface BoardCardsProps
 
 const BoardCards: React.FC<BoardCardsProps> = ({ cards }) =>
 {
+    const { t } = useTranslation();
+
     if (!cards || cards.length === 0) return null;
 
     return (
@@ -33,7 +36,7 @@ const BoardCards: React.FC<BoardCardsProps> = ({ cards }) =>
                     )}
                     {card.completedAt && (
                         <p className="text-xs text-green-600 mt-1">
-                            Completed: {new Date(card.completedAt).toLocaleString()}
+                            {t('boardCardsCompleted', { date: new Date(card.completedAt).toLocaleString() })}
                         </p>
                     )}
                 </li>

@@ -24,7 +24,7 @@ internal sealed class GetMediaByIdQueryHandler : IQueryHandler<GetMediaByIdQuery
     {
         var media = await _mediaRepository.GetByIdAsync(query.MediaId, ct);
         if (media is null)
-            return Result.Fail(new Error("Media not found").WithMetadata("Status", StatusCodes.Status404NotFound));
+            return Result.Fail(new Error("MediaNotFound").WithMetadata("Status", StatusCodes.Status404NotFound));
         
         
         var fileResult = await _blobStorage.GetFileAsync(media.Id, BlobContainers.MediaContainer, ct);

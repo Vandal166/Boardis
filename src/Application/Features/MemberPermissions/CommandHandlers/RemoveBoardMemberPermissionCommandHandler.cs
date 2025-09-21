@@ -21,28 +21,28 @@ internal sealed class RemoveBoardMemberPermissionCommandHandler : ICommandHandle
     {
         var board = await _boardMemberRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
-            return Result.Fail(new Error("Board not found."));
-        
+            return Result.Fail(new Error("BoardNotFound"));
+
         if(command.RequestingUserId == command.MemberId)
-            return Result.Fail(new Error("You cannot remove permissions from yourself.")
+            return Result.Fail(new Error("CannotRemoveOwnPermissions")
                 .WithMetadata("Status", StatusCodes.Status400BadRequest));
-        
+
         var currentUserMember = board.GetMemberByUserId(command.RequestingUserId);
         if (currentUserMember is null)
-            return Result.Fail(new Error("You are not a member of this board."));
-        
+            return Result.Fail(new Error("NotMemberOfBoard"));
+
         if(currentUserMember.RoleId != Domain.Constants.Roles.OwnerId)
-            return Result.Fail(new Error("Only the board owner can remove permissions from members.")
+            return Result.Fail(new Error("OnlyOwnerCanRemovePermissions")
                 .WithMetadata("Status", StatusCodes.Status400BadRequest));
-        
+
         var member = board.GetMemberByUserId(command.MemberId);
         if (member is null)
-            return Result.Fail(new Error("The specified member does not belong to the board."));
-        
+            return Result.Fail(new Error("MemberNotFoundOnBoard"));
+
         var permissionResult = member.RemovePermission(command.Permission, command.RequestingUserId);
         if (permissionResult.IsFailed)
             return Result.Fail(permissionResult.Errors);
-        
+
         await _unitOfWork.SaveChangesAsync(ct);
         return Result.Ok();
     }

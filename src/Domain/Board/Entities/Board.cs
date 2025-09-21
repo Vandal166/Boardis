@@ -5,7 +5,6 @@ using Domain.BoardMembers.Entities;
 using Domain.BoardMembers.Events;
 using Domain.Common;
 using Domain.Constants;
-using Domain.Images.Entities;
 using Domain.ValueObjects;
 using FluentResults;
 
@@ -61,7 +60,7 @@ public sealed class Board : Entity, IAggregateRoot
         {
             if (title.Value is null)
             {
-                errors.Add(new Error("Title cannot be null").WithMetadata("PropertyName", nameof(Title)));
+                errors.Add(new Error("TitleCannotBeNull").WithMetadata("PropertyName", nameof(Title)));
             }
             else
             {
@@ -81,7 +80,7 @@ public sealed class Board : Entity, IAggregateRoot
         {
             if (visibility.Value is null)
             {
-                errors.Add(new Error("Visibility cannot be null.").WithMetadata("PropertyName", nameof(Visibility)));
+                errors.Add(new Error("VisibilityCannotBeNull").WithMetadata("PropertyName", nameof(Visibility)));
             }
             else
             {
@@ -116,7 +115,7 @@ public sealed class Board : Entity, IAggregateRoot
     {
         var list = _lists.FirstOrDefault(l => l.Id == listId);
         if (list == null)
-            return Result.Fail(new Error("List not found.").WithMetadata("Status", 404));
+            return Result.Fail(new Error("ListNotFound").WithMetadata("Status", 404));
  
         _lists.Remove(list);
         UpdatedAt = DateTime.UtcNow;
@@ -129,7 +128,7 @@ public sealed class Board : Entity, IAggregateRoot
     {
         var list = _lists.FirstOrDefault(l => l.Id == listId);
         if (list == null)
-            return Result.Fail(new Error("List not found.").WithMetadata("Status", 404));
+            return Result.Fail(new Error("ListNotFound").WithMetadata("Status", 404));
         
         var patchResult = list.Patch(title, position, colorArgb);
         if (patchResult.IsFailed)
@@ -146,7 +145,7 @@ public sealed class Board : Entity, IAggregateRoot
     public Result DeleteBoard(Guid requestedByUserId)
     {
         if(_members.Any(m => m.RoleId == Roles.OwnerId && m.UserId != requestedByUserId))
-            return Result.Fail(new Error("Only the owner can delete the board.").WithMetadata("Status", 403));
+            return Result.Fail(new Error("BoardDeleteNotOwner").WithMetadata("Status", 403));
         
         AddDomainEvent(new BoardWallpaperRemovedEvent(Id, WallpaperImageId, requestedByUserId));
         AddDomainEvent(new BoardDeletedEvent(Id, requestedByUserId, Members.Select(g => g.UserId).ToList()));
@@ -158,10 +157,10 @@ public sealed class Board : Entity, IAggregateRoot
     {
         var member = _members.FirstOrDefault(m => m.UserId == requestedByUserId);
         if (member == null)
-            return Result.Fail(new Error("You are not a member of this board.").WithMetadata("Status", 404));
+            return Result.Fail(new Error("NotMemberOfBoard").WithMetadata("Status", 404));
 
         if (member.RoleId == Roles.OwnerId)
-            return Result.Fail(new Error("The owner cannot leave the board. Delete it instead.").WithMetadata("Status", 409));
+            return Result.Fail(new Error("OwnerCannotLeaveBoard").WithMetadata("Status", 409));
         
         _members.Remove(member);
         UpdatedAt = DateTime.UtcNow;
@@ -175,7 +174,7 @@ public sealed class Board : Entity, IAggregateRoot
     public Result<BoardMember> AddMember(Guid userToAddId, Guid roleId, Guid requestingUserId)
     {
         if(GetMemberByUserId(userToAddId) is not null)
-            return Result.Fail<BoardMember>(new Error("User is already a member of this board")
+            return Result.Fail<BoardMember>(new Error("UserIsMemberAlready")
                 .WithMetadata("Status", 409));
         
         var memberResult = BoardMember.Create(Id, userToAddId, roleId);
@@ -197,13 +196,13 @@ public sealed class Board : Entity, IAggregateRoot
     {
         var member = _members.FirstOrDefault(m => m.UserId == userId);
         if (member == null)
-            return Result.Fail(new Error("Member not found.").WithMetadata("Status", 404));
+            return Result.Fail(new Error("MemberNotFound").WithMetadata("Status", 404));
 
         if (member.RoleId == Roles.OwnerId)
-            return Result.Fail(new Error("Cannot remove the owner of the board.").WithMetadata("Status", 409));
+            return Result.Fail(new Error("CannotRemoveOwner").WithMetadata("Status", 409));
         
         if(userId == requestedByUserId)
-            return Result.Fail(new Error("You cannot remove yourself from the board.").WithMetadata("Status", 403));
+            return Result.Fail(new Error("CannotRemoveSelf").WithMetadata("Status", 403));
         
         _members.Remove(member);
         UpdatedAt = DateTime.UtcNow;
@@ -217,7 +216,7 @@ public sealed class Board : Entity, IAggregateRoot
     {
         var member = _members.FirstOrDefault(m => m.UserId == requestedByUserId);
         if (member is null)
-            return Result.Fail(new Error("Only board members can set the wallpaper image.").WithMetadata("Status", 403));
+            return Result.Fail(new Error("OnlyMembersCanSetWallpaper").WithMetadata("Status", 403));
 
         var oldImageId = WallpaperImageId;
         WallpaperImageId = wallpaperImageId;
@@ -232,10 +231,10 @@ public sealed class Board : Entity, IAggregateRoot
     {
         var member = _members.FirstOrDefault(m => m.UserId == requestedByUserId);
         if (member is null)
-            return Result.Fail(new Error("Only board members can delete the wallpaper image.").WithMetadata("Status", 403));
+            return Result.Fail(new Error("OnlyMembersCanDeleteWallpaper").WithMetadata("Status", 403));
 
         if (WallpaperImageId is null)
-            return Result.Fail(new Error("No wallpaper image to delete.").WithMetadata("Status", 409));
+            return Result.Fail(new Error("NoWallpaperToDelete").WithMetadata("Status", 409));
         
         var oldImageId = WallpaperImageId.Value;
         WallpaperImageId = null;
@@ -251,7 +250,7 @@ public sealed class Board : Entity, IAggregateRoot
     {
         var titleResult = Title.TryFrom(title);
         if (!titleResult.IsSuccess)
-            return Result.Fail(titleResult.Error.ErrorMessage);
+            return Result.Fail("TitleInvalid");
 
         Title = titleResult.ValueObject;
         return Result.Ok();
@@ -260,7 +259,7 @@ public sealed class Board : Entity, IAggregateRoot
     private Result UpdateDescription(string? description)
     {
         if (description is { Length: > 500 })
-            return Result.Fail(new Error("Description cannot exceed 500 characters.").WithMetadata("PropertyName", nameof(Description)));
+            return Result.Fail(new Error("DescriptionTooLong").WithMetadata("PropertyName", nameof(Description)));
 
         Description = description;
         return Result.Ok();

@@ -1,5 +1,7 @@
+using System.Globalization;
 using Application;
 using Infrastructure;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json.Serialization;
 using Serilog;
@@ -16,6 +18,8 @@ builder.Services.AddControllers()
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore; // Handle reference loops
         options.SerializerSettings.ContractResolver = new DefaultContractResolver(); // default property naming (PascalCase)
     });
+
+builder.Services.AddLocalization();
 
 builder.Services.AddSignalR();
 
@@ -59,6 +63,18 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 app.UseCors("AllowFrontend");
+
+var supportedCultures = new[]
+{
+    new CultureInfo("en"), // English (default)
+    new CultureInfo("pl")  // Polish
+};
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

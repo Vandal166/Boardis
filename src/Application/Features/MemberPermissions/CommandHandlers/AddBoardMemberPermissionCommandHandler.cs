@@ -24,27 +24,26 @@ internal sealed class AddBoardMemberPermissionCommandHandler : ICommandHandler<A
     {
          var board = await _boardMemberRepository.GetWithMembers(command.BoardId, ct);
          if (board is null)
-             return Result.Fail(new Error("Board not found."));
-         
+             return Result.Fail(new Error("BoardNotFound"));
+
          var currentUserMember = board.GetMemberByUserId(command.RequestingUserId);
          if (currentUserMember is null)
-             return Result.Fail(new Error("You are not a member of this board."));
-         
+             return Result.Fail(new Error("NotMemberOfBoard"));
+
          if(currentUserMember.RoleId != Roles.OwnerId)
-             return Result.Fail(new Error("Only the board owner can add permissions to members.")
+             return Result.Fail(new Error("OnlyOwnerCanAddPermissions")
                  .WithMetadata("Status", StatusCodes.Status400BadRequest));
-         
+
          var member = board.GetMemberByUserId(command.MemberId);
          if (member is null)
-             return Result.Fail(new Error("The specified member does not belong to the board."));
-         
+             return Result.Fail(new Error("MemberNotFoundOnBoard"));
+
          var permissionResult = member.AddPermission(command.Permission, command.RequestingUserId);
          if (permissionResult.IsFailed)
              return Result.Fail(permissionResult.Errors);
-            
-            
+
          await _unitOfWork.SaveChangesAsync(ct);
-        
+
          return Result.Ok();
     }
 }

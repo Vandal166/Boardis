@@ -1,29 +1,30 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 function Footer()
 {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     return (
         <footer className="w-full bg-gray-800 text-white py-12 shadow-2xl z-0">
             <div className="container mx-auto px-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div>
-                        <h3 className="text-xl font-semibold mb-4">About Boardis</h3>
+                        <h3 className="text-xl font-semibold mb-4">{t('footerAboutTitle')}</h3>
                         <p className="text-sm">
-                            Boardis is a modern Kanban app designed to help you organize your tasks and projects
-                            efficiently.
+                            {t('footerAboutDesc')}
                         </p>
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold mb-4">Quick Links</h3>
+                        <h3 className="text-xl font-semibold mb-4">{t('footerQuickLinksTitle')}</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
                                 <button
                                     onClick={() => navigate('/')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Home
+                                    {t('footerHome')}
                                 </button>
                             </li>
                             <li>
@@ -31,7 +32,7 @@ function Footer()
                                     onClick={() => navigate('/features')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Features
+                                    {t('footerFeatures')}
                                 </button>
                             </li>
                             <li>
@@ -39,7 +40,7 @@ function Footer()
                                     onClick={() => navigate('/pricing')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Pricing
+                                    {t('footerPricing')}
                                 </button>
                             </li>
                             <li>
@@ -47,20 +48,20 @@ function Footer()
                                     onClick={() => navigate('/blog')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Blog
+                                    {t('footerBlog')}
                                 </button>
                             </li>
                         </ul>
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold mb-4">Support</h3>
+                        <h3 className="text-xl font-semibold mb-4">{t('footerSupportTitle')}</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
                                 <button
                                     onClick={() => navigate('/help')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Help Center
+                                    {t('footerHelpCenter')}
                                 </button>
                             </li>
                             <li>
@@ -68,7 +69,7 @@ function Footer()
                                     onClick={() => navigate('/contact')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Contact Us
+                                    {t('footerContactUs')}
                                 </button>
                             </li>
                             <li>
@@ -76,7 +77,7 @@ function Footer()
                                     onClick={() => navigate('/privacy')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Privacy Policy
+                                    {t('footerPrivacyPolicy')}
                                 </button>
                             </li>
                             <li>
@@ -84,13 +85,13 @@ function Footer()
                                     onClick={() => navigate('/terms')}
                                     className="hover:underline bg-transparent text-white text-left w-full"
                                 >
-                                    Terms of Service
+                                    {t('footerTermsOfService')}
                                 </button>
                             </li>
                         </ul>
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold mb-4">Connect</h3>
+                        <h3 className="text-xl font-semibold mb-4">{t('footerConnectTitle')}</h3>
                         <ul className="space-y-2 text-sm">
                             <li>
                                 <a
@@ -99,7 +100,7 @@ function Footer()
                                     rel="noopener noreferrer"
                                     className="hover:underline"
                                 >
-                                    Twitter
+                                    {t('footerTwitter')}
                                 </a>
                             </li>
                             <li>
@@ -109,7 +110,7 @@ function Footer()
                                     rel="noopener noreferrer"
                                     className="hover:underline"
                                 >
-                                    Facebook
+                                    {t('footerFacebook')}
                                 </a>
                             </li>
                             <li>
@@ -119,7 +120,7 @@ function Footer()
                                     rel="noopener noreferrer"
                                     className="hover:underline"
                                 >
-                                    LinkedIn
+                                    {t('footerLinkedIn')}
                                 </a>
                             </li>
                             <li>
@@ -129,14 +130,14 @@ function Footer()
                                     rel="noopener noreferrer"
                                     className="hover:underline"
                                 >
-                                    Instagram
+                                    {t('footerInstagram')}
                                 </a>
                             </li>
                         </ul>
                     </div>
                 </div>
                 <div className="mt-8 text-center text-sm">
-                    &copy; {new Date().getFullYear()} Boardis. All rights reserved.
+                    &copy; {new Date().getFullYear()} Boardis. {t('footerCopyright')}
                 </div>
             </div>
         </footer>

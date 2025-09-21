@@ -23,11 +23,11 @@ internal sealed class CreateListCardCommandHandler : ICommandHandler<CreateListC
     {
         var board = await _boardRepository.GetWithCards(command.BoardId, ct);
         if (board is null)
-            return Result.Fail<ListCard>("Board not found");
+            return Result.Fail<ListCard>("BoardNotFound");
         
         var boardList = board.GetListById(command.BoardListId);
         if (boardList is null)
-            return Result.Fail<ListCard>("List not found in this board");
+            return Result.Fail<ListCard>("ListNotFound");
         
         var listCardResult = boardList.AddCard(command.RequestingUserId, command.Title, command.Description, command.Position);
         if (listCardResult.IsFailed)

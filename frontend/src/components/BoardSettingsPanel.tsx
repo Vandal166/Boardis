@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import api from '../api';
 import { useConfirmation } from './ConfirmationDialog';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 interface BoardSettingsPanelProps
 {
@@ -30,6 +31,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
     const [deleting, setDeleting] = useState(false);
     const [uploading, setUploading] = useState(false); // uploading state
     const confirm = useConfirmation();
+    const { t } = useTranslation();
 
     useEffect(() =>
     {
@@ -130,7 +132,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                     msg =
                         err.response?.data?.detail ||
                         err.response?.data?.title ||
-                        'Failed to update';
+                        t('boardSettingsFailedToUpdate');
                 }
 
                 setError(msg ?? null);
@@ -146,10 +148,10 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
     const handleDeleteBoard = async () =>
     {
         const confirmed = await confirm.confirm({
-            title: 'Delete Board',
-            message: 'Are you sure you want to delete this board? This action cannot be undone.',
-            confirmText: 'Delete',
-            cancelText: 'Cancel'
+            title: t('boardSettingsDeleteBoardConfirmTitle'),
+            message: t('boardSettingsDeleteBoardConfirmMessage'),
+            confirmText: t('boardSettingsDeleteBoardConfirm'),
+            cancelText: t('boardSettingsDeleteBoardCancel')
         });
         if (!confirmed)
             return;
@@ -170,8 +172,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
         }
         catch (err: any)
         {
-            //toast.error(err?.response?.data?.detail || 'Failed to delete board');
-            setError('Failed to delete board');
+            setError(t('boardSettingsDeleteBoardFailed'));
         }
         finally
         {
@@ -193,10 +194,10 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
             return;
 
         const confirmed = await confirm.confirm({
-            title: 'Change wallpaper',
-            message: `Upload "${file.name}" as this board's wallpaper?`,
-            confirmText: 'Ok',
-            cancelText: 'Cancel'
+            title: t('boardSettingsChangeWallpaperConfirmTitle'),
+            message: t('boardSettingsChangeWallpaperConfirmMessage', { fileName: file.name }),
+            confirmText: t('boardSettingsChangeWallpaperConfirmOk'),
+            cancelText: t('boardSettingsChangeWallpaperConfirmCancel')
         });
         if (!confirmed)
         {
@@ -238,9 +239,8 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                     msg =
                         err.response?.data?.detail ||
                         err.response?.data?.title ||
-                        'Failed to upload image';
+                        t('boardSettingsFailedToUploadImage');
                 }
-
 
                 toast.error(msg);
             }
@@ -256,10 +256,10 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
     const handleDeleteWallpaper = async () =>
     {
         const confirmed = await confirm.confirm({
-            title: 'Delete wallpaper',
-            message: 'Are you sure you want to delete this board\'s wallpaper?',
-            confirmText: 'Delete',
-            cancelText: 'Cancel'
+            title: t('boardSettingsDeleteWallpaperConfirmTitle'),
+            message: t('boardSettingsDeleteWallpaperConfirmMessage'),
+            confirmText: t('boardSettingsDeleteWallpaperConfirmDelete'),
+            cancelText: t('boardSettingsDeleteWallpaperConfirmCancel')
         });
         if (!confirmed) return;
 
@@ -291,7 +291,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                     msg =
                         err.response?.data?.detail ||
                         err.response?.data?.title ||
-                        'Failed to delete wallpaper';
+                        t('boardSettingsFailedToDeleteWallpaper');
                 }
 
                 toast.error(msg);
@@ -327,18 +327,18 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                     <div className="w-4 h-4 bg-white rotate-45 shadow-lg border-t border-l border-gray-200"></div>
                 </div>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Board Settings</h2>
+                    <h2 className="text-xl font-bold">{t('boardSettingsTitle')}</h2>
                     <button
                         className="text-gray-400 hover:text-gray-700 text-2xl font-bold"
                         onClick={handleRequestClose}
-                        aria-label="Close settings"
+                        aria-label={t('boardSettingsCloseAria')}
                     >
                         ×
                     </button>
                 </div>
                 <div className="space-y-4">
                     <div>
-                        <h3 className="font-semibold text-gray-700 mb-1">About this board</h3>
+                        <h3 className="font-semibold text-gray-700 mb-1">{t('boardSettingsAboutTitle')}</h3>
                         {/* Editable Title */}
                         <div className="mb-2">
                             {editingField === 'title' ? (
@@ -354,7 +354,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                                         className="text-green-600 text-xl px-1"
                                         onClick={handleSave}
                                         disabled={saving}
-                                        title="Save title"
+                                        title={t('boardSettingsSaveTitle')}
                                     >
                                         ✓
                                     </button>
@@ -363,7 +363,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                                 <div
                                     className="text-lg font-semibold text-blue-900 cursor-pointer hover:bg-blue-200 hover:rounded px-1 transition"
                                     onClick={() => setEditingField('title')}
-                                    title="Click to edit title"
+                                    title={t('boardSettingsEditTitleAria')}
                                 >
                                     {editTitle}
                                 </div>
@@ -385,7 +385,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                                         className="text-green-600 text-xl px-1"
                                         onClick={handleSave}
                                         disabled={saving}
-                                        title="Save description"
+                                        title={t('boardSettingsSaveDescription')}
                                     >
                                         ✓
                                     </button>
@@ -394,38 +394,38 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                                 <div
                                     className="text-gray-600 text-sm cursor-pointer italic hover:bg-blue-200 hover:rounded px-1 transition"
                                     onClick={() => setEditingField('description')}
-                                    title="Click to edit description"
+                                    title={t('boardSettingsEditDescriptionAria')}
                                 >
-                                    {editDescription || <span className="italic text-gray-400">No description</span>}
+                                    {editDescription || <span className="italic text-gray-400">{t('boardSettingsNoDescription')}</span>}
                                 </div>
                             )}
                         </div>
                         {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-700 mb-1">Visibility</h3>
+                        <h3 className="font-semibold text-gray-700 mb-1">{t('boardSettingsVisibilityTitle')}</h3>
                         <select className="w-full border rounded px-2 py-1">
-                            <option>Private</option>
-                            <option>Workspace visible</option>
-                            <option>Public</option>
+                            <option>{t('boardSettingsVisibilityPrivate')}</option>
+                            <option>{t('boardSettingsVisibilityWorkspace')}</option>
+                            <option>{t('boardSettingsVisibilityPublic')}</option>
                         </select>
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-700 mb-1">Change wallpaper image</h3>
+                        <h3 className="font-semibold text-gray-700 mb-1">{t('boardSettingsWallpaperTitle')}</h3>
                         <div className="flex gap-2">
                             <button
                                 className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 transition text-sm"
                                 onClick={handleChangeWallpaperClick}
                                 disabled={uploading}
                             >
-                                {uploading ? 'Uploading...' : 'Change wallpaper'}
+                                {uploading ? t('boardSettingsUploading') : t('boardSettingsChangeWallpaper')}
                             </button>
                             <button
                                 className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition text-sm"
                                 onClick={handleDeleteWallpaper}
                                 disabled={uploading}
                             >
-                                {uploading ? 'Deleting...' : 'Delete wallpaper'}
+                                {uploading ? t('boardSettingsDeleting') : t('boardSettingsDeleteWallpaper')}
                             </button>
                         </div>
                         <input
@@ -442,7 +442,7 @@ const BoardSettingsPanel: React.FC<BoardSettingsPanelProps> = ({ onClose, positi
                             onClick={handleDeleteBoard}
                             disabled={deleting}
                         >
-                            {deleting ? 'Deleting...' : 'Delete board'}
+                            {deleting ? t('boardSettingsDeleteBoardDeleting') : t('boardSettingsDeleteBoard')}
                         </button>
                     </div>
                 </div>

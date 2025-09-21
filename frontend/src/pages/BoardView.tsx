@@ -15,6 +15,7 @@ import SortableList from '../components/SortableList';
 import api from '../api';
 import { HubConnectionState } from '@microsoft/signalr';
 import { useBoardSignalR } from '../communication/BoardSignalRProvider';
+import { useTranslation } from 'react-i18next';
 
 
 function BoardView()
@@ -22,6 +23,7 @@ function BoardView()
   const { boardId } = useParams<{ boardId: string }>();
   const { keycloak, initialized } = useKeycloak();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   // Board info for settings panel
@@ -225,7 +227,7 @@ function BoardView()
       const user = userRes.data;
       if (!user?.id)
       {
-        toast.error('User not found.');
+        toast.error(t('boardViewUserNotFound'));
         return;
       }
 
@@ -239,7 +241,7 @@ function BoardView()
 
       // 3. Refresh members list
       await fetchMembers();
-      toast.success('Member added successfully!');
+      toast.success(t('boardViewMemberAdded'));
     }
     catch (err: any)
     {
@@ -247,7 +249,7 @@ function BoardView()
       {
         const msg =
           (err.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message)) ||
-          'You do not have permission to perform this action.';
+          t('boardViewNoPermission');
 
         toast.error(msg);
       }
@@ -268,7 +270,7 @@ function BoardView()
     {
       await api.delete(`/api/boards/${boardId}/members/${memberId}`);
       setMembers(members => members.filter(m => m.userId !== memberId));
-      toast.success('Member removed successfully!');
+      toast.success(t('boardViewMemberRemoved'));
     }
     catch (err: any)
     {
@@ -276,7 +278,7 @@ function BoardView()
       {
         const msg =
           (err.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message)) ||
-          'You do not have permission to perform this action.';
+          t('boardViewNoPermission');
 
         toast.error(msg);
       }
@@ -438,14 +440,14 @@ function BoardView()
     try
     {
       await api.post(`/api/boards/${boardId}/leave`);
-      toast.success('You have left the board.');
+      toast.success(t('boardViewLeaveSuccess'));
       navigate('/dashboard');
     }
     catch (err: any)
     {
       let msg = err?.response?.data && (err.response.data.detail || err.response.data.title || err.response.data.message);
       if (!msg)
-        msg = 'Failed to leave the board.';
+        msg = t('boardViewLeaveFailed');
 
       toast.error(msg);
     }
@@ -498,7 +500,7 @@ function BoardView()
                   onClick={() => setShowAddMember(true)}
                 >
                   <UserPlusIcon className="w-5 h-5" />
-                  Manage members
+                  {t('boardViewManageMembers')}
                 </button>
                 <button
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
@@ -506,13 +508,13 @@ function BoardView()
                   disabled={leaveLoading}
                 >
                   {leaveLoading ? <Spinner className="w-5 h-5" /> : null}
-                  Leave board
+                  {t('boardViewLeaveBoard')}
                 </button>
               </div>
               {/* Search bar for lists - make it grow to fill space */}
               <input
                 type="text"
-                placeholder="Search lists by title..."
+                placeholder={t('boardViewSearchListsPlaceholder')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="flex-grow mx-6 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -590,7 +592,7 @@ function BoardView()
                 </div>
                 {/* Show message if no lists match search */}
                 {filteredLists.length === 0 && search.trim() !== '' && (
-                  <p className="text-gray-600 text-center mt-8">No lists found matching "{search}"</p>
+                  <p className="text-gray-600 text-center mt-8">{t('boardViewNoListsMatching', { search })}</p>
                 )}
               </SortableContext>
             </div>
