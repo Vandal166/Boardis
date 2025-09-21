@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../api';
 import Spinner from './Spinner';
+import { useTranslation } from 'react-i18next';
 
 function hexToArgbInt(hex: string): number
 {
@@ -48,6 +49,7 @@ export default function ListColorPicker({
     onClose: () => void;
 })
 {
+    const { t } = useTranslation();
     const [color, setColor] = useState(argbIntToHex(currentColor));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export default function ListColorPicker({
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 px-4 py-2">
             <label className="flex items-center gap-2">
-                <span>Pick color:</span>
+                <span>{t('listColorPickerLabel')}</span>
                 <input
                     type="color"
                     value={color}
@@ -97,7 +99,7 @@ export default function ListColorPicker({
                     className="w-8 h-8 border rounded"
                 />
             </label>
-            {error && <div className="text-red-600">{error}</div>}
+            {error && <div className="text-red-600">{t('listColorPickerFailed')}</div>}
             {loading ? (
                 <div className="flex justify-center py-2">
                     <Spinner className="w-6 h-6" />
@@ -109,7 +111,7 @@ export default function ListColorPicker({
                         className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                         disabled={loading}
                     >
-                        Save
+                        {t('listColorPickerSave')}
                     </button>
                     <button
                         type="button"
@@ -117,7 +119,7 @@ export default function ListColorPicker({
                         onClick={onClose}
                         disabled={loading}
                     >
-                        Cancel
+                        {t('listColorPickerCancel')}
                     </button>
                 </div>
             )}

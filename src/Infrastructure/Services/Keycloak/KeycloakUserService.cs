@@ -106,7 +106,7 @@ internal sealed class KeycloakUserService : IKeycloakUserService
     public async Task<Result<UserResponse>> GetUserByIdAsync(Guid userId, CancellationToken ct = default)
     {
         if (userId == Guid.Empty)
-            return Result.Fail<UserResponse>("User ID is invalid");
+            return Result.Fail<UserResponse>("UserIdInvalid");
         
         return await GetUserResponseAsync(userId.ToString(), QueryType.UserId, ct);
     }
@@ -114,15 +114,15 @@ internal sealed class KeycloakUserService : IKeycloakUserService
     public async Task<Result<UserResponse>> GetUserByNameAsync(string username, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(username) || username.Length > 50 || username.Length < 3)
-            return Result.Fail<UserResponse>("Username is invalid");
+            return Result.Fail<UserResponse>("UsernameInvalid");
         
         return await GetUserResponseAsync(username, QueryType.Username, ct);
     }
 
     public async Task<Result<UserResponse>> GetUserByEmailAsync(string email, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(email) || email.Length > 254 || email.Length < 4 || !email.Contains("@"))
-            return Result.Fail<UserResponse>("Email is invalid");
+        if (string.IsNullOrEmpty(email) || email.Length > 254 || email.Length < 4 || !email.Contains('@'))
+            return Result.Fail<UserResponse>("EmailInvalid");
         
         return await GetUserResponseAsync(email, QueryType.Email, ct);
     }

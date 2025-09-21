@@ -1,39 +1,41 @@
 ﻿using Application.Contracts.Keycloak;
 using Application.Features.ListCards.Commands;
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using Web.Resources.Resources.Boards;
 
 namespace Application.Features.ListCards.Validators;
 
 public sealed class CreateListCardCommandValidator : AbstractValidator<CreateListCardCommand>
 {
-    public CreateListCardCommandValidator(IKeycloakUserService keycloakUserService)
+    public CreateListCardCommandValidator(IKeycloakUserService keycloakUserService, IStringLocalizer<BoardResources> localizer)
     {
         RuleFor(c => c.BoardId)
-            .NotEmpty().WithMessage("Board ID is required.")
-            .NotEqual(Guid.Empty).WithMessage("Board ID cannot be an empty GUID.");
+            .NotEmpty().WithMessage(localizer["BoardIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["BoardIdNotEmptyGuid"]);
         
         RuleFor(c => c.BoardListId)
-            .NotEmpty().WithMessage("Board List ID is required.")
-            .NotEqual(Guid.Empty).WithMessage("Board List ID cannot be an empty GUID.");
+            .NotEmpty().WithMessage(localizer["BoardListIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["BoardListIdNotEmptyGuid"]);
         
         RuleFor(c => c.Title)
-            .NotEmpty().WithMessage("Title is required.")
-            .MaximumLength(100).WithMessage("Title cannot exceed 100 characters.");
+            .NotEmpty().WithMessage(localizer["TitleRequired"])
+            .MaximumLength(100).WithMessage(localizer["TitleMaxLength", 100]);
 
         RuleFor(c => c.Position)
-            .GreaterThan(0).WithMessage("Position must be a positive integer.");
+            .GreaterThan(0).WithMessage(localizer["PositionGreaterThanZero"]);
         
         RuleFor(c => c.Description)
-            .MaximumLength(200).WithMessage("Description cannot exceed 500 characters.")
+            .MaximumLength(500).WithMessage(localizer["DescriptionMaxLength", 500])
             .When(c => !string.IsNullOrEmpty(c.Description));
         
         RuleFor(c => c.RequestingUserId)
-            .NotEmpty().WithMessage("Requesting User ID is required.")
-            .NotEqual(Guid.Empty).WithMessage("Requesting User ID cannot be an empty GUID.")
+            .NotEmpty().WithMessage(localizer["RequestingUserIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["RequestingUserIdNotEmptyGuid"])
             .MustAsync(async (reqId, cancellation) =>
             {
                 var result = await keycloakUserService.GetUserByIdAsync(reqId, cancellation);
                 return result.IsSuccess;
-            }).WithMessage("User with the given Requesting User ID does not exist.");
+            }).WithMessage(localizer["RequestingUserIdUserNotExist"]);
     }
 }

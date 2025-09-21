@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 
 interface AddBoardMemberButtonProps
@@ -13,6 +14,7 @@ const AddBoardMemberButton: React.FC<AddBoardMemberButtonProps> = ({
 }) =>
 {
     const [input, setInput] = useState('');
+    const { t } = useTranslation();
 
 
     const handleAdd = (e?: React.FormEvent) =>
@@ -27,7 +29,7 @@ const AddBoardMemberButton: React.FC<AddBoardMemberButtonProps> = ({
             <input
                 type="text"
                 className="flex-1 border rounded px-3 py-2"
-                placeholder="Email or username"
+                placeholder={t('addMemberInputPlaceholder')}
                 required
                 value={input}
                 onChange={e => setInput(e.target.value)}
@@ -38,7 +40,7 @@ const AddBoardMemberButton: React.FC<AddBoardMemberButtonProps> = ({
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                 disabled={isLoading}
             >
-                Add
+                {t('addMemberButton')}
             </button>
         </form>
     );

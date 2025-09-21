@@ -19,21 +19,20 @@ internal sealed class GetBoardMemberPermissionsQueryHandler : IQueryHandler<GetB
     {
         var board = await _boardRepository.GetWithMembers(query.BoardId, ct);
         if (board is null)
-            return Result.Fail(new Error("Board not found.")
+            return Result.Fail(new Error("BoardNotFound")
                 .WithMetadata("Status", StatusCodes.Status404NotFound));
 
         var member = board.Members.FirstOrDefault(m => m.UserId == query.MemberId);
         if (member is null)
-            return Result.Fail(new Error("Member not found on this board.")
+            return Result.Fail(new Error("MemberNotFoundOnBoard")
                 .WithMetadata("Status", StatusCodes.Status404NotFound));
-        
-        
+
         var response = new BoardMemberPermissionsResponse
         {
             UserId = query.MemberId,
             Permissions = member.Permissions.Select(p => p.Permission.ToString()).ToList()
         };
-        
+
         return Result.Ok(response);
     }
 }

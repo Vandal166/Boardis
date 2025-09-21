@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface AddCardButtonProps
 {
     value: string;
@@ -10,6 +12,8 @@ interface AddCardButtonProps
 
 function AddCardButton({ value, error, fieldErrors, onChange, onAdd, onCancel }: AddCardButtonProps)
 {
+    const { t } = useTranslation();
+
     return (
         <form onSubmit={onAdd} className="mt-4 flex flex-col gap-2">
             <input
@@ -18,7 +22,7 @@ function AddCardButton({ value, error, fieldErrors, onChange, onAdd, onCancel }:
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="Enter card title"
+                placeholder={t('addCardInputPlaceholder')}
             />
             {/* Field error for title */}
             {fieldErrors?.Title && fieldErrors.Title.map((err, idx) => (
@@ -30,14 +34,14 @@ function AddCardButton({ value, error, fieldErrors, onChange, onAdd, onCancel }:
                     type="submit"
                     className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
                 >
-                    Add card
+                    {t('addCardButton')}
                 </button>
                 <button
                     type="button"
                     className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 transition"
                     onClick={onCancel}
                 >
-                    Cancel
+                    {t('addCardCancel')}
                 </button>
             </div>
         </form>

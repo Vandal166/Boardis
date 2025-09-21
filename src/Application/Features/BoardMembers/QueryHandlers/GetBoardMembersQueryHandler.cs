@@ -22,7 +22,7 @@ internal sealed class GetBoardMembersQueryHandler : IQueryHandler<GetBoardMember
     {
         var board = await _boardRepository.GetWithMembers(query.BoardId, ct);
         if (board is null)
-            return Result.Fail<List<BoardMemberResponse>>("Board not found");
+            return Result.Fail<List<BoardMemberResponse>>("BoardNotFound");
      
         var memberResponses = new List<BoardMemberResponse>();
         foreach (var member in board.Members)

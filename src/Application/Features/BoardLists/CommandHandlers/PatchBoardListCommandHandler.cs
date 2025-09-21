@@ -22,7 +22,7 @@ internal sealed class PatchBoardListCommandHandler : ICommandHandler<PatchBoardL
     {
         var board = await _boardRepository.GetWithLists(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
         
         var patchResult = board.UpdateList(command.BoardListId, command.Title, command.Position, command.ColorArgb);
         if (patchResult.IsFailed)

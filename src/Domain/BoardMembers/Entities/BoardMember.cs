@@ -24,13 +24,13 @@ public sealed class BoardMember : Entity
     {
         var errors = new List<Error>();
         if (boardId == Guid.Empty)
-            errors.Add(new Error("Board ID cannot be empty.").WithMetadata("PropertyName", nameof(BoardId)));
+            errors.Add(new Error("BoardIdRequired").WithMetadata("PropertyName", nameof(BoardId)));
         
         if (userId == Guid.Empty)
-            errors.Add(new Error("User ID cannot be empty.").WithMetadata("PropertyName", nameof(UserId)));
+            errors.Add(new Error("UserIdRequired").WithMetadata("PropertyName", nameof(UserId)));
         
         if (roleId == Guid.Empty)
-            errors.Add(new Error("Assign an role to the member.").WithMetadata("PropertyName", nameof(RoleId)));
+            errors.Add(new Error("RoleIdRequired").WithMetadata("PropertyName", nameof(RoleId)));
         
         if(errors.Count != 0)
             return Result.Fail<BoardMember>(errors);
@@ -76,18 +76,18 @@ public sealed class BoardMember : Entity
             return Result.Ok();
         }
 
-        return Result.Fail("No new permissions were added.");
+        return Result.Fail("NoNewPermissionsAdded");
     }
     
     public Result RemovePermission(Permissions permission, Guid removedById)
     {
         //if the permission does not exist
         if (_permissions.All(p => p.Permission != permission))
-            return Result.Fail(new Error("The member does not have the specified permission.").WithMetadata("Status", 404));
+            return Result.Fail(new Error("MemberDoesNotHavePermission").WithMetadata("Status", 404));
         
         //if it's the last permission
         if (_permissions.Count == 1)
-            return Result.Fail(new Error("Cannot remove the last permission from a member.").WithMetadata("Status", 409));
+            return Result.Fail(new Error("CannotRemoveLastPermission").WithMetadata("Status", 409));
         
         _permissions.RemoveAll(p => p.Permission == permission);
         UpdatedAt = DateTime.UtcNow;

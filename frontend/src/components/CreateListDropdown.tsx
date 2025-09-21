@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props
 {
@@ -21,6 +22,7 @@ const CreateListDropdown: React.FC<Props> = ({
 {
     const [title, setTitle] = useState('');
     const panelRef = useRef<HTMLDivElement>(null);
+    const { t } = useTranslation();
 
     // Reset title when closed
     useEffect(() =>
@@ -63,18 +65,18 @@ const CreateListDropdown: React.FC<Props> = ({
             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4">
                 <div className="w-4 h-4 bg-white rotate-45 shadow-lg" />
             </div>
-            <h2 className="text-lg font-bold mb-4">Create List</h2>
+            <h2 className="text-lg font-bold mb-4">{t('createListTitle')}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium mb-1">
-                        Title <span className="text-red-500">*</span>
+                        {t('createListLabelTitle')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        placeholder='Enter list title'
+                        placeholder={t('createListInputPlaceholder')}
                         required
                     />
                     {/* Field error for title */}
@@ -94,14 +96,14 @@ const CreateListDropdown: React.FC<Props> = ({
                         onClick={onClose}
                         disabled={loading}
                     >
-                        Cancel
+                        {t('createListCancel')}
                     </button>
                     <button
                         type="submit"
                         className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
                         disabled={loading}
                     >
-                        {loading ? 'Creating...' : 'Create'}
+                        {loading ? t('createListCreating') : t('createListCreate')}
                     </button>
                 </div>
             </form>

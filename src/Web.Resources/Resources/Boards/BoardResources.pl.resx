@@ -1,0 +1,234 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+            
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    
+    <data name="TitleRequired" xml:space="preserve">
+        <value>Tytuł jest wymagany.</value>
+    </data>
+    <data name="TitleMaxLength" xml:space="preserve">
+        <value>Tytuł nie może przekraczać {0} znaków.</value>
+    </data>
+    <data name="DescriptionMaxLength" xml:space="preserve">
+        <value>Opis nie może przekraczać {0} znaków.</value>
+    </data>
+    <data name="OwnerIdRequired" xml:space="preserve">
+        <value>Identyfikator właściciela jest wymagany.</value>
+    </data>
+    <data name="OwnerIdNotEmptyGuid" xml:space="preserve">
+        <value>Identyfikator właściciela nie może być pustym GUID-em.</value>
+    </data>
+    <data name="OwnerIdUserNotExist" xml:space="preserve">
+        <value>Użytkownik o podanym identyfikatorze właściciela nie istnieje.</value>
+    </data>
+    <data name="BoardIdRequired" xml:space="preserve">
+        <value>Identyfikator tablicy jest wymagany.</value>
+    </data>
+    <data name="BoardIdNotEmptyGuid" xml:space="preserve">
+        <value>Identyfikator tablicy nie może być pustym GUID-em.</value>
+    </data>
+    <data name="RequestingUserIdRequired" xml:space="preserve">
+        <value>Identyfikator żądającego użytkownika jest wymagany.</value>
+    </data>
+    <data name="RequestingUserIdNotEmptyGuid" xml:space="preserve">
+        <value>Identyfikator żądającego użytkownika nie może być pustym GUID-em.</value>
+    </data>
+    <data name="RequestingUserIdUserNotExist" xml:space="preserve">
+        <value>Użytkownik o podanym identyfikatorze żądającego nie istnieje.</value>
+    </data>
+    <data name="VisibilityRequired" xml:space="preserve">
+        <value>Widoczność nie może być pusta.</value>
+    </data>
+    <data name="VisibilityInvalid" xml:space="preserve">
+        <value>Nieprawidłowy poziom widoczności.</value>
+    </data>
+    <data name="FileRequired" xml:space="preserve">
+        <value>Plik jest wymagany.</value>
+    </data>
+    <data name="FileNotEmpty" xml:space="preserve">
+        <value>Plik nie może być pusty.</value>
+    </data>
+    <data name="FileMaxSize" xml:space="preserve">
+        <value>Rozmiar pliku nie może przekraczać {0} MB.</value>
+    </data>
+    <data name="FileTypeInvalid" xml:space="preserve">
+        <value>Nieobsługiwany typ pliku. Dozwolone typy: JPEG, PNG, GIF.</value>
+    </data>
+    
+    <data name="BoardNotFound" xml:space="preserve">
+        <value>Tablica nie znaleziona.</value>
+    </data>
+    <data name="BoardDeleteNotOwner" xml:space="preserve">
+      <value>Tylko właściciel może usunąć tablicę.</value>
+    </data>
+    <data name="TitleCannotBeNull" xml:space="preserve">
+        <value>Tytuł nie może być pusty.</value>
+    </data>
+    <data name="VisibilityCannotBeNull" xml:space="preserve">
+        <value>Widoczność nie może być pusta.</value>
+    </data>
+    <data name="ListNotFound" xml:space="preserve">
+        <value>Lista nie znaleziona.</value>
+    </data>
+    <data name="NotMemberOfBoard" xml:space="preserve">
+        <value>Nie jesteś członkiem tej tablicy.</value>
+    </data>
+    <data name="OwnerCannotLeaveBoard" xml:space="preserve">
+        <value>Właściciel nie może opuścić tablicy. Usuń ją zamiast tego.</value>
+    </data>
+    <data name="UserIsMemberAlready" xml:space="preserve">
+        <value>Użytkownik jest już członkiem tej tablicy.</value>
+    </data>
+    <data name="MemberNotFound" xml:space="preserve">
+        <value>Członek nie znaleziony.</value>
+    </data>
+    <data name="CannotRemoveOwner" xml:space="preserve">
+        <value>Nie można usunąć właściciela tablicy.</value>
+    </data>
+    <data name="CannotRemoveSelf" xml:space="preserve">
+        <value>Nie możesz usunąć siebie z tablicy.</value>
+    </data>
+    <data name="OnlyMembersCanSetWallpaper" xml:space="preserve">
+        <value>Tylko członkowie tablicy mogą ustawić obraz tła.</value>
+    </data>
+    <data name="OnlyMembersCanDeleteWallpaper" xml:space="preserve">
+        <value>Tylko członkowie tablicy mogą usunąć obraz tła.</value>
+    </data>
+    <data name="NoWallpaperToDelete" xml:space="preserve">
+        <value>Brak obrazu tła do usunięcia.</value>
+    </data>
+    <data name="TitleInvalid" xml:space="preserve">
+        <value>Tytuł jest nieprawidłowy.</value>
+    </data>
+    <data name="DescriptionTooLong" xml:space="preserve">
+        <value>Opis nie może przekraczać 500 znaków.</value>
+    </data>
+    <data name="PositionCannotBeNull" xml:space="preserve">
+        <value>Pozycja nie może być pusta.</value>
+    </data>
+    <data name="CardNotFound" xml:space="preserve">
+        <value>Karta nie znaleziona.</value>
+    </data>
+    <data name="PositionMustBeNonNegative" xml:space="preserve">
+        <value>Pozycja musi być nieujemna.</value>
+    </data>
+    <data name="InvalidColorArgbValue" xml:space="preserve">
+        <value>Nieprawidłowa wartość ARGB koloru.</value>
+    </data>
+    <data name="ListIdRequired" xml:space="preserve">
+        <value>Identyfikator listy nie może być pusty.</value>
+    </data>
+    <data name="CompletedAtCannotBeInFuture" xml:space="preserve">
+        <value>Data zakończenia nie może być w przyszło��ci.</value>
+    </data>
+    <data name="UserIdRequired" xml:space="preserve">
+        <value>Identyfikator użytkownika nie może być pusty.</value>
+    </data>
+    <data name="RoleIdRequired" xml:space="preserve">
+        <value>Przypisz rolę członkowi.</value>
+    </data>
+    <data name="NoNewPermissionsAdded" xml:space="preserve">
+        <value>Nie dodano żadnych nowych uprawnień.</value>
+    </data>
+    <data name="MemberDoesNotHavePermission" xml:space="preserve">
+        <value>Członek nie posiada określonego uprawnienia.</value>
+    </data>
+    <data name="CannotRemoveLastPermission" xml:space="preserve">
+        <value>Nie można usunąć ostatniego uprawnienia członka.</value>
+    </data>
+    <data name="BoardListIdRequired" xml:space="preserve">
+        <value>Identyfikator listy tablicy jest wymagany.</value>
+    </data>
+    <data name="BoardListIdNotEmptyGuid" xml:space="preserve">
+        <value>Identyfikator listy tablicy nie może być pustym GUID-em.</value>
+    </data>
+    <data name="PositionGreaterThanZero" xml:space="preserve">
+        <value>Pozycja musi być większa od zera.</value>
+    </data>
+    <data name="UserIdNotEmptyGuid" xml:space="preserve">
+        <value>Identyfikator użytkownika nie może być pustym GUID-em.</value>
+    </data>
+    <data name="UserIdToAddUserNotExist" xml:space="preserve">
+        <value>Użytkownik do dodania nie istnieje.</value>
+    </data>
+    <data name="CardIdRequired" xml:space="preserve">
+        <value>Identyfikator karty jest wymagany.</value>
+    </data>
+    <data name="CardIdNotEmptyGuid" xml:space="preserve">
+        <value>Identyfikator karty nie może być pustym GUID-em.</value>
+    </data>
+    
+    <data name="MediaNotFound" xml:space="preserve">
+        <value>Nie znaleziono pliku.</value>
+    </data>
+    <data name="MemberIdRequired" xml:space="preserve">
+        <value>Identyfikator członka jest wymagany.</value>
+    </data>
+    <data name="PermissionRequired" xml:space="preserve">
+        <value>Uprawnienie jest wymagane.</value>
+    </data>
+    <data name="OnlyOwnerCanAddPermissions" xml:space="preserve">
+        <value>Tylko właściciel tablicy może dodawać uprawnienia członkom.</value>
+    </data>
+    <data name="OnlyOwnerCanRemovePermissions" xml:space="preserve">
+        <value>Tylko właściciel tablicy może usuwać uprawnienia członkom.</value>
+    </data>
+    <data name="MemberNotFoundOnBoard" xml:space="preserve">
+        <value>Podany członek nie należy do tablicy.</value>
+    </data>
+    <data name="CannotRemoveOwnPermissions" xml:space="preserve">
+        <value>Nie możesz usuwać uprawnień samemu sobie.</value>
+    </data>
+    <data name="FailedToUploadBlob" xml:space="preserve">
+        <value>Nie udało się przesłać pliku do magazynu blob.</value>
+    </data>
+    <data name="FailedToDownloadBlob" xml:space="preserve">
+        <value>Nie udało się pobrać pliku z magazynu blob.</value>
+    </data>
+    <data name="BlobFileNotFound" xml:space="preserve">
+        <value>Nie znaleziono pliku w magazynie blob.</value>
+    </data>
+    <data name="UnexpectedBlobDownloadError" xml:space="preserve">
+        <value>Wystąpił nieoczekiwany błąd podczas pobierania pliku z magazynu blob.</value>
+    </data>
+    <data name="BoardIdNotInRoute" xml:space="preserve">
+        <value>Brak lub nieprawidłowy identyfikator tablicy w ścieżce żądania.</value>
+    </data>
+    <data name="UserPermissionsNotFound" xml:space="preserve">
+        <value>Nie można pobrać uprawnień użytkownika.</value>
+    </data>
+    <data name="MissingRequiredPermission" xml:space="preserve">
+        <value>Brakuje wymaganego uprawnienia do wykonania tej akcji.</value>
+    </data>
+    <data name="UserIdInvalid" xml:space="preserve">
+        <value>Identyfikator użytkownika jest nieprawidłowy.</value>
+    </data>
+    <data name="UsernameInvalid" xml:space="preserve">
+        <value>Nazwa użytkownika jest nieprawidłowa.</value>
+    </data>
+    <data name="EmailInvalid" xml:space="preserve">
+        <value>Adres e-mail jest nieprawidłowy.</value>
+    </data>
+    <data name="NotificationBoardInviteTitle" xml:space="preserve">
+        <value>Zostałeś zaproszony do tablicy</value>
+    </data>
+    <data name="NotificationBoardRemovedTitle" xml:space="preserve">
+        <value>Zostałeś usunięty z tablicy</value>
+    </data>
+</root>

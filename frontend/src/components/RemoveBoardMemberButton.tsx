@@ -1,5 +1,6 @@
 import React from 'react';
 import { useConfirmation } from './ConfirmationDialog';
+import { useTranslation } from 'react-i18next';
 
 interface RemoveBoardMemberButtonProps
 {
@@ -14,16 +15,16 @@ const RemoveBoardMemberButton: React.FC<RemoveBoardMemberButtonProps> = ({
     isLoading = false,
 }) =>
 {
-
     const confirmation = useConfirmation();
+    const { t } = useTranslation();
 
     const handleClick = async () =>
     {
         const confirmed = await confirmation.confirm({
-            title: 'Remove Member',
-            message: 'Are you sure you want to remove this member from the board?',
-            confirmText: 'Remove',
-            cancelText: 'Cancel',
+            title: t('removeMemberTitle'),
+            message: t('removeMemberMessage'),
+            confirmText: t('removeMemberConfirm'),
+            cancelText: t('removeMemberCancel'),
         });
         if (confirmed) onRemove(memberId);
     };
@@ -31,10 +32,10 @@ const RemoveBoardMemberButton: React.FC<RemoveBoardMemberButtonProps> = ({
         <button
             className="ml-2 text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded transition"
             onClick={handleClick}
-            title="Remove from board"
+            title={t('removeMemberTooltip')}
             disabled={isLoading}
         >
-            Remove
+            {t('removeMemberButton')}
         </button>
     );
 };

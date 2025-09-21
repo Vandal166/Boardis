@@ -25,7 +25,7 @@ internal sealed class DeleteBoardMediaCommandHandler : ICommandHandler<DeleteBoa
     {
         var board = await _boardRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
-            return Result.Fail(new Error("Board not found").WithMetadata("Status", StatusCodes.Status404NotFound));
+            return Result.Fail(new Error("BoardNotFound").WithMetadata("Status", StatusCodes.Status404NotFound));
         
         var oldWallpaperId = board.WallpaperImageId;
         var deleteResult = board.DeleteWallpaperImageId(command.RequestingUserId);

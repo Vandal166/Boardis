@@ -21,11 +21,11 @@ internal sealed class DeleteListCardCommandHandler : ICommandHandler<DeleteListC
     {
         var board = await _boardRepository.GetWithCards(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
         
         var boardList = board.GetListById(command.BoardListId);
         if (boardList is null)
-            return Result.Fail("List not found in this board");
+            return Result.Fail("ListNotFound");
         
         var removeResult = boardList.RemoveCard(command.CardId, command.RequestingUserId);
         if (removeResult.IsFailed)

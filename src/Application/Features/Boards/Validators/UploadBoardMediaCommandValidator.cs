@@ -1,6 +1,8 @@
 ﻿using Application.Contracts.Keycloak;
 using Application.Features.Boards.Commands;
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using Web.Resources.Resources.Boards;
 
 namespace Application.Features.Boards.Validators;
 
@@ -16,25 +18,27 @@ public sealed class UploadBoardMediaCommandValidator : AbstractValidator<UploadB
 
     private const long MaxFileSizeInBytes = 10 * 1024 * 1024; // 10 MB
 
-    public UploadBoardMediaCommandValidator(IKeycloakUserService keycloakUserService)
+    public UploadBoardMediaCommandValidator(IStringLocalizer<BoardResources> localizer, IKeycloakUserService keycloakUserService)
     {
         RuleFor(c => c.BoardId)
-            .NotEmpty().WithMessage("Board ID is required.")
-            .NotEqual(Guid.Empty).WithMessage("Board ID cannot be an empty GUID.");
+            .NotEmpty().WithMessage(localizer["BoardIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["BoardIdNotEmptyGuid"]);
 
         RuleFor(c => c.RequestingUserId)
-            .NotEmpty().WithMessage("Requesting User ID is required.")
-            .NotEqual(Guid.Empty).WithMessage("Requesting User ID cannot be an empty GUID.")
+            .NotEmpty().WithMessage(localizer["RequestingUserIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["RequestingUserIdNotEmptyGuid"])
             .MustAsync(async (reqId, cancellation) =>
             {
                 var result = await keycloakUserService.GetUserByIdAsync(reqId, cancellation);
                 return result.IsSuccess;
-            }).WithMessage("User with the given Requesting User ID does not exist.");
+            }).WithMessage(localizer["RequestingUserIdUserNotExist"]);
 
         RuleFor(c => c.File)
-            .NotNull().WithMessage("File is required.")
-            .Must(file => file.Length > 0).WithMessage("File cannot be empty.")
-            .Must(file => file.Length <= MaxFileSizeInBytes).WithMessage($"File size cannot exceed {MaxFileSizeInBytes / (1024 * 1024)} MB.")
-            .Must(file => AllowedContentTypes.Contains(file.ContentType)).WithMessage("Unsupported file type. Allowed types are: JPEG, PNG, GIF.");
+            .NotNull().WithMessage(localizer["FileRequired"])
+            .Must(file => file != null && file.Length > 0).WithMessage(localizer["FileNotEmpty"])
+            .Must(file => file != null && file.Length <= MaxFileSizeInBytes)
+                .WithMessage(localizer["FileMaxSize", MaxFileSizeInBytes / (1024 * 1024)])
+            .Must(file => file != null && AllowedContentTypes.Contains(file.ContentType))
+                .WithMessage(localizer["FileTypeInvalid"]);
     }
 }

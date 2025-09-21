@@ -22,11 +22,11 @@ internal sealed class GetListCardByIdQueryHandler : IQueryHandler<GetListCardByI
     {
         var board = await _boardRepository.GetWithLists(query.BoardId, ct);
         if (board is null)
-            return Result.Fail<ListCardResponse>("Board not found");
+            return Result.Fail<ListCardResponse>("BoardNotFound");
      
         var boardList = board.GetListById(query.BoardListId);
         if (boardList is null)
-            return Result.Fail("Board list not found in this board");
+            return Result.Fail("ListNotFound");
         
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
         

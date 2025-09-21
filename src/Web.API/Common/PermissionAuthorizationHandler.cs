@@ -31,7 +31,7 @@ internal sealed class PermissionAuthorizationHandler : AuthorizationHandler<Perm
         var boardId = _contextAccessor.HttpContext?.Request.RouteValues["boardId"]?.ToString();
         if (boardId is null || !Guid.TryParse(boardId, out var boardGuid))
         {
-            context.Fail(new AuthorizationFailureReason(this, "BoardId is missing or invalid in route"));
+            context.Fail(new AuthorizationFailureReason(this, "BoardIdNotInRoute"));
             return;
         }
         using var connection = await _dbConnectionFactory.CreateConnectionAsync(ct);
@@ -52,13 +52,13 @@ internal sealed class PermissionAuthorizationHandler : AuthorizationHandler<Perm
 
         if (!result.BoardExists)
         {
-            context.Fail(new AuthorizationFailureReason(this, "Board not found"));
+            context.Fail(new AuthorizationFailureReason(this, "BoardNotFound"));
             return;
         }
 
         if (!result.MemberExists)
         {
-            context.Fail(new AuthorizationFailureReason(this, "You are not a member of the board"));
+            context.Fail(new AuthorizationFailureReason(this, "NotMemberOfBoard"));
             return;
         }
         
@@ -66,13 +66,13 @@ internal sealed class PermissionAuthorizationHandler : AuthorizationHandler<Perm
         var permissionSet = new HashSet<string>(result.Permissions, StringComparer.Ordinal);
         if (permissionSet.Count == 0)
         {
-            context.Fail(new AuthorizationFailureReason(this, "Could not retrieve user permissions"));
+            context.Fail(new AuthorizationFailureReason(this, "UserPermissionsNotFound"));
             return;
         }
 
         if (!permissionSet.Contains(requirement.Permission))
         {
-            context.Fail(new AuthorizationFailureReason(this, $"You lack the required permission: {requirement.Permission}"));
+            context.Fail(new AuthorizationFailureReason(this, "MissingRequiredPermission"));
             return;
         }
         

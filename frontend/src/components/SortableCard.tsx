@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import DeleteCardButton from './DeleteCardButton';
 import { useConfirmationDialogOpen } from './ConfirmationDialog';
 import CardDetailsModal from './CardDetailsModal';
+import { useTranslation } from 'react-i18next';
 
 type BoardCard = {
     id: string;
@@ -22,6 +23,8 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
 {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
         useSortable({ id: card.id });
+
+    const { t } = useTranslation();
 
     const [editing, setEditing] = useState(false);
     const [titleInput, setTitleInput] = useState(card.title);
@@ -259,7 +262,7 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
                             setTitleInput(title);
                             setError(null);
                         }}
-                        title="Click to edit title"
+                        title={t('sortableCardEditTitleAria')}
                     >
                         {title}
                     </h4>
@@ -292,14 +295,14 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
                                     onClick={() => { setShowMenu(false); setShowDetailsModal(true); }}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                                    Details
+                                    {t('sortableCardDetails')}
                                 </button>
                                 <button
                                     className="flex items-center gap-2 w-full text-left px-5 py-2 text-gray-800 hover:bg-blue-50 transition"
                                     onClick={() => { setShowMenu(false); handleComplete(); }}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                                    Mark as completed
+                                    {t('sortableCardMarkCompleted')}
                                 </button>
                                 <DeleteCardButton cardId={card.id} listId={card.boardListId} onDeleted={onDeleted} />
                             </div>,
@@ -313,7 +316,7 @@ function SortableCard({ card, onDeleted, refetch }: { card: BoardCard, onDeleted
             )}
             {completedAt && (
                 <p className="text-xs text-green-600 mt-1 select-none">
-                    Completed: {new Date(completedAt).toLocaleString()}
+                    {t('sortableCardCompleted', { date: new Date(completedAt).toLocaleString() })}
                 </p>
             )}
             {/* Add the details modal */}

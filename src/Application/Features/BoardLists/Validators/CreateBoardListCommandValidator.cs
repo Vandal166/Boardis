@@ -1,31 +1,33 @@
 ﻿using Application.Contracts.Keycloak;
 using Application.Features.BoardLists.Commands;
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using Web.Resources.Resources.Boards;
 
 namespace Application.Features.BoardLists.Validators;
 
 public sealed class CreateBoardListCommandValidator : AbstractValidator<CreateBoardListCommand>
 {
-    public CreateBoardListCommandValidator(IKeycloakUserService keycloakUserService)
+    public CreateBoardListCommandValidator(IKeycloakUserService keycloakUserService, IStringLocalizer<BoardResources> localizer)
     {
         RuleFor(c => c.BoardId)
-            .NotEmpty().WithMessage("Board ID is required.")
-            .NotEqual(Guid.Empty).WithMessage("Board ID cannot be an empty GUID.");
+            .NotEmpty().WithMessage(localizer["BoardIdRequired"])
+            .NotEqual(Guid.Empty).WithMessage(localizer["BoardIdNotEmptyGuid"]);
         
         RuleFor(c => c.Title)
-            .NotEmpty().WithMessage("Title is required.")
-            .MaximumLength(100).WithMessage("Title cannot exceed 100 characters.");
+            .NotEmpty().WithMessage(localizer["TitleRequired"])
+            .MaximumLength(100).WithMessage(localizer["TitleMaxLength", 100]);
         
         RuleFor(c => c.Position)
-            .GreaterThan(0).WithMessage("Position must be a positive integer.");
+            .GreaterThan(0).WithMessage(localizer["PositionGreaterThanZero"]);
         
         RuleFor(x => x.RequestingUserId)
-            .NotEmpty().WithMessage("Requesting user is required.")
+            .NotEmpty().WithMessage(localizer["RequestingUserIdRequired"])
             .MustAsync(async (userId, ct) => 
             {
                 var result = await keycloakUserService.GetUserByIdAsync(userId, ct);
                 return result.IsSuccess;
             })
-            .WithMessage(x => $"Requesting user with ID '{x.RequestingUserId}' does not exist.");
+            .WithMessage(localizer["RequestingUserIdUserNotExist"]);
     }
 }

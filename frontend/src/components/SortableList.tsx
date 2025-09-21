@@ -4,6 +4,7 @@ import { useKeycloak } from '@react-keycloak/web';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
+import { useTranslation } from 'react-i18next';
 
 import AddCardButton from './AddCardButton';
 import { useUserListCards } from '../hooks/userListCard';
@@ -296,6 +297,8 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
         }
     }
 
+    const { t } = useTranslation();
+
     return (
         <div ref={setNodeRef} style={style} {...attributes} className="bg-gray-100 rounded-lg p-4 flex flex-col w-[300px] min-w-[300px] max-w-[300px] min-h-[220px]">
             <div
@@ -379,7 +382,7 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
                                     onClick={() => setShowColorPicker(true)}
                                 >
                                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: argbToRgba(listColor) }}></span>
-                                    Change list color
+                                    {t('sortableListChangeColor')}
                                 </button>
                                 {showColorPicker && (
                                     <ListColorPicker
@@ -396,7 +399,7 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
                                     className="flex items-center gap-2 w-full text-left px-5 py-2 text-gray-800 hover:bg-blue-50 transition"
                                 >
                                     <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                                    More info
+                                    {t('sortableListMoreInfo')}
                                 </button>
                                 <DeleteListButton
                                     listId={list.id}
@@ -482,7 +485,7 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
                     className="mt-4 text-blue-600 hover:underline text-left"
                     onClick={() => setAddingCard(true)}
                 >
-                    + Add a card
+                    {t('sortableListAddCard')}
                 </button>
             )}
         </div>

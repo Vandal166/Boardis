@@ -3,6 +3,7 @@ import { useConfirmation } from './ConfirmationDialog';
 import api from '../api';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface DeleteCardButtonProps
 {
@@ -15,20 +16,21 @@ const DeleteCardButton: React.FC<DeleteCardButtonProps> = ({ cardId, listId, onD
 {
     const confirmation = useConfirmation();
     const { boardId } = useParams<{ boardId: string }>();
+    const { t } = useTranslation();
 
     const handleDelete = async () =>
     {
         const confirmed = await confirmation.confirm({
-            title: 'Delete Card',
-            message: 'Are you sure you want to delete this card?',
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
+            title: t('deleteCardTitle'),
+            message: t('deleteCardMessage'),
+            confirmText: t('deleteCardConfirm'),
+            cancelText: t('deleteCardCancel'),
         });
         if (!confirmed) return;
         try
         {
             await api.delete(`/api/boards/${boardId}/lists/${listId}/cards/${cardId}`);
-            toast.success('Card deleted');
+            toast.success(t('deleteCardSuccess'));
             onDeleted();
         }
         catch { }
@@ -40,7 +42,7 @@ const DeleteCardButton: React.FC<DeleteCardButtonProps> = ({ cardId, listId, onD
             onClick={handleDelete}
         >
             <span className="w-2 h-2 rounded-full bg-red-400"></span>
-            Delete
+            {t('deleteCardButton')}
         </button>
     );
 };

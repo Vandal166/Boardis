@@ -23,7 +23,7 @@ internal sealed class CreateBoardListCommandHandler : ICommandHandler<CreateBoar
     {
         var board = await _boardRepository.GetWithCards(command.BoardId, ct);
         if (board is null)
-            return Result.Fail<BoardList>("Board not found");
+            return Result.Fail<BoardList>("BoardNotFound");
         
         var addListResult = board.AddList(command.Title, command.Position);
         if (addListResult.IsFailed)

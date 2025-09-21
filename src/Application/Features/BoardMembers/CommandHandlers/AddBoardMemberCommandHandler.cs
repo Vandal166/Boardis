@@ -24,7 +24,7 @@ internal sealed class AddBoardMemberCommandHandler : ICommandHandler<AddBoardMem
     {
         var board = await _boardRepository.GetWithMembers(command.BoardId, ct);
         if (board is null)
-            return Result.Fail<BoardMember>("Board not found");
+            return Result.Fail<BoardMember>("BoardNotFound");
         
         var memberResult = board.AddMember(command.UserIdToAdd, Roles.MemberId, command.RequestingUserId);
         if (memberResult.IsFailed)

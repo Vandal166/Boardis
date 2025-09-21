@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
 
 export interface BoardList
@@ -16,6 +17,7 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string[] }>({});
+    const { t } = useTranslation();
 
     const loadLists = useCallback(async () =>
     {
@@ -31,13 +33,13 @@ export function useBoardLists(boardId: string | undefined, keycloak: any, naviga
         }
         catch
         {
-            setError('Failed to load board data. Please try again later.');
+            setError(t('userBoardListsFailed'));
         }
         finally
         {
             setIsLoading(false);
         }
-    }, [boardId, keycloak?.authenticated, keycloak?.token]);
+    }, [boardId, keycloak?.authenticated, keycloak?.token, t]);
 
     useEffect(() =>
     {

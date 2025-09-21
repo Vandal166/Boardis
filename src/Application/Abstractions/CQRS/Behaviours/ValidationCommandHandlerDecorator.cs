@@ -1,5 +1,6 @@
 ﻿using FluentResults;
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 
 namespace Application.Abstractions.CQRS.Behaviours;
 
@@ -13,7 +14,7 @@ public class ValidationCommandHandlerDecorator<TCommand, TResponse> : ICommandHa
 {
     private readonly ICommandHandler<TCommand, TResponse> _innerHandler;
     private readonly IValidator<TCommand>? _validator;
-
+    
     public ValidationCommandHandlerDecorator(ICommandHandler<TCommand, TResponse> innerHandler, IValidator<TCommand>? validator = null)
     {
         _innerHandler = innerHandler ?? throw new ArgumentNullException(nameof(innerHandler));

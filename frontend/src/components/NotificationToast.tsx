@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface NotificationToastProps
 {
     title: string;
@@ -19,6 +21,7 @@ export default function NotificationToast({
     const initials = byUser
         ? byUser.trim().substring(0, 2).toUpperCase()
         : "??";
+    const { t } = useTranslation();
 
     return (
         <div
@@ -37,7 +40,7 @@ export default function NotificationToast({
                             {title}
                         </p>
                         <div className="mt-1 text-sm text-gray-500">
-                            Invited by: {byUser}
+                            {t('notificationInvitedBy', { user: byUser })}
                         </div>
                     </div>
                 </div>
@@ -48,14 +51,14 @@ export default function NotificationToast({
                         onClick={onView}
                         className="w-full border border-transparent rounded-none p-4 flex items-center justify-center text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        View Board
+                        {t('notificationViewBoard')}
                     </button>
                 )}
                 <button
                     onClick={onClose}
                     className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
-                    Close
+                    {t('notificationClose')}
                 </button>
             </div>
         </div>

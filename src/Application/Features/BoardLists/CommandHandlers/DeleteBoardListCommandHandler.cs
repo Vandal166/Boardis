@@ -21,7 +21,7 @@ internal sealed class DeleteBoardListCommandHandler : ICommandHandler<DeleteBoar
     {
         var board = await _boardRepository.GetWithLists(command.BoardId, ct);
         if (board is null)
-            return Result.Fail("Board not found");
+            return Result.Fail("BoardNotFound");
         
         var result = board.RemoveList(command.BoardListId);
         if (result.IsFailed)
