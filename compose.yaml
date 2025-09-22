@@ -19,6 +19,7 @@
       - ASPNETCORE_ENVIRONMENT=Development # running in Development mode
       - ConnectionStrings__Boardis_DB=Host=web.database;Port=5432;Database=Boardis_DB;Username=postgres;Password=postgres
       - ConnectionStrings__Redis=redis:6379
+      - Ollama__Endpoint=http://ollama:11434 # internal url in docker network
     networks:
       - boardis-network
             
@@ -120,6 +121,19 @@
         - "10000:10000" # Blob service
     volumes:
         - ./.containers/azurite:/data
+    networks:
+      - boardis-network
+        
+        
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"  # exposing for local testing/debugging (e.g., curl from host)
+    volumes:
+      - ./.containers/ollama:/root/.ollama  # persisting models and config
+      - ./ollama/ollama-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     networks:
       - boardis-network
     

@@ -135,7 +135,7 @@
         <value>Identyfikator listy nie może być pusty.</value>
     </data>
     <data name="CompletedAtCannotBeInFuture" xml:space="preserve">
-        <value>Data zakończenia nie może być w przyszło��ci.</value>
+        <value>Data zakończenia nie może być w przyszłości.</value>
     </data>
     <data name="UserIdRequired" xml:space="preserve">
         <value>Identyfikator użytkownika nie może być pusty.</value>

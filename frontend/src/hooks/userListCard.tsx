@@ -62,6 +62,48 @@ export function useUserListCards(
         fetchData();
     }, [keycloak, listId, navigate, initialized]);
 
+    async function handleAddCardToList(existingListId: string, data: { title: string; description?: string }): Promise<boolean | undefined>
+    {
+        if (!keycloak.token || !existingListId)
+            return;
+
+        // Find max position among current cards
+        const maxPosition = cards.length > 0
+            ? Math.max(...cards.map(c => c.position ?? 0))
+            : 0;
+
+        try
+        {
+            await api.post(
+                `/api/boards/${boardId}/lists/${existingListId}/cards`,
+                {
+                    title: data.title,
+                    description: data.description,
+                    position: maxPosition + 1024.0,
+                }
+            );
+            await fetchData(); // Refetch cards after adding
+            return true;
+        }
+        catch (error: any)
+        {
+            if (error.response?.data?.errors)
+            {
+                setFieldErrors(error.response.data.errors);
+            }
+            else if (error.response?.data?.message)
+            {
+                setError(error.response.data.message);
+            }
+            else
+            {
+                setError(t('userListCardAddFailed'));
+            }
+            return false;
+        }
+    };
+
+
     const handleAddCard = async (data: { title: string; description?: string }) =>
     {
         if (!keycloak.token || !listId)
@@ -103,5 +145,5 @@ export function useUserListCards(
         }
     };
 
-    return { cards, setCards, error, isLoading, fieldErrors, setFieldErrors, handleAddCard, refetch: fetchData };
+    return { cards, setCards, error, isLoading, fieldErrors, setFieldErrors, handleAddCard, handleAddCardToList, refetch: fetchData };
 }
