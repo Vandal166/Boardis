@@ -16,6 +16,7 @@ import api from '../api';
 import { HubConnectionState } from '@microsoft/signalr';
 import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 import { useTranslation } from 'react-i18next';
+import GenerateListStructureButton from '../components/Ollama/GenerateListStructureButton';
 
 
 function BoardView()
@@ -432,7 +433,6 @@ function BoardView()
     [lists, search]
   );
 
-
   const handleLeaveBoard = async () =>
   {
     if (!boardId || !keycloak.token) return;
@@ -502,6 +502,13 @@ function BoardView()
                   <UserPlusIcon className="w-5 h-5" />
                   {t('boardViewManageMembers')}
                 </button>
+
+                {/* Generate List Structure Button */}
+                <GenerateListStructureButton
+                  boardId={boardId}
+                  initialMaxPosition={lists.length ? Math.max(...lists.map(l => l.position ?? 0)) : 0}
+                />
+
                 <button
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
                   onClick={handleLeaveBoard}

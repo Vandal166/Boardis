@@ -195,7 +195,7 @@ namespace Web.Resources.Resources.Boards {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Data zakończenia nie może być w przyszło��ci..
+        ///   Looks up a localized string similar to Data zakończenia nie może być w przyszłości..
         /// </summary>
         public static string CompletedAtCannotBeInFuture {
             get {
