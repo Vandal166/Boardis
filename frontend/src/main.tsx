@@ -37,7 +37,6 @@ createRoot(document.getElementById('root')!).render(
                     <Route path="board/:boardId" element={<BoardView />} />
                   </Route>
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="/profile" element={<PlaceholderPage title="Your Profile" />} />
                   <Route path="/features" element={<PlaceholderPage title="Features" />} />
                   <Route path="/pricing" element={<PlaceholderPage title="Pricing" />} />
                   <Route path="/blog" element={<PlaceholderPage title="Blog" />} />

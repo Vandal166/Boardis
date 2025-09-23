@@ -60,6 +60,15 @@ namespace Web.Resources.Resources.Boards {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to AI response was empty or null..
+        /// </summary>
+        public static string AiResponseEmptyOrNull {
+            get {
+                return ResourceManager.GetString("AiResponseEmptyOrNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File not found in blob storage..
         /// </summary>
         public static string BlobFileNotFound {
@@ -213,6 +222,24 @@ namespace Web.Resources.Resources.Boards {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Description must not be whitespace..
+        /// </summary>
+        public static string DescriptionNotWhitespace {
+            get {
+                return ResourceManager.GetString("DescriptionNotWhitespace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Description is required..
+        /// </summary>
+        public static string DescriptionRequired {
+            get {
+                return ResourceManager.GetString("DescriptionRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Description cannot exceed 500 characters..
         /// </summary>
         public static string DescriptionTooLong {
@@ -290,6 +317,15 @@ namespace Web.Resources.Resources.Boards {
         public static string InvalidColorArgbValue {
             get {
                 return ResourceManager.GetString("InvalidColorArgbValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid JSON structure from AI: {0}.
+        /// </summary>
+        public static string InvalidJsonStructureFromAi {
+            get {
+                return ResourceManager.GetString("InvalidJsonStructureFromAi", resourceCulture);
             }
         }
         
@@ -407,6 +443,33 @@ namespace Web.Resources.Resources.Boards {
         public static string NoWallpaperToDelete {
             get {
                 return ResourceManager.GetString("NoWallpaperToDelete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ollama API request failed with status code: {0}.
+        /// </summary>
+        public static string OllamaApiRequestFailedWithStatusCode {
+            get {
+                return ResourceManager.GetString("OllamaApiRequestFailedWithStatusCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ollama API response missing &apos;response&apos; field..
+        /// </summary>
+        public static string OllamaApiResponseMissingResponseField {
+            get {
+                return ResourceManager.GetString("OllamaApiResponseMissingResponseField", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occurred while processing the Ollama API request..
+        /// </summary>
+        public static string OllamaApiUnexpectedError {
+            get {
+                return ResourceManager.GetString("OllamaApiUnexpectedError", resourceCulture);
             }
         }
         

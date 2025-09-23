@@ -231,6 +231,27 @@
     <data name="NotificationBoardRemovedTitle" xml:space="preserve">
         <value>You have been removed from the board</value>
     </data>
+    <data name="DescriptionRequired" xml:space="preserve">
+        <value>Description is required.</value>
+    </data>
+    <data name="DescriptionNotWhitespace" xml:space="preserve">
+        <value>Description must not be whitespace.</value>
+    </data>
+    <data name="OllamaApiRequestFailedWithStatusCode" xml:space="preserve">
+        <value>Ollama API request failed with status code: {0}</value>
+    </data>
+    <data name="OllamaApiResponseMissingResponseField" xml:space="preserve">
+        <value>Ollama API response missing 'response' field.</value>
+    </data>
+    <data name="InvalidJsonStructureFromAi" xml:space="preserve">
+        <value>Invalid JSON structure from AI: {0}</value>
+    </data>
+    <data name="AiResponseEmptyOrNull" xml:space="preserve">
+        <value>AI response was empty or null.</value>
+    </data>
+    <data name="OllamaApiUnexpectedError" xml:space="preserve">
+        <value>An error occurred while processing the Ollama API request.</value>
+    </data>
     
     
 </root>

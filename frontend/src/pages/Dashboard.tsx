@@ -2,9 +2,11 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useTranslation } from 'react-i18next';
+import { useKeycloak } from '@react-keycloak/web';
 
 function Dashboard()
 {
+    const { keycloak } = useKeycloak();
     const navigate = useNavigate();
     const { t } = useTranslation();
 
@@ -33,20 +35,7 @@ function Dashboard()
                         </li>
                         <li>
                             <button
-                                onClick={() => navigate('/notifications')}
-                                className="group w-full flex justify-between items-center text-left px-4 py-2 text-sm bg-transparent hover:bg-gray-700 rounded-md transition"
-                            >
-                                {t('dashboardNotifications')}
-                                <span
-                                    className="inline-block ml-2 text-3xl leading-none opacity-0 transform translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"
-                                >
-                                    ›
-                                </span>
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                onClick={() => navigate('/profile')}
+                                onClick={() => keycloak.accountManagement()}
                                 className="group w-full flex justify-between items-center text-left px-4 py-2 text-sm bg-transparent hover:bg-gray-700 rounded-md transition"
                             >
                                 {t('dashboardProfile')}
@@ -57,25 +46,14 @@ function Dashboard()
                                 </span>
                             </button>
                         </li>
-                        <li>
-                            <button
-                                onClick={() => navigate('/settings')}
-                                className="group w-full flex justify-between items-center text-left px-4 py-2 text-sm bg-transparent hover:bg-gray-700 rounded-md transition"
-                            >
-                                {t('dashboardSettings')}
-                                <span
-                                    className="inline-block ml-2 text-3xl leading-none opacity-0 transform translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200"
-                                >
-                                    ›
-                                </span>
-                            </button>
-                        </li>
                     </ul>
                 </aside>
+
                 {/* Main Content */}
                 <main className="flex-1">
                     <Outlet />
                 </main>
+
             </div>
             <Footer />
         </div>
