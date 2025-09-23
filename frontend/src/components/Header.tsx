@@ -80,6 +80,7 @@ function Header()
     const handleLogin = () => keycloak.login({ redirectUri: window.location.origin + '/' });
     const handleRegister = () => keycloak.register({ redirectUri: window.location.origin + '/' });
     const handleLogout = () => keycloak.logout({ redirectUri: window.location.origin + '/' });
+
     const { t, i18n } = useTranslation();
 
     return (
@@ -136,7 +137,7 @@ function Header()
                                         className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10"
                                     >
                                         <button
-                                            onClick={() => navigate('/profile')}
+                                            onClick={() => keycloak.accountManagement()}
                                             className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
                                         >
                                             {t('headerYourProfile')}

@@ -344,8 +344,11 @@ function SortableList({ list, onDeleted, onTitleUpdated, onColorUpdated }: { lis
                 ) : (
                     <h3
                         className="text-lg font-semibold text-black break-words whitespace-normal line-clamp-2 max-w-full pr-8 cursor-text select-none"
-                        onClick={handleTitleEdit}
-                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e =>
+                        {
+                            e.stopPropagation();
+                            handleTitleEdit();
+                        }}
                         title="Click to edit title"
                     >
                         {list.title}

@@ -3,8 +3,9 @@ using Application.DTOs.Ollama;
 
 namespace Application.Features.Ollama.Commands;
 
-public sealed record GenerateListStructureCommand : ICommand<ListStructureResponse>
+public sealed record ChatRequestCommand : ICommand<ChatResponse>
 {
-    public required string Description { get; init; }
+    public required Guid BoardId { get; init; }
+    public required string Message { get; init; }
     public required Guid RequestingUserId { get; init; }
 }

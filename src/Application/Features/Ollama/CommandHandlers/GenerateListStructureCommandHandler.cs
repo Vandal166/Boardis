@@ -1,5 +1,4 @@
 ﻿using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using Application.Abstractions.CQRS;
 using Application.DTOs.Ollama;
@@ -119,7 +118,8 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
             {
                 model = Model,
                 prompt = fullPrompt,
-                options = new { temperature = 0.2 }  // low temperature for more deterministic, structured output
+                options = new { temperature = 0.2 },  // low temperature for more deterministic, structured output
+                stream = false
             };
 
             Console.WriteLine("Sending POST request to Ollama API...");
@@ -129,26 +129,20 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"Ollama API request failed with status code: {response.StatusCode}");
-                return Result.Fail($"Ollama API request failed with status code: {response.StatusCode}");
+                return Result.Fail("OllamaApiRequestFailedWithStatusCode");
             }
 
-            var resultBuilder = new StringBuilder();
-            await using var stream = await response.Content.ReadAsStreamAsync(ct);
-            using var reader = new StreamReader(stream);
-
-            string? line;
-            while ((line = await reader.ReadLineAsync(ct)) != null)
+            var content = await response.Content.ReadAsStringAsync(ct);
+             
+            var json = JsonDocument.Parse(content);
+            if (!json.RootElement.TryGetProperty("response", out var resp))
             {
-                if (string.IsNullOrWhiteSpace(line)) continue;
-                var json = JsonDocument.Parse(line);
-                if (json.RootElement.TryGetProperty("response", out var resp))
-                    resultBuilder.Append(resp.GetString());
-
-                if (json.RootElement.TryGetProperty("done", out var done) && done.GetBoolean())
-                    break;
+                Console.WriteLine("Ollama API response missing 'response' field.");
+                return Result.Fail("OllamaApiResponseMissingResponseField");
             }
+          
 
-            var responseText = resultBuilder.ToString().Trim();  // Trim any whitespace
+            var responseText = resp.ToString().Trim();  // Trim any whitespace
             Console.WriteLine($"Raw Ollama response: {responseText}");
             // Remove code block markers if present
             var cleanedResponse = responseText
@@ -168,12 +162,12 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
             catch (JsonException ex)
             {
                 Console.WriteLine($"JSON deserialization failed: {ex.Message}");
-                return Result.Fail($"Invalid JSON structure from AI: {ex.Message}");
+                return Result.Fail("InvalidJsonStructureFromAi");
             }
 
             if (structureResponse is null)
             {
-                return Result.Fail("AI response was empty or null.");
+                return Result.Fail("AiResponseEmptyOrNull");
             }
 
             Console.WriteLine("Ollama response successfully parsed to Kanban structure.");
@@ -183,7 +177,7 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
         {
             Console.WriteLine($"Exception occurred: {ex.Message}");
             Console.WriteLine(ex.StackTrace);
-            return Result.Fail(new ExceptionalError("An error occurred while processing the Ollama API request.", ex));
+            return Result.Fail("OllamaApiUnexpectedError");
         }
     }
 }

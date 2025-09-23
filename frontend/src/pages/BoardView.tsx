@@ -17,6 +17,7 @@ import { HubConnectionState } from '@microsoft/signalr';
 import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 import { useTranslation } from 'react-i18next';
 import GenerateListStructureButton from '../components/Ollama/GenerateListStructureButton';
+import ChatWithAIButton from '../components/ChatWithAIButton';
 
 
 function BoardView()
@@ -165,7 +166,7 @@ function BoardView()
   }, [boardId, boardHubConnection, navigate, initialized, keycloak.authenticated, keycloak.token, fetchBoardInfo]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -503,12 +504,6 @@ function BoardView()
                   {t('boardViewManageMembers')}
                 </button>
 
-                {/* Generate List Structure Button */}
-                <GenerateListStructureButton
-                  boardId={boardId}
-                  initialMaxPosition={lists.length ? Math.max(...lists.map(l => l.position ?? 0)) : 0}
-                />
-
                 <button
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
                   onClick={handleLeaveBoard}
@@ -517,6 +512,9 @@ function BoardView()
                   {leaveLoading ? <Spinner className="w-5 h-5" /> : null}
                   {t('boardViewLeaveBoard')}
                 </button>
+
+                <ChatWithAIButton boardId={boardId} />
+
               </div>
               {/* Search bar for lists - make it grow to fill space */}
               <input
@@ -527,13 +525,21 @@ function BoardView()
                 className="flex-grow mx-6 px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 style={{ minWidth: 0 }}
               />
-              <button
-                className="p-2 rounded-full hover:bg-gray-200 transition"
-                onClick={() => setShowSettings(v => !v)}
-                aria-label="Board settings"
-              >
-                <Cog6ToothIcon className="w-7 h-7 text-gray-700" />
-              </button>
+              {/* Move GenerateListStructureButton here, left of settings */}
+              <div className="flex items-center gap-2">
+                <GenerateListStructureButton
+                  boardId={boardId}
+                  initialMaxPosition={lists.length ? Math.max(...lists.map(l => l.position ?? 0)) : 0}
+                  showPromo={initialized} // wait until Keycloak is initialized before showing promo
+                />
+                <button
+                  className="p-2 rounded-full hover:bg-gray-200 transition"
+                  onClick={() => setShowSettings(v => !v)}
+                  aria-label="Board settings"
+                >
+                  <Cog6ToothIcon className="w-7 h-7 text-gray-700" />
+                </button>
+              </div>
             </div>
 
             {/* Add Member Modal */}

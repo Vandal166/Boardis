@@ -231,4 +231,25 @@
     <data name="NotificationBoardRemovedTitle" xml:space="preserve">
         <value>Zostałeś usunięty z tablicy</value>
     </data>
+    <data name="DescriptionRequired" xml:space="preserve">
+        <value>Opis jest wymagany.</value>
+    </data>
+    <data name="DescriptionNotWhitespace" xml:space="preserve">
+        <value>Opis nie może składać się wyłącznie ze znaków odstępu.</value>
+    </data>
+  <data name="OllamaApiRequestFailedWithStatusCode" xml:space="preserve">
+    <value>Żądanie do API Ollama nie powiodło się. Kod statusu: {0}</value>
+  </data>
+  <data name="OllamaApiResponseMissingResponseField" xml:space="preserve">
+    <value>Odpowiedź API Ollama nie zawiera pola 'response'.</value>
+  </data>
+  <data name="InvalidJsonStructureFromAi" xml:space="preserve">
+    <value>Nieprawidłowa struktura JSON z AI: {0}</value>
+  </data>
+  <data name="AiResponseEmptyOrNull" xml:space="preserve">
+    <value>Odpowiedź AI była pusta lub null.</value>
+  </data>
+  <data name="OllamaApiUnexpectedError" xml:space="preserve">
+    <value>Wystąpił błąd podczas przetwarzania żądania do API Ollama.</value>
+  </data>
 </root>
