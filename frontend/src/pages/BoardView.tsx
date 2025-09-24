@@ -17,7 +17,7 @@ import { HubConnectionState } from '@microsoft/signalr';
 import { useBoardSignalR } from '../communication/BoardSignalRProvider';
 import { useTranslation } from 'react-i18next';
 import GenerateListStructureButton from '../components/Ollama/GenerateListStructureButton';
-import ChatWithAIButton from '../components/ChatWithAIButton';
+import ChatWithAIButton from '../components/Ollama/ChatWithAIButton';
 
 
 function BoardView()

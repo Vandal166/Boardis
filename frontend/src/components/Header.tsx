@@ -59,18 +59,25 @@ function Header()
         };
     }, [boardId, initialized, keycloak.authenticated, keycloak.token, boardHubConnection]);
 
+    const { t, i18n } = useTranslation();
+
+    // Language dropdown state
+    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+    const langBtnRef = useRef<HTMLButtonElement>(null);
+    const langMenuRef = useRef<HTMLDivElement>(null);
+
     useEffect(() =>
     {
         const handleClickOutside = (event: MouseEvent) =>
         {
             if (
-                menuRef.current &&
-                !menuRef.current.contains(event.target as Node) &&
-                avatarRef.current &&
-                !avatarRef.current.contains(event.target as Node)
+                langMenuRef.current &&
+                !langMenuRef.current.contains(event.target as Node) &&
+                langBtnRef.current &&
+                !langBtnRef.current.contains(event.target as Node)
             )
             {
-                setDropdownOpen(false);
+                setLangDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -81,7 +88,13 @@ function Header()
     const handleRegister = () => keycloak.register({ redirectUri: window.location.origin + '/' });
     const handleLogout = () => keycloak.logout({ redirectUri: window.location.origin + '/' });
 
-    const { t, i18n } = useTranslation();
+    // Helper for language code
+    const getLangCode = (lang: string) =>
+    {
+        if (lang === 'en') return 'EN';
+        if (lang === 'pl') return 'PL';
+        return lang.toUpperCase();
+    };
 
     return (
         <header className="sticky top-0 z-50 w-full flex justify-between items-center p-4 bg-gray-800 shadow-2xl">
@@ -102,17 +115,41 @@ function Header()
                 )}
             </button>
             <div className="flex items-center space-x-4">
-                {/* Language Switcher */}
-                <select
-                    value={i18n.language}
-                    onChange={e => i18n.changeLanguage(e.target.value)}
-                    className="bg-gray-700 text-white px-2 py-1 rounded-md focus:outline-none"
-                    style={{ minWidth: 70 }}
-                    aria-label="Select language"
-                >
-                    <option value="en">English</option>
-                    <option value="pl">Polski</option>
-                </select>
+                {/* Language Switcher with custom SVG icon */}
+                <div className="relative">
+                    <button
+                        ref={langBtnRef}
+                        onClick={() => setLangDropdownOpen(v => !v)}
+                        className="bg-gray-700 text-white px-2 py-1 rounded-md focus:outline-none flex items-center gap-2"
+                        aria-label="Select language"
+                        type="button"
+                    >
+                        {/* Inline SVG for language icon */}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802" />
+                        </svg>
+                        <span className="hidden sm:inline">{getLangCode(i18n.language)}</span>
+                    </button>
+                    {langDropdownOpen && (
+                        <div
+                            ref={langMenuRef}
+                            className="absolute left-0 mt-2 w-32 bg-white rounded-lg shadow-lg py-2 z-20"
+                        >
+                            <button
+                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${i18n.language === 'en' ? 'font-bold text-blue-700' : 'text-gray-800'}`}
+                                onClick={() => { i18n.changeLanguage('en'); setLangDropdownOpen(false); }}
+                            >
+                                English
+                            </button>
+                            <button
+                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${i18n.language === 'pl' ? 'font-bold text-blue-700' : 'text-gray-800'}`}
+                                onClick={() => { i18n.changeLanguage('pl'); setLangDropdownOpen(false); }}
+                            >
+                                Polish
+                            </button>
+                        </div>
+                    )}
+                </div>
                 {initialized ? (
                     keycloak.authenticated ? (
                         <>

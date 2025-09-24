@@ -252,6 +252,15 @@
     <data name="OllamaApiUnexpectedError" xml:space="preserve">
         <value>An error occurred while processing the Ollama API request.</value>
     </data>
+    <data name="MessageRequired" xml:space="preserve">
+        <value>Message is required.</value>
+    </data>
+    <data name="MessageMaxLength" xml:space="preserve">
+        <value>Message cannot exceed {0} characters.</value>
+    </data>
+    <data name="MessageNotWhitespace" xml:space="preserve">
+        <value>Message must not be whitespace.</value>
+    </data>
     
     
 </root>

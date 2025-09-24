@@ -10,7 +10,7 @@ using Web.API.Common;
 using Web.API.Communication.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
-IdentityModelEventSource.ShowPII = true;
+IdentityModelEventSource.ShowPII = false;
 
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>

@@ -6,7 +6,6 @@ import { KeycloakProvider } from './KeycloakProvider.tsx';
 import App from './App.tsx';
 import Home from './pages/Home.tsx';
 import BoardView from './pages/BoardView.tsx';
-import Settings from './pages/Settings.tsx';
 import Boards from './pages/Boards.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import { ConfirmationDialogProvider } from './components/ConfirmationDialog.tsx';
@@ -36,7 +35,6 @@ createRoot(document.getElementById('root')!).render(
                     <Route index element={<Boards />} />
                     <Route path="board/:boardId" element={<BoardView />} />
                   </Route>
-                  <Route path="/settings" element={<Settings />} />
                   <Route path="/features" element={<PlaceholderPage title="Features" />} />
                   <Route path="/pricing" element={<PlaceholderPage title="Pricing" />} />
                   <Route path="/blog" element={<PlaceholderPage title="Blog" />} />

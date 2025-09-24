@@ -393,6 +393,33 @@ namespace Web.Resources.Resources.Boards {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Message cannot exceed {0} characters..
+        /// </summary>
+        public static string MessageMaxLength {
+            get {
+                return ResourceManager.GetString("MessageMaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message must not be whitespace..
+        /// </summary>
+        public static string MessageNotWhitespace {
+            get {
+                return ResourceManager.GetString("MessageNotWhitespace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message is required..
+        /// </summary>
+        public static string MessageRequired {
+            get {
+                return ResourceManager.GetString("MessageRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You lack the required permission for this action..
         /// </summary>
         public static string MissingRequiredPermission {

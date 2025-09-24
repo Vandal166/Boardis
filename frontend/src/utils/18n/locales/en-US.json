@@ -188,5 +188,11 @@
   "generateListModalNoteEnglishOnly": "Model can only respond in English.",
   "generateListModalNoteMoreDetails": "The more details you provide, the better the result.",
   "generateListModalNoteBeSpecific": "Be specific (e.g. how many lists/cards you want).",
-  "generateListModalNoteAvoidAmbiguity": "Avoid ambiguity; be clear about your requirements."
+  "generateListModalNoteAvoidAmbiguity": "Avoid ambiguity; be clear about your requirements.",
+  "chatWithAI.buttonTitle": "Chat with AI",
+  "chatWithAI.closeAria": "Close chat",
+  "chatWithAI.inputPlaceholder": "Ask the AI anything about your board...",
+  "chatWithAI.send": "Send",
+  "chatWithAI.typing": "AI is typing...",
+  "chatWithAI.noResponse": "No response"
 }

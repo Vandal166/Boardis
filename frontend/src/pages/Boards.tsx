@@ -391,7 +391,7 @@ function Boards()
               {t('boardsTitle')}
             </h2>
             {/* {error && <p className="text-red-600 mb-4 text-center">{error}</p>} */}
-            {boards.length > 0 ? (
+            {filteredBoards.length > 0 ? (
               <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center cursor-pointer">
                 {filteredBoards.map((board) => (
                   <li
