@@ -117,6 +117,12 @@ A Kanban-style web API built with ASP.NET Core 9, featuring board, list, and car
 8. Re-run docker compose for changes to apply:
    See point 2.
 
+9. Run the frontend:
+   ```bash
+   cd frontend
+   npm run build
+   ```
+
 
 ## Tests
 
