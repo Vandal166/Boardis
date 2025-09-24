@@ -91,7 +91,7 @@ A Kanban-style web API built with ASP.NET Core 9, featuring board, list, and car
 
 5. Configure **Keycloak**:
 
-   - Access the Keycloak admin panel.  
+   - Access the Keycloak admin panel at http://localhost:8081
    - Log in using:
      ```
      Username: admin
