@@ -72,7 +72,7 @@ A Kanban-style web API built with ASP.NET Core 9, featuring board, list, and car
 
 2. Run Docker Compose:
    ```bash
-   docker compose up -d
+   docker compose up --build -d
    ```
    OR for ease of development:
    ```bash
