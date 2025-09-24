@@ -188,5 +188,11 @@
   "generateListModalNoteEnglishOnly": "Model odpowiada tylko po angielsku.",
   "generateListModalNoteMoreDetails": "Im więcej szczegółów podasz, tym lepszy będzie efekt.",
   "generateListModalNoteBeSpecific": "Bądź konkretny (np. ile list/kart chcesz).",
-  "generateListModalNoteAvoidAmbiguity": "Unikaj niejasności; jasno określ swoje wymagania."
+  "generateListModalNoteAvoidAmbiguity": "Unikaj niejasności; jasno określ swoje wymagania.",
+  "chatWithAI.buttonTitle": "Porozmawiaj z AI",
+  "chatWithAI.closeAria": "Zamknij czat",
+  "chatWithAI.inputPlaceholder": "Zapytaj AI o swoją tablicę...",
+  "chatWithAI.send": "Wyślij",
+  "chatWithAI.typing": "AI pisze...",
+  "chatWithAI.noResponse": "Brak odpowiedzi"
 }

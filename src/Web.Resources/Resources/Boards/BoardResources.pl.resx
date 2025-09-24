@@ -252,4 +252,13 @@
   <data name="OllamaApiUnexpectedError" xml:space="preserve">
     <value>Wystąpił błąd podczas przetwarzania żądania do API Ollama.</value>
   </data>
+  <data name="MessageRequired" xml:space="preserve">
+        <value>Wiadomość jest wymagana.</value>
+    </data>
+    <data name="MessageMaxLength" xml:space="preserve">
+        <value>Wiadomość nie może przekraczać {0} znaków.</value>
+    </data>
+    <data name="MessageNotWhitespace" xml:space="preserve">
+        <value>Wiadomość nie może składać się wyłącznie ze znaków odstępu.</value>
+    </data>
 </root>

@@ -108,7 +108,6 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
         
         try
         {
-            Console.WriteLine("Starting Ollama API request...");
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.Timeout = TimeSpan.FromMinutes(2);
             Console.WriteLine($"Using model: {Model}");
@@ -122,13 +121,10 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
                 stream = false
             };
 
-            Console.WriteLine("Sending POST request to Ollama API...");
             var response = await httpClient.PostAsJsonAsync(OllamaApiUrl, requestBody, ct);
-            Console.WriteLine($"Received response with status code: {response.StatusCode}");
 
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Ollama API request failed with status code: {response.StatusCode}");
                 return Result.Fail("OllamaApiRequestFailedWithStatusCode");
             }
 
@@ -137,7 +133,6 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
             var json = JsonDocument.Parse(content);
             if (!json.RootElement.TryGetProperty("response", out var resp))
             {
-                Console.WriteLine("Ollama API response missing 'response' field.");
                 return Result.Fail("OllamaApiResponseMissingResponseField");
             }
           
@@ -159,9 +154,8 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
                     PropertyNameCaseInsensitive = true  // Handle case variations if model hallucinates
                 });
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
-                Console.WriteLine($"JSON deserialization failed: {ex.Message}");
                 return Result.Fail("InvalidJsonStructureFromAi");
             }
 
@@ -170,13 +164,10 @@ internal sealed class GenerateListStructureCommandHandler : ICommandHandler<Gene
                 return Result.Fail("AiResponseEmptyOrNull");
             }
 
-            Console.WriteLine("Ollama response successfully parsed to Kanban structure.");
             return Result.Ok(structureResponse);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Exception occurred: {ex.Message}");
-            Console.WriteLine(ex.StackTrace);
             return Result.Fail("OllamaApiUnexpectedError");
         }
     }

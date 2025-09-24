@@ -56,11 +56,10 @@ internal sealed class ChatRequestCommandHandler : ICommandHandler<ChatRequestCom
                 {
                     l.Title,
                     Cards = l.Cards
-                        .Where(c => !string.IsNullOrWhiteSpace(c.Title.ToString()) || !string.IsNullOrWhiteSpace(c.Description))
                         .Select(c => new
                         {
                             c.Title,
-                            Description = string.IsNullOrWhiteSpace(c.Description) ? null : c.Description,
+                            c.Description,
                             c.CompletedAt
                         })
                         .ToList()
@@ -73,7 +72,6 @@ internal sealed class ChatRequestCommandHandler : ICommandHandler<ChatRequestCom
          
         try
         {
-            Console.WriteLine("Starting Ollama API request...");
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.Timeout = TimeSpan.FromMinutes(2);
             Console.WriteLine($"Using model: {Model}");
@@ -91,9 +89,7 @@ internal sealed class ChatRequestCommandHandler : ICommandHandler<ChatRequestCom
                 stream = false
             };
 
-            Console.WriteLine("Sending POST request to Ollama API...");
             var response = await httpClient.PostAsJsonAsync(OllamaApiUrl, requestBody, ct);
-            Console.WriteLine($"Received response with status code: {response.StatusCode}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -104,11 +100,10 @@ internal sealed class ChatRequestCommandHandler : ICommandHandler<ChatRequestCom
             var content = await response.Content.ReadAsStringAsync(ct);
              
             var json = JsonDocument.Parse(content);
-            Console.WriteLine($"Json response: {json.RootElement}");
+            
             if (!json.RootElement.TryGetProperty("message", out var messageObj) ||
                 !messageObj.TryGetProperty("content", out var resp))
             {
-                Console.WriteLine("Ollama API response missing 'response' field.");
                 return Result.Fail("OllamaApiResponseMissingResponseField");
             }
           
@@ -121,13 +116,10 @@ internal sealed class ChatRequestCommandHandler : ICommandHandler<ChatRequestCom
                 ResponseMessage = responseText
             };
 
-            Console.WriteLine("Ollama response successfully parsed to ChatResponse.");
             return Result.Ok(chatResponse);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Exception occurred: {ex.Message}");
-            Console.WriteLine(ex.StackTrace);
             return Result.Fail("OllamaApiUnexpectedError");
         }
     }
