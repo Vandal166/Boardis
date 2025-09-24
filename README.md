@@ -120,6 +120,7 @@ A Kanban-style web API built with ASP.NET Core 9, featuring board, list, and car
 9. Run the frontend:
    ```bash
    cd frontend
+   npm install
    npm run build
    ```
 
