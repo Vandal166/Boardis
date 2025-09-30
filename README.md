@@ -2,6 +2,7 @@
 
 A Kanban-style web API built with ASP.NET Core 9, featuring board, list, and card management with real-time notifications via SignalR. It integrates the Gemma2:2b LLM with Ollama, Keycloak for authentication, Redis for caching, PostgreSQL for data storage, Azurite for blob storage, and follows Clean Architecture principles. The frontend is built using React with Nginx as a reverse proxy. Supports localization (English, Polish) and permission-based access control.
 
+Features also an optional observability stack(OpenTelemetry, Grafana, Prometheus, Loki, Jaeger)
 ## Features
 
 - **User Accounts**
@@ -78,7 +79,15 @@ A Kanban-style web API built with ASP.NET Core 9, featuring board, list, and car
    ```bash
    docker compose -f compose.yaml -f compose.dev.yaml up -d
    ```
-
+**Optional Note:** The monitoring stack (including OpenTelemetry, Prometheus, Grafana, Jaeger, and Loki) is not required for the API to function but can be enabled for observability. To run only the monitoring stack:
+   ```bash
+   docker compose -f compose.monitoring.yaml up --build -d
+   ```
+   To run the main services along with the monitoring stack:
+   ```bash
+   docker compose -f compose.yaml -f compose.monitoring.yaml up --build -d
+   ```
+   
 3. Navigate to the Web.API project:
    ```bash
    cd src/Web.API
