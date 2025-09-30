@@ -4,16 +4,13 @@ using Infrastructure;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json.Serialization;
-using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Serilog.Sinks.Grafana.Loki;
 using Serilog.Sinks.Loki;
-using Serilog.Sinks.OpenTelemetry;
 using Web.API;
 using Web.API.Common;
 using Web.API.Communication.Hubs;
@@ -100,8 +97,8 @@ builder.Services.AddOpenTelemetry()
         options.AddHttpClientInstrumentation();
         options.AddOtlpExporter(otlp => 
         {
-            otlp.Endpoint = new Uri("http://jaeger:4318/v1/traces");  // Explicit path for traces
-            otlp.Protocol = OtlpExportProtocol.HttpProtobuf;  // Force HTTP
+            otlp.Endpoint = new Uri("http://jaeger:4318/v1/traces");
+            otlp.Protocol = OtlpExportProtocol.HttpProtobuf;
         });
     });
 
