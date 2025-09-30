@@ -55,6 +55,7 @@ Features also an optional observability stack(OpenTelemetry, Grafana, Prometheus
 - **AI Integration**: Ollama with Gemma2:2b LLM for content generation and chat
 - **Containerization**: Docker Compose for service orchestration
 - **Architecture**: Follows Clean Architecture principles
+- **Monitoring and Observability**: OpenTelemetry for tracing, Prometheus for metrics, Grafana for visualization, Jaeger for distributed tracing, and Loki for log aggregation
 
 ## Requirements
 
