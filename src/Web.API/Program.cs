@@ -4,7 +4,16 @@ using Infrastructure;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json.Serialization;
+using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Sinks.Grafana.Loki;
+using Serilog.Sinks.Loki;
+using Serilog.Sinks.OpenTelemetry;
 using Web.API;
 using Web.API.Common;
 using Web.API.Communication.Hubs;
@@ -49,8 +58,52 @@ builder.Services.AddAuthorization(options =>
 
 builder.Host.UseSerilog((context, configuration) =>
 {
-    configuration.ReadFrom.Configuration(context.Configuration);
+    configuration.ReadFrom.Configuration(context.Configuration)
+        .Enrich.WithProperty("service_name", "web-api")
+        .WriteTo.LokiHttp(() => new LokiSinkConfiguration
+        {
+            LokiUrl = "http://loki:3100"
+        });
 });
+
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.IncludeScopes = true;
+    options.ParseStateValues = true;
+    options.IncludeFormattedMessage = true;
+});
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("web-api", serviceVersion: "1.0.0"))
+    .WithLogging(options =>
+    {
+        options.AddOtlpExporter(otlp => 
+        {
+            otlp.Endpoint = new Uri("http://jaeger:4318/v1/logs");
+            otlp.Protocol = OtlpExportProtocol.HttpProtobuf;
+        });
+    })
+    .WithMetrics(options =>
+    {
+        options.AddAspNetCoreInstrumentation();
+        options.AddHttpClientInstrumentation();
+        options.AddPrometheusExporter();
+        options.AddOtlpExporter(otlp => 
+        {
+            otlp.Endpoint = new Uri("http://jaeger:4318/v1/metrics");
+            otlp.Protocol = OtlpExportProtocol.HttpProtobuf;
+        });
+    })
+    .WithTracing(options =>
+    {
+        options.AddAspNetCoreInstrumentation();
+        options.AddHttpClientInstrumentation();
+        options.AddOtlpExporter(otlp => 
+        {
+            otlp.Endpoint = new Uri("http://jaeger:4318/v1/traces");  // Explicit path for traces
+            otlp.Protocol = OtlpExportProtocol.HttpProtobuf;  // Force HTTP
+        });
+    });
 
 var app = builder.Build();
 
@@ -63,6 +116,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 app.UseCors("AllowFrontend");
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 var supportedCultures = new[]
 {

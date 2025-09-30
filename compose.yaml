@@ -19,7 +19,8 @@
       - ASPNETCORE_ENVIRONMENT=Development # running in Development mode
       - ConnectionStrings__Boardis_DB=Host=web.database;Port=5432;Database=Boardis_DB;Username=postgres;Password=postgres
       - ConnectionStrings__Redis=redis:6379
-      - Ollama__Endpoint=http://ollama:11434 # internal url in docker network
+      #- Ollama__Endpoint=http://ollama:11434 # internal url in docker network
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
     networks:
       - boardis-network
             
@@ -40,8 +41,9 @@
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: Boardis_DB
+      PGDATA: /var/lib/postgresql/18/docker
     volumes:
-      - ./.containers/boardis_db:/var/lib/postgresql/data
+      - ./.containers/boardis_db:/var/lib/postgresql
     ports:
         - "5433:5432"
     healthcheck: # ensuring PostgreSQL is ready before Keycloak starts
@@ -60,8 +62,9 @@
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: keycloak
+      PGDATA: /var/lib/postgresql/18/docker
     volumes:
-      - ./.containers/keycloak_db:/var/lib/postgresql/data
+      - ./.containers/keycloak_db:/var/lib/postgresql
     ports:
       - "5434:5432"
     healthcheck:
@@ -111,8 +114,7 @@
       - web.api
       - web.keycloak
     networks:
-      - boardis-network
-        
+      - boardis-network        
         
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
@@ -124,27 +126,26 @@
     networks:
       - boardis-network
         
-        
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"  # exposing for local testing/debugging (e.g., curl from host)
-    volumes:
-      - ./.containers/ollama:/root/.ollama  # persisting models and config
-      - ./ollama/ollama-entrypoint.sh:/entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "/entrypoint.sh"]
-    networks:
-      - boardis-network
-    deploy: # This enables GPU if available
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all  # Or 'capabilities: [[gpu]]'
-              capabilities: [ gpu ]
+#        disabled for now as Ollama requires a GPU and is quite large
+#  ollama:
+#    image: ollama/ollama:latest
+#    container_name: ollama
+#    ports:
+#      - "11434:11434"  # exposing for local testing/debugging (e.g., curl from host)
+#    volumes:
+#      - ./.containers/ollama:/root/.ollama  # persisting models and config
+#      - ./ollama/ollama-entrypoint.sh:/entrypoint.sh:ro
+#    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+#    networks:
+#      - boardis-network
+#    deploy: # This enables GPU if available
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: all  # Or 'capabilities: [[gpu]]'
+#              capabilities: [ gpu ]
     
-  
 networks:
   boardis-network:
     driver: bridge # allows inter-container communication
