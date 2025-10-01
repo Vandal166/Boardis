@@ -1,6 +1,4 @@
 ﻿using Application.Abstractions.CQRS;
-using Application.Contracts;
-using Application.Contracts.Media;
 using Application.Contracts.Persistence;
 using Domain.Board.Events;
 using Domain.Constants;
@@ -24,6 +22,7 @@ internal sealed class BoardWallpaperAddedEventHandler : EventHandlerBase<BoardWa
 
         if (@event.OldWallpaperImageId is not null)
         {
+            //should be offloaded to an bg service instead for example using BackgroundService and Channel or Hangfire
             await _blobStorage.DeleteFileAsync(@event.OldWallpaperImageId.Value, BlobContainers.MediaContainer, ct);
             await _cache.RemoveAsync($"media_{@event.OldWallpaperImageId}", ct);
         }
